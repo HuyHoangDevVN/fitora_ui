@@ -1,5 +1,6 @@
 import Header from "@/components/Layout/HeaderCommon/Header";
 import LeftSidebar from "@/components/Layout/LeftSideBarCommon/LeftSideBar";
+import RightSideBar from "@/components/Layout/RightSideBarCommon/RightSideBar";
 import React from "react";
 import { Outlet } from "react-router-dom";
 
@@ -9,6 +10,7 @@ const Layout: React.FC = () => {
       <Header />
       <div className="flex flex-1">
         <LeftSidebar />
+        <RightSideBar />
         <main className="flex-1 p-4 ml-64">
           <Outlet />
         </main>

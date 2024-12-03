@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MenuItem } from "../interface";
+import { MenuItem } from "../interfaces";
 import LinkButton from "./LinkButton";
 import { Button, Flex } from "antd";
 import { FaCircleChevronDown, FaCircleChevronUp } from "react-icons/fa6";
