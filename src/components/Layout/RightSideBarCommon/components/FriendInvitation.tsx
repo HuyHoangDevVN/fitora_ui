@@ -1,4 +1,4 @@
-import { Avatar, Button, Flex, Space } from "antd";
+import { Avatar, Button, Flex } from "antd";
 import { FriendInvite } from "../interfaces";
 
 type FriendInvitationProp = {
@@ -11,7 +11,7 @@ const FriendInvitation = ({ user }: FriendInvitationProp) => {
       <Flex align="center" gap={10} style={{ width: "100%" }}>
         <Avatar size={50} src={user?.image} />
         <Flex vertical gap={5} style={{ width: "100%" }}>
-          <h2>{user?.name}</h2>
+          <h2 className="font-[500]">{user?.name}</h2>
           <Flex
             gap={10}
             align="center"

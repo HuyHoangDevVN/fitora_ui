@@ -1,8 +1,9 @@
 import { Button, Divider, Flex, Tooltip } from "antd";
 import FriendInvitation from "./components/FriendInvitation";
-import { friendInvite } from "./fakeData";
+import { friendInvite, listContacts } from "./fakeData";
 import colors from "@/styles/colors";
 import { SearchOutlined } from "@ant-design/icons";
+import ListContactPerson from "./components/ListContactPerson";
 
 const RightSideBar = () => {
   return (
@@ -25,6 +26,7 @@ const RightSideBar = () => {
           />
         </Tooltip>
       </Flex>
+      <ListContactPerson people={listContacts} />
     </aside>
   );
 };
