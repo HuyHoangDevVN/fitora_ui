@@ -10,32 +10,32 @@ import { fakeGroupData } from "./fakeData";
 
 const menuItems = [
   {
-    icon: <RiHomeLine size={24} color={colors.primary} />,
+    icon: <RiHomeLine size={20} color={colors.primary} />,
     link: "/",
     title: "Trang chủ",
   },
   {
-    icon: <FaUserFriends size={24} color={colors.primary} />,
+    icon: <FaUserFriends size={20} color={colors.primary} />,
     link: "/",
     title: "Bạn bè",
   },
   {
-    icon: <FaBookmark size={24} color={colors.primary} />,
+    icon: <FaBookmark size={20} color={colors.primary} />,
     link: "/",
     title: "Đã lưu",
   },
   {
-    icon: <HiUserGroup size={24} color={colors.primary} />,
+    icon: <HiUserGroup size={20} color={colors.primary} />,
     link: "/",
     title: "Nhóm",
   },
   {
-    icon: <FaChartLine size={24} color={colors.primary} />,
+    icon: <FaChartLine size={20} color={colors.primary} />,
     link: "/",
     title: "Xu hướng",
   },
   {
-    icon: <MdOutlineCategory size={24} color={colors.primary} />,
+    icon: <MdOutlineCategory size={20} color={colors.primary} />,
     link: "/",
     title: "Khám phá",
   },

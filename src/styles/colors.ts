@@ -1,9 +1,8 @@
-// src/styles/colors.js
 const colors = {
-  primary: "#FF6D91", // Màu cam hồng (dùng làm màu chính)
-  secondary: "#4A90E2", // Màu xanh (dùng làm màu phụ)
+  primary: "#FF4770", // Màu cam hồng đậm hơn (dùng làm màu chính)
+  secondary: "#2767B1", // Màu xanh đậm hơn (dùng làm màu phụ)
   background: "#FFFFFF", // Màu trắng (dùng làm nền)
-  secondBackground: "#F8FAFC",
+  secondBackground: "#F8FAFC", // Màu nền phụ
   textPrimary: "#000000", // Màu chữ chính
   textSecondary: "#666666", // Màu chữ phụ
   border: "#E0E0E0", // Màu viền

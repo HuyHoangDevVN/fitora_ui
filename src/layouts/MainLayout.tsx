@@ -11,7 +11,7 @@ const Layout: React.FC = () => {
       <div className="flex flex-1">
         <LeftSidebar />
         <RightSideBar />
-        <main className="flex-1 p-4 ml-64">
+        <main className="flex-1 p-4 mx-auto w-[680px] max-w-[680px]">
           <Outlet />
         </main>
       </div>

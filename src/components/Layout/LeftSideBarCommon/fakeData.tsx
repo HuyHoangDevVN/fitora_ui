@@ -2,8 +2,9 @@ import { Image } from "antd";
 
 const imageFake = (
   <Image
-    width={24}
+    width={20}
     src="https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"
+    style={{ aspectRatio: "1 / 1" }}
   />
 );
 

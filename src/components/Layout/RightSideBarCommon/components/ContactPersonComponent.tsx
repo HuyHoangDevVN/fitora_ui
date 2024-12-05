@@ -14,7 +14,7 @@ const ContactPersonComponent = ({ user }: ContactPersonProp) => {
       >
         <Flex align="center" gap={8} style={{ width: "100%" }}>
           <Avatar size={50} src={user?.image} />
-          <h2 className="text-[.9375rem] font-[500]">{user?.name}</h2>
+          <h2 className="text-[14] font-[500]">{user?.name}</h2>
         </Flex>
       </Button>
     </div>
