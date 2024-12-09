@@ -7,7 +7,7 @@ import ListContactPerson from "./components/ListContactPerson";
 
 const RightSideBar = () => {
   return (
-    <aside className="bg-background text-textPrimary  p-4 pb-32 h-full right-0 fixed border overflow-y-auto">
+    <div className="bg-background text-textPrimary p-4 pb-32 h-full  right-0 fixed border overflow-y-auto">
       <Flex flex={"row"} justify="space-between" align="center">
         <h2 className="text-[20]  font-semibold">Lời mời kết bạn</h2>
         <h2 className="text-[20] text-secondary font-semibold hover:underline ">
@@ -27,7 +27,7 @@ const RightSideBar = () => {
         </Tooltip>
       </Flex>
       <ListContactPerson people={listContacts} />
-    </aside>
+    </div>
   );
 };
 

@@ -9,15 +9,15 @@ const Layout: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       <div className="flex flex-1 w-full">
-        <aside className="hidden  lg:block w-1/4 max-w-[250px] bg-gray-50">
+        <aside className="hidden lg:block w-[250px] max-w-[250px] bg-gray-50">
           <LeftSidebar />
         </aside>
 
-        <main className="flex-1 px-4 py-6 mx-auto w-full max-w-[680px]">
+        <main className="flex-1 px-4 py-6 mx-auto max-w-[680px]">
           <Outlet />
         </main>
 
-        <aside className="hidden md:block lg:block w-1/4 max-w-[250px] bg-gray-50">
+        <aside className="hidden md:block lg:block w-[300px] max-w-[300px] bg-gray-50">
           <RightSideBar />
         </aside>
       </div>
