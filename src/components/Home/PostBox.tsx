@@ -1,8 +1,7 @@
 import { TblPost } from "@/interfaces/TblPost";
-import colors from "@/styles/colors";
 import { timeToLast } from "@/utils/FunctionHelpper";
 import { PlusOutlined } from "@ant-design/icons";
-import { Avatar, Button, Flex, Space } from "antd";
+import { Avatar, Button, Space } from "antd";
 import { BsDot } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
@@ -14,71 +13,63 @@ type PostBoxProps = {
 };
 
 const PostBox = ({ post }: PostBoxProps) => (
-  <div className="mb-3">
-    <div className="header">
-      <Flex style={{ width: "100%" }} align="center" justify="space-between">
-        <Flex style={{ width: "230px" }} align="center" justify="space-between">
-          <Avatar src={post.createByAvatar}></Avatar>
-          <h2 className="text-neutral-content whitespace-nowrap flex items-center h-xl a cursor-pointer text-[12px] font-semibold no-visited no-underline hover:no-underline">{`f/${post.postCategoryName}`}</h2>
-          <BsDot />
-          <h2 className="text-[12px] font-semibold">
-            {timeToLast(post.createDate)}
-          </h2>
-        </Flex>
-        <Space style={{ width: "fit-content" }}>
-          <Button
-            style={{
-              borderRadius: "20px",
-              backgroundColor: colors.primary,
-              fontSize: "14px",
-            }}
-            icon={<PlusOutlined />}
-            iconPosition="end"
-            type="primary"
-            size="small"
-          >
-            Theo dõi
-          </Button>
-          <IoIosMore />
-        </Space>
-      </Flex>
+  <div className="post-box mb-3">
+    <div className="post-header flex justify-between items-center w-full">
+      <div className="post-info flex items-center gap-2">
+        <Avatar src={post.createByAvatar} />
+        <h2 className="category-name text-xs font-semibold cursor-pointer">
+          {`f/${post.postCategoryName}`}
+        </h2>
+        <BsDot />
+        <span className="create-date text-xs font-semibold">
+          {timeToLast(post.createDate)}
+        </span>
+      </div>
+      <Space>
+        <Button
+          className="follow-btn bg-primary rounded-2xl hover:bg-primary"
+          icon={<PlusOutlined />}
+          type="primary"
+          size="small"
+        >
+          Theo dõi
+        </Button>
+        <IoIosMore className="icon-more" />
+      </Space>
     </div>
 
-    <div className="content">
-      <h2 className="title block font-semibold text-neutral-content-strong m-0 visited:text-neutral-content-weak text-16 xs:text-18  mb-2xs xs:mb-xs  overflow-hidden">
+    <div className="post-content mt-2">
+      <h2 className="post-title text-sm font-semibold overflow-hidden mb-2">
         {post.postTitle}
       </h2>
-      <div id="mainContent">{post.postContent}</div>
+      <div className="post-main-content">{post.postContent}</div>
     </div>
-    <Flex align="center" gap={10}>
-      <div className="bg-secondBackground rounded-2xl w-fit flex flex-row items-center">
-        <Button type="text" icon={<PiArrowFatUpLight />}></Button>
-        <p className="text-[12px] font-[600]">{post.voteQuantity}</p>
-        <Button type="text" icon={<PiArrowFatDownLight />}></Button>
+
+    <div className="post-footer flex items-center gap-2 mt-2">
+      <div className="vote-controls flex items-center bg-gray-100 rounded-2xl px-2">
+        <Button type="text" icon={<PiArrowFatUpLight />} />
+        <span className="vote-count text-xs font-medium">
+          {post.voteQuantity}
+        </span>
+        <Button type="text" icon={<PiArrowFatDownLight />} />
       </div>
       <Button
-        style={{
-          borderRadius: "1rem",
-          backgroundColor: colors.secondBackground,
-          fontSize: "12px",
-        }}
-        type="text"
+        className="comment-btn bg-gray-100 rounded-2xl"
         icon={<FaRegComment />}
+        type="text"
+        size="small"
       >
         {post.numberOfComments}
       </Button>
       <Button
-        style={{
-          borderRadius: "1rem",
-          backgroundColor: colors.secondBackground,
-          fontSize: "12px",
-        }}
-        type="text"
+        className="share-btn bg-gray-100 rounded-2xl"
         icon={<RiShareForwardLine />}
+        type="text"
+        size="small"
       >
         Share
       </Button>
-    </Flex>
+    </div>
   </div>
 );
 

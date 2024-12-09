@@ -1,16 +1,16 @@
 import { SearchOutlined } from "@ant-design/icons";
-import { Input, Space } from "antd";
+import { Input } from "antd";
 import React from "react";
+
 const App: React.FC = () => (
-  <Space direction="vertical">
+  <div className="flex w-full">
     <Input
       size="middle"
-      placeholder="Search fitora..."
-      variant="outlined"
-      style={{ width: 450, borderRadius: "15px", padding: "6px 10px" }}
+      placeholder="Search Fitora..."
+      className="flex rounded-3xl px-4 py-2 text-sm shadow-sm focus:ring focus:ring-primary focus:outline-none"
       suffix={<SearchOutlined />}
     />
-  </Space>
+  </div>
 );
 
 export default App;

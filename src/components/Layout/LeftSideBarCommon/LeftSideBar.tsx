@@ -42,7 +42,7 @@ const menuItems = [
 ];
 
 const LeftSidebar: React.FC = () => (
-  <aside className="bg-background text-textPrimary w-[350px] p-4 pb-32 h-full fixed border overflow-y-auto">
+  <aside className="bg-background text-textPrimary p-4 pb-32 h-full fixed border overflow-y-auto">
     <ListLinkButton listItems={menuItems} />
     <Divider style={{ borderColor: colors.border, margin: "15px 0px" }} />
     <h2 className="text-[20] text-primary font-semibold mt-0 mb-6">
