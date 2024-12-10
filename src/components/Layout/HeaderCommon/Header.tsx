@@ -15,7 +15,7 @@ const Header: React.FC = () => {
       </h1>
 
       {/* Search Bar */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 w-full max-w-[450px] sm:max-w-[300px] md:max-w-[450px]">
+      <div className="flex-1 flex justify-center">
         <SearchBar />
       </div>
 

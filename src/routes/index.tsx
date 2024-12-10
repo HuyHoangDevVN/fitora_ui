@@ -1,36 +1,40 @@
-import Layout from "@layouts/MainLayout";
-import React, { lazy, Suspense } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import PrivateRoute from "@/auth/PrivateRoute";
+import Layout from "@/layouts/MainLayout";
+import About from "@/pages/About";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import PageNotFound from "@/pages/PageNotFound";
+import Register from "@/pages/Register";
+import { createBrowserRouter } from "react-router-dom";
 
-// Import hoặc Lazy-load các Page
-const Home = lazy(() => import("../pages/Home"));
-const About = lazy(() => import("../pages/About"));
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <PrivateRoute />,
+    errorElement: <PageNotFound />,
+    children: [
+      {
+        path: "/",
+        element: <Layout />,
+        children: [
+          { path: "/", element: <Home /> },
+          { path: "about", element: <About /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "*",
+    element: <PageNotFound />,
+  },
+]);
 
-const AppRoutes: React.FC = () => {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route
-            index
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <Home />
-              </Suspense>
-            }
-          />
-          <Route
-            path="about"
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <About />
-              </Suspense>
-            }
-          />
-        </Route>
-      </Routes>
-    </Router>
-  );
-};
-
-export default AppRoutes;
+export default router;
