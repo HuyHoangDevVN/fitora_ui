@@ -14,15 +14,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
 
   const login = async (username: string, password: string) => {
-    // Fake authentication logic
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulating delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Replace with actual authentication logic (e.g., API call)
-    if (username === "admin" && password === "password") {
+    if (username === "admin" && password === "@Aa12345") {
       setUser(username);
     } else {
-      throw new Error("Invalid username or password");
+      setLoading(false);
+      throw new Error("Tài khoản hoặc mật khẩu không chính xác !");
     }
     setLoading(false);
   };
