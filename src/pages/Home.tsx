@@ -5,10 +5,10 @@ import { Divider } from "antd";
 
 const Home = () => {
   return fakePosts?.map((post) => (
-    <>
+    <div key={post.postId}>
       <PostBox post={post} />
       <Divider style={{ borderColor: colors.border, margin: "15px 0px" }} />
-    </>
+    </div>
   ));
 };
 

@@ -4,6 +4,7 @@ interface AuthContextType {
   user: string | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -26,12 +27,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   };
 
+  const register = async (username: string, password: string) => {
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    if (username && password.length >= 8) {
+      console.log("Tài khoản đăng ký thành công:", username);
+      setUser(username);
+    } else {
+      setLoading(false);
+      throw new Error("Tên tài khoản hoặc mật khẩu không hợp lệ !");
+    }
+    setLoading(false);
+  };
+
   const logout = () => {
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

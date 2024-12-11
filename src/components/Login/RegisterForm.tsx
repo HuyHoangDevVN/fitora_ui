@@ -2,15 +2,13 @@ import { useAuth } from "@/auth/AuthProvider";
 import colors from "@/styles/colors";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import styled from "@emotion/styled";
-import { Button, Divider, Form, Input } from "antd";
+import { Button, Form, Input } from "antd";
 import { useNavigate } from "react-router-dom";
-import { FcGoogle } from "react-icons/fc";
 import { FaLock, FaUser } from "react-icons/fa";
-import { FiLogIn } from "react-icons/fi";
+import { FiUserPlus } from "react-icons/fi";
 
 const StyledButton = styled(Button)`
-  background-color: #ff4770;
-  border-color: #ff4770;
+  background-color: ${colors.primary};
   border-radius: 20px;
   font-weight: bold;
   width: 300px;
@@ -19,39 +17,38 @@ const StyledButton = styled(Button)`
 
   &:hover {
     background-color: #d9365e !important;
-    border-color: #d9365e;
   }
 
   &:focus {
-    background-color: #ff5a85;
+    background-color: #4cc389;
   }
 `;
 
-interface LoginFormProps {
+interface RegisterFormProps {
   onSuccess?: () => void;
 }
 
-const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const { login, loading } = useAuth();
+const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
+  const { register, loading } = useAuth();
   const navigate = useNavigate();
 
   const onFinish = async (values: { username: string; password: string }) => {
     const { username, password } = values;
     try {
-      await login(username, password);
+      await register(username, password);
       if (onSuccess) {
         onSuccess();
       } else {
         navigate("/");
       }
     } catch {
-      console.error("Tài khoản hoặc mật khẩu không chính xác!");
+      console.error("Đăng ký không thành công, vui lòng thử lại!");
     }
   };
 
   return (
     <Form
-      name="login"
+      name="register"
       className="flex flex-col justify-center items-center my-auto w-[300px]"
       onFinish={onFinish}
       layout="vertical"
@@ -87,32 +84,20 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         htmlType="submit"
         type="primary"
         loading={loading}
-        icon={<FiLogIn />}
+        icon={<FiUserPlus />}
         iconPosition="end"
       >
-        Đăng nhập
+        Đăng ký
       </StyledButton>
 
       <h1 className="text-right font-[500] my-4">
-        <span className="">Chưa có tài khoản ?</span>{" "}
-        <a className="text-secondary" href="/register">
-          Đăng ký
+        <span className="">Đã có tài khoản?</span>{" "}
+        <a className="text-secondary" href="/login">
+          Đăng nhập
         </a>
       </h1>
-
-      <Divider plain style={{ margin: "0 0 20px 0", fontWeight: 500 }}>
-        Hoặc
-      </Divider>
-
-      <Button
-        type="default"
-        icon={<FcGoogle />}
-        className="font-[500] w-[300px] p-5 rounded-[20px]"
-      >
-        Đăng nhập bằng Google
-      </Button>
     </Form>
   );
 };
 
-export default LoginForm;
+export default RegisterForm;
