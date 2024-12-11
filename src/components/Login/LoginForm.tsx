@@ -1,21 +1,16 @@
 import { useAuth } from "@/auth/AuthProvider";
-import {
-  EyeInvisibleOutlined,
-  EyeTwoTone,
-  UserOutlined,
-} from "@ant-design/icons";
-import { Button, Input } from "antd";
-import { useState } from "react";
-import { FaLock } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import colors from "@/styles/colors";
+import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import styled from "@emotion/styled";
+import { Button, Divider, Input } from "antd";
+import { useState } from "react";
+import { FaLock, FaUser } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
 
-interface LoginFormProps {
-  onSuccess?: () => void;
-}
-
+// Styled component for the login button
 const StyledButton = styled(Button)`
-  background-color: #ff4770; /* Màu nền mặc định */
+  background-color: #ff4770;
   border-color: #ff4770;
   border-radius: 20px;
   font-weight: bold;
@@ -29,9 +24,14 @@ const StyledButton = styled(Button)`
   }
 
   &:focus {
-    background-color: #ff5a85; /* Màu khi focus */
+    background-color: #ff5a85;
   }
 `;
+
+interface LoginFormProps {
+  onSuccess?: () => void;
+}
+
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -51,13 +51,13 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         navigate("/");
       }
     } catch {
-      setError("Tài khoản hoặc mật khẩu không chính xác !");
+      setError("Tài khoản hoặc mật khẩu không chính xác!");
     }
   };
 
   return (
     <form
-      className="flex flex-col justify-center items-center gap-[20px] my-auto"
+      className="flex flex-col justify-center items-center gap-5 my-auto w-[300px]"
       onSubmit={handleSubmit}
     >
       <Input
@@ -65,9 +65,10 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         placeholder="Tài khoản"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        prefix={<UserOutlined />}
-        className="rounded-[20px] w-[300px]"
+        prefix={<FaUser color={colors.primary} />}
+        className="rounded-2xl w-72"
       />
+
       <Input.Password
         size="large"
         placeholder="Mật khẩu"
@@ -76,13 +77,27 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         }
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        prefix={<FaLock />}
-        className="rounded-[20px]  w-[300px]"
+        prefix={<FaLock color={colors.primary} />}
+        className="rounded-2xl w-72"
       />
-      {error && <p className="text-red-500">{error}</p>}
+
+      {error && username && password && (
+        <p className="text-red-500 text-sm">{error}</p>
+      )}
+
       <StyledButton htmlType="submit" type="primary" loading={loading}>
         Đăng nhập
       </StyledButton>
+      <Divider plain style={{ margin: 0, fontWeight: 500 }}>
+        Hoặc
+      </Divider>
+      <Button
+        type="default"
+        icon={<FcGoogle />}
+        className="font-[500] w-[300px] p-5 rounded-[20px]"
+      >
+        Đăng nhập bằng google
+      </Button>
     </form>
   );
 };
