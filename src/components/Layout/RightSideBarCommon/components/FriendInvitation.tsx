@@ -1,27 +1,34 @@
+import { FriendInvite } from "@/interfaces/FriendInvite";
 import { Avatar, Button, Flex } from "antd";
-import { FriendInvite } from "../interfaces";
 
 type FriendInvitationProp = {
-  user?: FriendInvite;
+  invite?: FriendInvite;
+  type: "sent" | "received";
 };
 
-const FriendInvitation = ({ user }: FriendInvitationProp) => {
+const FriendInvitation = ({ invite, type }: FriendInvitationProp) => {
+  const isReceived = type === "received";
+  const userImageUrl = isReceived
+    ? invite?.senderImageUrl
+    : invite?.receiverImageUrl;
+  const userName = isReceived ? invite?.senderName : invite?.receiverName;
+
   return (
-    <div style={{ marginTop: 15, width: "100%" }}>
-      <Flex align="center" gap={10} style={{ width: "100%" }}>
-        <Avatar size={50} src={user?.image} />
-        <Flex vertical gap={5} style={{ width: "100%" }}>
-          <h2 className="font-[500] text-[14]">{user?.name}</h2>
+    <div className="friend-invitation">
+      <Flex align="center" gap={10} className="friend-invitation-container">
+        <Avatar size={50} src={userImageUrl} />
+        <Flex vertical gap={5} className="friend-invitation-info">
+          <h2 className="font-semibold text-sm">{userName}</h2>
           <Flex
             gap={10}
             align="center"
             justify="space-between"
-            style={{ width: "100%", fontWeight: "500" }}
+            className="friend-invitation-buttons"
           >
-            <Button type="primary" style={{ width: "100%" }}>
+            <Button type="primary" className="full-width">
               Chấp nhận
             </Button>
-            <Button type="default" style={{ width: "100%" }}>
+            <Button type="default" className="full-width">
               Từ chối
             </Button>
           </Flex>

@@ -1,4 +1,4 @@
-import { TblPost } from "@/interfaces/TblPost";
+import { Post } from "@/interfaces/Post";
 import { timeToLast } from "@/utils/FunctionHelpper";
 import { PlusOutlined } from "@ant-design/icons";
 import { Avatar, Button, Space } from "antd";
@@ -9,7 +9,7 @@ import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
 type PostBoxProps = {
-  post: TblPost;
+  post: Post;
 };
 
 const PostBox = ({ post }: PostBoxProps) => (

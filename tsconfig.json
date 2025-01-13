@@ -24,7 +24,8 @@
     },
     "composite": true,
     "outDir": "./dist",
-    "declaration": true
+    "declaration": true,
+    "noImplicitAny": false
   },
   "include": ["src"],
   "exclude": ["node_modules"],

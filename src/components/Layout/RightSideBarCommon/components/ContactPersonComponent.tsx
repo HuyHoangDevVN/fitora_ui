@@ -1,8 +1,9 @@
 import { Avatar, Button, Flex } from "antd";
-import { ContactPerson } from "../interfaces";
+import { User } from "@/interfaces/User";
+import { fakeImage } from "../fakeData";
 
 type ContactPersonProp = {
-  user?: ContactPerson;
+  user?: User;
 };
 
 const ContactPersonComponent = ({ user }: ContactPersonProp) => {
@@ -13,8 +14,8 @@ const ContactPersonComponent = ({ user }: ContactPersonProp) => {
         style={{ width: "100%", height: "fit-content", padding: 0 }}
       >
         <Flex align="center" gap={8} style={{ width: "100%" }}>
-          <Avatar size={50} src={user?.image} />
-          <h2 className="text-[14] font-[500]">{user?.name}</h2>
+          <Avatar size={40} src={user?.profilePictureUrl ?? fakeImage} />
+          <h2 className="text-[14] font-[500]">{user?.username}</h2>
         </Flex>
       </Button>
     </div>

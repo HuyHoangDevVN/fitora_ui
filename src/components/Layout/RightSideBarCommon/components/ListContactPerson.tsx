@@ -1,8 +1,8 @@
-import { ContactPerson } from "../interfaces";
+import { User } from "@/interfaces/User";
 import ContactPersonComponent from "./ContactPersonComponent";
 
 type ListContactPersonProp = {
-  people?: ContactPerson[];
+  people?: User[];
 };
 
 const ListContactPerson = ({ people }: ListContactPersonProp) => {

@@ -1,4 +1,4 @@
-export interface TblPost {
+export interface Post {
   postId: string | number;
   postCategoryName: string | null;
   postCategoryId: string | number;

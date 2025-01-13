@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { authRepository } from "@/_base/const/Repository";
+import { notification } from "antd";
+import { createContext, ReactNode, useContext, useState } from "react";
 
 interface AuthContextType {
   user: string | null;
@@ -16,10 +18,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string) => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const dataSubmit = {
+      email: username,
+      password: password,
+    };
+    const response = await authRepository.post("/auth/login", dataSubmit);
 
-    if (username === "admin" && password === "@Aa12345") {
+    if (response.isSuccess && response.data) {
+      notification.success({
+        message: "Đăng nhập",
+        description: "Đăng nhập thành công !",
+      });
       setUser(username);
+      localStorage.setItem("token", response.data.token?.accessToken);
     } else {
       setLoading(false);
       throw new Error("Tài khoản hoặc mật khẩu không chính xác !");
@@ -29,11 +40,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (username: string, password: string) => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const dataSubmit = {
+      email: username,
+      password: password,
+    };
+    const response = await authRepository.post("/auth/register", dataSubmit);
 
-    if (username && password.length >= 8) {
+    if (response.isSuccess && response.data) {
       console.log("Tài khoản đăng ký thành công:", username);
       setUser(username);
+      localStorage.setItem("token", response.data.token?.accessToken);
     } else {
       setLoading(false);
       throw new Error("Tên tài khoản hoặc mật khẩu không hợp lệ !");
@@ -43,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     setUser(null);
+    localStorage.clear();
   };
 
   return (

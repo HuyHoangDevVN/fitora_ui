@@ -1,4 +1,4 @@
-const fakeImage =
+export const fakeImage =
   "https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png";
 
 export const friendInvite = [
