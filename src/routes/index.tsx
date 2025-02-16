@@ -1,4 +1,4 @@
-import PrivateRoute from "@/auth/PrivateRoute";
+import PrivateRoute from "@/_base/auth/PrivateRoute";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
 import Home from "@/pages/Home";
