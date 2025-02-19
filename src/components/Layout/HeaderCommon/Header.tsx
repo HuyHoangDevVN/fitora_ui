@@ -6,14 +6,15 @@ import ProfileActionIcon from "./components/ProfileActionIcon";
 import CreatePostActionIcon from "./components/CreatePostActionIcon";
 import FriendActionIcon from "./components/FriendActionIcon";
 import { useNavigate } from "react-router-dom";
+import CreatePostModal from "@/components/UI/Post/CreatePost";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <header className="bg-secondBackground text-white p-4 flex items-center justify-between border-b border-gray-200 relative">
+    <header className="sticky top-0 left-0 right-0 z-50 bg-secondBackground text-white p-4 flex items-center justify-between border-b border-gray-200">
       {/* Logo */}
       <h1
-        className="text-2xl md:text-3xl text-primary font-bold whitespace-nowrap flex-shrink-0"
+        className="text-2xl md:text-3xl text-primary font-bold whitespace-nowrap flex-shrink-0 cursor-pointer"
         onClick={() => navigate("/")}
       >
         Fitora
@@ -28,7 +29,7 @@ const Header: React.FC = () => {
       <nav>
         <ul className="flex items-center space-x-4">
           <li>
-            <CreatePostActionIcon />
+            <CreatePostModal trigger={<CreatePostActionIcon />} />
           </li>
           <li>
             <FriendActionIcon />
