@@ -18,7 +18,12 @@ const ListLinkButton = ({ listItems }: ListLinkButtonProps) => {
       <ul className="space-y-5">
         {itemsToShow.map((item, index) => (
           <li key={index}>
-            <LinkButton icon={item.icon} link={item.link} title={item.title} />
+            <LinkButton
+              icon={item.icon}
+              link={item.link}
+              title={item.title}
+              onClick={item.onClick}
+            />
           </li>
         ))}
       </ul>

@@ -1,9 +1,13 @@
 import PrivateRoute from "@/_base/auth/PrivateRoute";
+import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
+import FriendRequestPage from "@/pages/FriendRequestPage";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import PageNotFound from "@/pages/PageNotFound";
+import Profile from "@/pages/Profile";
+import ProfileSettings from "@/pages/ProfileSetting";
 import Register from "@/pages/Register";
 import { createBrowserRouter } from "react-router-dom";
 
@@ -20,6 +24,30 @@ const router = createBrowserRouter([
           { path: "/", element: <Home /> },
           { path: "about", element: <About /> },
         ],
+      },
+      {
+        path: "profile",
+        element: (
+          <LayoutWOSB>
+            <Profile />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/edit-profile",
+        element: (
+          <LayoutWOSB>
+            <ProfileSettings />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/friend-requests",
+        element: (
+          <LayoutWOSB>
+            <FriendRequestPage />
+          </LayoutWOSB>
+        ),
       },
     ],
   },

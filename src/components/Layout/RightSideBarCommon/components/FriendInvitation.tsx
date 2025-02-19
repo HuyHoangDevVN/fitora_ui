@@ -1,17 +1,57 @@
 import { FriendInvite } from "@/interfaces/FriendInvite";
-import { Avatar, Button, Flex } from "antd";
+import { userRepository } from "@/_base/const/Repository";
+import { Avatar, Button, Flex, message } from "antd";
+import { useState } from "react";
 
 type FriendInvitationProp = {
   invite?: FriendInvite;
   type: "sent" | "received";
+  onUpdate: () => void;
 };
 
-const FriendInvitation = ({ invite, type }: FriendInvitationProp) => {
+const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
   const isReceived = type === "received";
   const userImageUrl = isReceived
     ? invite?.senderImageUrl
     : invite?.receiverImageUrl;
   const userName = isReceived ? invite?.senderName : invite?.receiverName;
+  const [status, setStatus] = useState<string | null>(null);
+
+  const handleAction = async (
+    apiEndpoint: string,
+    method: "PUT" | "DELETE",
+    successMessage: string,
+    newStatus: string | null
+  ) => {
+    if (!invite?.id) {
+      message.error("Không tìm thấy ID lời mời.");
+      return;
+    }
+    try {
+      const response =
+        method === "PUT"
+          ? await userRepository.put(apiEndpoint, invite.senderId)
+          : await userRepository.delete(`${apiEndpoint}?id=${invite.senderId}`);
+
+      if (response?.isSuccess) {
+        message.success(successMessage);
+        setStatus(newStatus);
+        onUpdate();
+      } else {
+        message.error(response?.message || "Thao tác thất bại");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    }
+  };
+
+  if (status === "accepted") {
+    return <p className="text-green-500">Đã là bạn bè</p>;
+  }
+
+  if (status === "deleted") {
+    return null;
+  }
 
   return (
     <div className="friend-invitation">
@@ -19,19 +59,43 @@ const FriendInvitation = ({ invite, type }: FriendInvitationProp) => {
         <Avatar size={50} src={userImageUrl} />
         <Flex vertical gap={5} className="friend-invitation-info">
           <h2 className="font-semibold text-sm">{userName}</h2>
-          <Flex
-            gap={10}
-            align="center"
-            justify="space-between"
-            className="friend-invitation-buttons"
-          >
-            <Button type="primary" className="full-width">
-              Chấp nhận
-            </Button>
-            <Button type="default" className="full-width">
-              Từ chối
-            </Button>
-          </Flex>
+          {isReceived && (
+            <Flex
+              gap={10}
+              align="center"
+              justify="space-between"
+              className="friend-invitation-buttons"
+            >
+              <Button
+                type="primary"
+                className="full-width"
+                onClick={() =>
+                  handleAction(
+                    "friendShip/accept-friend-request",
+                    "PUT",
+                    "Đã chấp nhận lời mời",
+                    "accepted"
+                  )
+                }
+              >
+                Chấp nhận
+              </Button>
+              <Button
+                type="default"
+                className="full-width"
+                onClick={() =>
+                  handleAction(
+                    "friendShip/delete-request",
+                    "DELETE",
+                    "Đã từ chối lời mời",
+                    "deleted"
+                  )
+                }
+              >
+                Từ chối
+              </Button>
+            </Flex>
+          )}
         </Flex>
       </Flex>
     </div>

@@ -4,15 +4,20 @@ type LinkButtonProps = {
   title: string;
   link?: string;
   icon?: React.ReactElement;
+  onClick?: () => void;
 };
-const LinkButton = ({ title, link, icon }: LinkButtonProps) => {
+const LinkButton = ({ title, link, icon, onClick }: LinkButtonProps) => {
   return (
     <Space
       size={24}
       style={{ width: "100%" }}
       styles={{ item: { width: "100%" } }}
     >
-      <a href={link} className="w-full hover:text-primary">
+      <a
+        href={link}
+        className="w-full hover:text-primary"
+        onClick={() => onClick}
+      >
         <Flex align="center" gap={15}>
           {icon && <>{icon}</>}
           <h2 className="text-[14px] font-semibold">{title}</h2>

@@ -12,7 +12,10 @@ class Repository {
     // Tạo instance của Axios với cấu hình mặc định
     this.axiosInstance = axios.create({
       baseURL,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": localStorage.getItem("x-client-id"),
+      },
       withCredentials: true, // Kích hoạt gửi cookie trong các request
     });
 
@@ -34,8 +37,6 @@ class Repository {
 
               if (response.data && response.data.token) {
                 // Lưu token mới
-                Cookies.set("access_token", response.data.token);
-                // Gửi lại yêu cầu ban đầu với token mới
                 error.config.headers["Authorization"] =
                   "Bearer " + response.data.token;
                 return this.axiosInstance(error.config); // Gửi lại yêu cầu
@@ -111,6 +112,24 @@ class Repository {
   }
 
   /**
+   * Gửi yêu cầu DELETE đến API.
+   * @param url - Đường dẫn API.
+   * @param data - Dữ liệu cần xóa.
+   */
+  public async delete<T = any>(
+    url: string,
+    data?: any
+  ): Promise<T | undefined> {
+    await Delay(500);
+    try {
+      const response = await this.axiosInstance.delete<T>(url, data);
+      return response.data;
+    } catch (error: any) {
+      this.handleError(error);
+    }
+  }
+
+  /**
    * Xử lý lỗi từ các yêu cầu HTTP và hiển thị thông báo.
    * @param error - Đối tượng lỗi.
    */
@@ -124,8 +143,6 @@ class Repository {
     }
 
     const status = error.response?.status;
-    const description =
-      error.response?.data?.message || "Đã xảy ra lỗi không mong muốn!";
 
     // Thông báo lỗi dựa trên mã trạng thái HTTP
     const errorMessages: Record<number, string> = {
@@ -143,8 +160,8 @@ class Repository {
    * Đăng xuất người dùng và xóa các thông tin đăng nhập.
    */
   private logout(): void {
-    Cookies.remove("access_token");
-    Cookies.remove("refresh_token");
+    Cookies.remove("accessToken");
+    Cookies.remove("refreshToken");
     localStorage.removeItem("isLoggedIn"); // Xóa trạng thái đăng nhập khỏi localStorage
     notification.error({
       message: "Token hết hạn",

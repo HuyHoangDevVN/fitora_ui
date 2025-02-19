@@ -4,19 +4,17 @@ import {
   createContext,
   ReactNode,
   useContext,
-  useState,
   useEffect,
+  useState,
 } from "react";
-import Cookies from "js-cookie";
 
 interface AuthContextType {
   isLoggedIn: boolean;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshAccessToken: () => Promise<void>;
-  getToken: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,40 +23,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Kiểm tra trạng thái đăng nhập khi ứng dụng được tải lại
+  // Kiểm tra trạng thái đăng nhập khi ứng dụng tải lên
   useEffect(() => {
-    const isAuthenticated = checkAuthentication();
-    setIsLoggedIn(isAuthenticated);
+    const storedStatus = localStorage.getItem("isLoggedIn");
+    if (storedStatus === "true") {
+      setIsLoggedIn(true);
+    } else {
+      checkLoginStatus();
+    }
   }, []);
 
-  const checkAuthentication = (): boolean => {
-    const token = getToken();
-    const refreshToken = Cookies.get("refreshToken");
-    // Kiểm tra trạng thái đăng nhập và lưu trữ trạng thái trong localStorage
-    return !!(
-      token &&
-      refreshToken &&
-      localStorage.getItem("isLoggedIn") === "true"
-    );
-  };
-
-  const handleResponse = (
-    response: any,
-    successMessage: string,
-    errorMessage: string
-  ) => {
-    if (response.isSuccess && response.data) {
-      notification.success({
-        message: successMessage,
-        description: "Chào mừng bạn đã quay trở lại!",
-      });
-      return true;
-    } else {
-      notification.error({
-        message: errorMessage,
-        description: "Tài khoản hoặc mật khẩu không chính xác!",
-      });
-      return false;
+  const checkLoginStatus = async () => {
+    try {
+      const response = await authRepository.get("/auth/me");
+      if (response?.isSuccess) {
+        setIsLoggedIn(true);
+        localStorage.setItem("isLoggedIn", "true");
+      } else {
+        setIsLoggedIn(false);
+        localStorage.setItem("isLoggedIn", "false");
+      }
+    } catch (error) {
+      setIsLoggedIn(false);
+      localStorage.setItem("isLoggedIn", "false");
     }
   };
 
@@ -69,15 +56,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: username,
         password,
       });
-      if (
-        handleResponse(response, "Đăng nhập thành công", "Đăng nhập thất bại")
-      ) {
+      if (response?.isSuccess) {
         setIsLoggedIn(true);
-        storeTokens(response.data.token);
-        localStorage.setItem("isLoggedIn", "true"); // Lưu trạng thái đăng nhập vào localStorage
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem(
+          "userInfo",
+          JSON.stringify(response?.data?.responseDto?.user)
+        );
+        localStorage.setItem(
+          "x-client-id",
+          response?.data?.responseDto?.user.id
+        );
+        notification.success({
+          message: "Đăng nhập thành công",
+          description: "Chào mừng bạn trở lại!",
+        });
       }
     } catch (error) {
-      console.error("Đăng nhập lỗi:", error);
+      notification.error({
+        message: "Đăng nhập thất bại",
+        description: "Tài khoản hoặc mật khẩu không chính xác!",
+      });
     } finally {
       setLoading(false);
     }
@@ -90,76 +89,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: username,
         password,
       });
-      if (handleResponse(response, "Đăng ký thành công", "Đăng ký thất bại")) {
+      if (response?.isSuccess) {
         setIsLoggedIn(true);
-        storeTokens(response.data.token);
-        localStorage.setItem("isLoggedIn", "true"); // Lưu trạng thái đăng nhập vào localStorage
-      }
-    } catch (error) {
-      console.error("Đăng ký lỗi:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const storeTokens = (tokenData: any) => {
-    // Lưu access token vào cookie với thuộc tính httpOnly, secure và sameSite
-    Cookies.set("accessToken", tokenData?.accessToken || "", {
-      secure: true,
-      sameSite: "None",
-      expires: 30, // Đặt ngày hết hạn cho access token
-      httpOnly: true, // Token chỉ có thể được truy cập từ server
-    });
-
-    // Lưu refresh token vào Cookies với thuộc tính httpOnly và secure
-    Cookies.set("refreshToken", tokenData?.refreshToken || "", {
-      secure: true,
-      sameSite: "None",
-      expires: 30, // Đặt ngày hết hạn cho refresh token
-      httpOnly: true, // Token chỉ có thể được truy cập từ server
-    });
-  };
-
-  const logout = () => {
-    setIsLoggedIn(false);
-    Cookies.remove("accessToken");
-    Cookies.remove("refreshToken");
-    localStorage.removeItem("isLoggedIn"); // Xóa trạng thái đăng nhập khỏi localStorage
-    notification.info({
-      message: "Đăng xuất",
-      description: "Đăng xuất thành công.",
-    });
-  };
-
-  const refreshAccessToken = async () => {
-    const refreshToken = Cookies.get("refreshToken");
-    if (!refreshToken) return;
-
-    setLoading(true);
-    try {
-      const response = await authRepository.post("/auth/refresh-token", {
-        refresh_token: refreshToken,
-      });
-      if (response.isSuccess && response.data) {
-        storeTokens(response.data.token);
-      } else {
-        logout();
-        notification.error({
-          message: "Làm mới token thất bại",
-          description: "Phiên làm việc đã hết hạn!",
+        localStorage.setItem("isLoggedIn", "true");
+        notification.success({
+          message: "Đăng ký thành công",
+          description: "Bạn có thể đăng nhập ngay bây giờ!",
         });
       }
     } catch (error) {
-      console.error("Làm mới token lỗi:", error);
-      logout();
+      notification.error({
+        message: "Đăng ký thất bại",
+        description: "Có lỗi xảy ra, vui lòng thử lại!",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Lấy access token từ cookie
-  const getToken = (): string | null => {
-    return Cookies.get("accessToken") || null;
+  const logout = async () => {
+    try {
+      await authRepository.post("/auth/logout");
+      setIsLoggedIn(false);
+      localStorage.clear();
+      notification.info({
+        message: "Đăng xuất",
+        description: "Bạn đã đăng xuất thành công.",
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+    }
+  };
+
+  const refreshAccessToken = async () => {
+    try {
+      await authRepository.post("/auth/refresh-token");
+      setIsLoggedIn(true);
+      localStorage.setItem("isLoggedIn", "true");
+    } catch (error) {
+      setIsLoggedIn(false);
+      localStorage.setItem("isLoggedIn", "false");
+      notification.error({
+        message: "Phiên làm việc hết hạn",
+        description: "Vui lòng đăng nhập lại.",
+      });
+    }
   };
 
   return (
@@ -170,7 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         logout,
         refreshAccessToken,
-        getToken,
         loading,
       }}
     >
