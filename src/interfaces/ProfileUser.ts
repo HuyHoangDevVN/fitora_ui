@@ -7,6 +7,7 @@ export interface UserInfo {
   address: string;
   phoneNumber: string;
   profilePictureUrl: string;
+  profileBackgroundPictureUrl: string;
   bio: string;
   id: string;
   createdAt: string | null;

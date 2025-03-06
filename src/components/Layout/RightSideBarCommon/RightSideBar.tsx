@@ -53,7 +53,7 @@ const RightSideBar = () => {
   };
 
   return (
-    <div className="bg-background text-textPrimary p-4 pb-32 h-full right-0 fixed border overflow-y-auto">
+    <div className="bg-background text-textPrimary p-4 pb-32 h-full w-[280px] right-0 sticky top-0 overflow-y-auto">
       {friendInvite.length !== 0 && (
         <>
           <Flex flex={"row"} justify="space-between" align="center">

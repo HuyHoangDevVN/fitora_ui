@@ -19,14 +19,33 @@
 //   isFeatured?: boolean;
 // }
 
+interface User {
+  id: string;
+  isFriend: boolean;
+  isFollowing: boolean;
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  gender: number;
+  address: string;
+  phoneNumber: string;
+  profilePictureUrl: string;
+  bio: string | null;
+}
+
 export interface Post {
   id: string;
-  userId: string;
-  groupId?: string | null;
+  groupId: string | null;
   content: string;
-  mediaUrl?: string;
+  mediaUrl: string;
+  votesCount: number;
+  commentsCount: number;
+  score: number;
   privacy: number;
-  createdDate: string; // Dữ liệu trả về là string
-  updatedDate?: string | null;
+  user: User;
+  createdAt: string;
+  updatedAt: string | null;
   isDeleted: boolean;
 }

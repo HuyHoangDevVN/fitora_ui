@@ -15,7 +15,7 @@ const ContactPersonComponent = ({ user }: ContactPersonProp) => {
         type="text"
         style={{ width: "100%", height: "fit-content", padding: 0 }}
         onClick={() =>
-          navigate("/profile", {
+          navigate("/personal", {
             state: { isWatching: true, userId: user?.id },
           })
         }

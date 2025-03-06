@@ -1,7 +1,7 @@
-/* eslint-disable no-debugger */
 import { userRepository } from "@/_base/const/Repository";
-import { ProfileUser } from "@/interfaces/ProfileUser";
+import { ProfileUser, UserInfo } from "@/interfaces/ProfileUser";
 import { ResponseBase } from "@/interfaces/ResponseBase";
+import { uploadFile } from "@/utils/UploadFiles";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Avatar,
@@ -28,6 +28,7 @@ interface Profile {
   address: string;
   phoneNumber: string;
   profilePictureUrl: string;
+  profileBackgroundPictureUrl: string;
   bio: string;
 }
 
@@ -41,6 +42,7 @@ const initialState: Profile = {
   address: "",
   phoneNumber: "",
   profilePictureUrl: "",
+  profileBackgroundPictureUrl: "",
   bio: "",
 };
 
@@ -54,17 +56,18 @@ const ProfileSettings = () => {
           `/user/profile`
         );
         if (response?.isSuccess && response?.data) {
-          const userInfo = response?.data?.userInfo;
+          const userInfo = response.data.userInfo;
           setProfile({
             id: userInfo.id,
             userId: userInfo.userId,
             firstName: userInfo.firstName,
             lastName: userInfo.lastName,
-            birthDate: userInfo.birthDate ? dayjs(userInfo.birthDate) : null, // chuyển thành Dayjs
+            birthDate: userInfo.birthDate ? dayjs(userInfo.birthDate) : null,
             gender: userInfo.gender,
             address: userInfo.address,
             phoneNumber: userInfo.phoneNumber,
             profilePictureUrl: userInfo.profilePictureUrl,
+            profileBackgroundPictureUrl: userInfo.profileBackgroundPictureUrl,
             bio: userInfo.bio,
           });
         }
@@ -81,6 +84,16 @@ const ProfileSettings = () => {
     value: string | number | Dayjs | null
   ) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = async (field: keyof UserInfo, file: File) => {
+    const url = await uploadFile(file);
+    if (url) {
+      setProfile((prev) => ({
+        ...prev,
+        [field]: url,
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -105,72 +118,139 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div className="flex min-h-full bg-gray-100 p-6">
-      {/* Thanh bên */}
-      <div className="w-1/4 bg-white p-4 rounded-lg shadow-md">
-        <div className="flex flex-col items-center">
-          <Avatar size={64} icon={<UserOutlined />} className="mb-3" />
+    <div className="bg-gray-100 min-h-screen">
+      <div className="flex flex-col md:flex-row gap-6 w-full max-w-7xl mx-auto p-6">
+        {/* Sidebar */}
+        <div className="w-full md:w-1/4 bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
+          {/* Ảnh đại diện */}
+          <Avatar
+            size={100}
+            src={profile.profilePictureUrl || undefined}
+            icon={<UserOutlined />}
+            className="mb-4"
+          />
+          {/* Tên người dùng */}
+          <h2 className="text-xl font-bold mb-1 text-center">
+            {profile.firstName || profile.lastName
+              ? `${profile.firstName} ${profile.lastName}`.trim()
+              : "Người dùng"}
+          </h2>
+          {/* Các nút chức năng (ví dụ) */}
+          <div className="w-full mt-4 space-y-2">
+            <Button type="default" block>
+              Thông tin cá nhân
+            </Button>
+            <Button type="default" block>
+              Cài đặt tài khoản
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Cài đặt hồ sơ */}
-      <div className="flex-1 bg-white p-6 ml-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Cài đặt hồ sơ</h2>
-        <Form layout="vertical">
-          <Form.Item label="Tên">
-            <Input
-              value={profile.firstName}
-              onChange={(e) => handleChange("firstName", e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="Họ">
-            <Input
-              value={profile.lastName}
-              onChange={(e) => handleChange("lastName", e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="Ngày sinh">
-            <DatePicker
-              value={profile.birthDate}
-              onChange={(date) => handleChange("birthDate", date)}
-            />
-          </Form.Item>
-          <Form.Item label="Giới tính">
-            <Select
-              value={profile.gender}
-              onChange={(value) => handleChange("gender", value)}
-            >
-              <Option value={1}>Nam</Option>
-              <Option value={2}>Nữ</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Địa chỉ">
-            <Input
-              value={profile.address}
-              onChange={(e) => handleChange("address", e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="Số điện thoại">
-            <Input
-              value={profile.phoneNumber}
-              onChange={(e) => handleChange("phoneNumber", e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label="Ảnh đại diện">
-            <Upload>
-              <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
-            </Upload>
-          </Form.Item>
-          <Form.Item label="Tiểu sử">
-            <Input.TextArea
-              value={profile.bio}
-              onChange={(e) => handleChange("bio", e.target.value)}
-            />
-          </Form.Item>
-          <Button type="primary" onClick={handleSave}>
-            Lưu thay đổi
-          </Button>
-        </Form>
+        {/* Form cài đặt hồ sơ */}
+        <div className="flex-1 bg-white p-6 rounded-lg shadow-md">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold mb-2">Cài đặt hồ sơ</h2>
+            <p className="text-gray-500">
+              Quản lý và chỉnh sửa thông tin hồ sơ cá nhân của bạn
+            </p>
+          </div>
+
+          <Form layout="vertical">
+            {/* Họ và Tên */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Item label="Tên" className="mb-2">
+                <Input
+                  value={profile.firstName}
+                  onChange={(e) => handleChange("firstName", e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Họ" className="mb-2">
+                <Input
+                  value={profile.lastName}
+                  onChange={(e) => handleChange("lastName", e.target.value)}
+                />
+              </Form.Item>
+            </div>
+
+            {/* Ngày sinh và Giới tính */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Item label="Ngày sinh" className="mb-2">
+                <DatePicker
+                  value={profile.birthDate}
+                  onChange={(date) => handleChange("birthDate", date)}
+                  className="w-full"
+                />
+              </Form.Item>
+              <Form.Item label="Giới tính" className="mb-2">
+                <Select
+                  value={profile.gender}
+                  onChange={(value) => handleChange("gender", value)}
+                >
+                  <Option value={1}>Nam</Option>
+                  <Option value={2}>Nữ</Option>
+                </Select>
+              </Form.Item>
+            </div>
+
+            {/* Địa chỉ và Số điện thoại */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Item label="Địa chỉ" className="mb-2">
+                <Input
+                  value={profile.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
+                />
+              </Form.Item>
+              <Form.Item label="Số điện thoại" className="mb-2">
+                <Input
+                  value={profile.phoneNumber}
+                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                />
+              </Form.Item>
+            </div>
+
+            {/* Tiểu sử */}
+            <Form.Item label="Tiểu sử" className="mt-4">
+              <Input.TextArea
+                rows={4}
+                value={profile.bio}
+                onChange={(e) => handleChange("bio", e.target.value)}
+              />
+            </Form.Item>
+
+            {/* Ảnh đại diện và Ảnh background */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <Form.Item label="Ảnh đại diện" className="mb-2">
+                <Upload
+                  beforeUpload={(file) => {
+                    handleFileChange("profilePictureUrl", file);
+                    return false; // Ngăn upload tự động
+                  }}
+                  showUploadList={false}
+                >
+                  <Button icon={<UploadOutlined />}>Tải ảnh lên</Button>
+                </Upload>
+              </Form.Item>
+              <Form.Item label="Ảnh background" className="mb-2">
+                <Upload
+                  beforeUpload={(file) => {
+                    handleFileChange("profileBackgroundPictureUrl", file);
+                    return false; // Ngăn upload tự động
+                  }}
+                  showUploadList={false}
+                >
+                  <Button icon={<UploadOutlined />}>Tải ảnh lên</Button>
+                </Upload>
+              </Form.Item>
+            </div>
+
+            {/* Nút lưu */}
+            <Form.Item className="mt-6">
+              <Button type="primary" onClick={handleSave} block>
+                Lưu thay đổi
+              </Button>
+            </Form.Item>
+          </Form>
+        </div>
       </div>
     </div>
   );

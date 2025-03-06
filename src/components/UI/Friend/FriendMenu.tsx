@@ -7,12 +7,18 @@ import {
   GiftOutlined,
   UnorderedListOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const FriendMenu: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-md shadow p-2">
       <Menu mode="inline" defaultSelectedKeys={["friend-requests"]}>
-        <Menu.Item key="home" icon={<TeamOutlined />}>
+        <Menu.Item
+          key="home"
+          icon={<TeamOutlined />}
+          onClick={() => navigate("/personal")}
+        >
           Trang chủ
         </Menu.Item>
         <Menu.Item key="friend-requests" icon={<UserAddOutlined />}>

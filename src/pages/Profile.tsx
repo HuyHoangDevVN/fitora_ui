@@ -21,7 +21,7 @@ const Profile = () => {
       try {
         const url =
           isWatching && userId
-            ? `http://localhost:5003/api/user/get-user?GetId=${userId}`
+            ? `https://localhost:5003/api/user/get-user?GetId=${userId}`
             : `/user/profile`;
 
         const response = await userRepository.get<ResponseBase<ProfileUser>>(
@@ -94,7 +94,7 @@ const Profile = () => {
           <div className="flex flex-col items-center gap-4">
             <Avatar
               size={120}
-              src={user.userInfo.profilePictureUrl}
+              src={user?.userInfo?.profilePictureUrl}
               className="border-4 border-gray-300"
             />
             <h2 className="text-xl font-semibold">

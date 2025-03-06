@@ -6,19 +6,25 @@ import { Outlet } from "react-router-dom";
 
 const Layout: React.FC = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen container mx-auto px-4">
       <Header />
-      <div className="flex flex-1 w-full">
-        <aside className="hidden lg:block w-[250px] max-w-[250px] bg-gray-50">
-          <LeftSidebar />
+      <div className="flex flex-col lg:flex-row">
+        {/* Left Sidebar */}
+        <aside className="hidden lg:block lg:w-[280px] bg-gray-50">
+          <div className="sticky top-[74px]">
+            <LeftSidebar />
+          </div>
         </aside>
 
-        <main className="flex-1 px-4 py-6 mx-auto max-w-[680px]">
+        <main className="flex-1 px-4 py-4 mx-auto max-w-[680px]">
           <Outlet />
         </main>
 
-        <aside className="hidden md:block lg:block w-[300px] max-w-[300px] bg-gray-50">
-          <RightSideBar />
+        {/* Right Sidebar */}
+        <aside className="hidden lg:block lg:w-[280px] bg-gray-50">
+          <div className="sticky top-[74px]">
+            <RightSideBar />
+          </div>
         </aside>
       </div>
     </div>

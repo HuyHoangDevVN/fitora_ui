@@ -2,10 +2,10 @@ import { useAuth } from "@/_base/auth/AuthProvider";
 import colors from "@/styles/colors";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import styled from "@emotion/styled";
-import { Button, Form, Input } from "antd";
-import { useNavigate } from "react-router-dom";
-import { FaLock, FaUser } from "react-icons/fa";
+import { Button, Form, Input, notification } from "antd";
+import { FaIdCardAlt, FaLock, FaUser } from "react-icons/fa";
 import { FiUserPlus } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const StyledButton = styled(Button)`
   background-color: ${colors.primary};
@@ -24,6 +24,41 @@ const StyledButton = styled(Button)`
   }
 `;
 
+const FORM_WIDTH = "300px";
+const INPUT_WIDTH = "w-72";
+
+const formRules = {
+  fullName: [{ required: true, message: "Vui lòng nhập họ và tên!" }],
+  username: [{ required: true, message: "Vui lòng nhập tài khoản!" }],
+  password: [{ required: true, message: "Vui lòng nhập mật khẩu!" }],
+};
+
+const handleRegister = async (
+  register: (
+    username: string,
+    password: string,
+    fullName: string
+  ) => Promise<void>,
+  values: { username: string; password: string; fullName: string },
+  navigate: (path: string) => void,
+  onSuccess?: () => void
+) => {
+  const { username, password, fullName } = values;
+  try {
+    await register(username, password, fullName);
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      navigate("/login");
+    }
+  } catch (error) {
+    notification.error({
+      message: "Đăng ký thất bại",
+      description: "Có lỗi xảy ra, vui lòng thử lại!",
+    });
+  }
+};
+
 interface RegisterFormProps {
   onSuccess?: () => void;
 }
@@ -31,71 +66,73 @@ interface RegisterFormProps {
 const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
+  const [form] = Form.useForm();
 
-  const onFinish = async (values: { username: string; password: string }) => {
-    const { username, password } = values;
-    try {
-      await register(username, password);
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        navigate("/");
-      }
-    } catch {
-      console.error("Đăng ký không thành công, vui lòng thử lại!");
-    }
+  const onFinish = (values: {
+    username: string;
+    password: string;
+    fullName: string;
+  }) => {
+    handleRegister(register, values, navigate, onSuccess);
   };
 
   return (
     <Form
+      form={form}
       name="register"
-      className="flex flex-col justify-center items-center my-auto w-[300px]"
-      onFinish={onFinish}
       layout="vertical"
+      onFinish={onFinish}
+      className="flex flex-col justify-center items-center my-auto"
+      style={{ width: FORM_WIDTH }}
     >
-      <Form.Item
-        name="username"
-        rules={[{ required: true, message: "Vui lòng nhập tài khoản!" }]}
-      >
+      <Form.Item name="fullName" rules={formRules.fullName}>
+        <Input
+          size="large"
+          placeholder="Họ và tên"
+          prefix={<FaIdCardAlt color={colors.primary} />}
+          className={`rounded-2xl ${INPUT_WIDTH}`}
+        />
+      </Form.Item>
+
+      <Form.Item name="username" rules={formRules.username}>
         <Input
           size="large"
           placeholder="Tài khoản"
           prefix={<FaUser color={colors.primary} />}
-          className="rounded-2xl w-72"
+          className={`rounded-2xl ${INPUT_WIDTH}`}
         />
       </Form.Item>
 
-      <Form.Item
-        name="password"
-        rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
-      >
+      <Form.Item name="password" rules={formRules.password}>
         <Input.Password
           size="large"
           placeholder="Mật khẩu"
+          prefix={<FaLock color={colors.primary} />}
           iconRender={(visible) =>
             visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
           }
-          prefix={<FaLock color={colors.primary} />}
-          className="rounded-2xl w-72"
+          className={`rounded-2xl ${INPUT_WIDTH}`}
         />
       </Form.Item>
 
-      <StyledButton
-        htmlType="submit"
-        type="primary"
-        loading={loading}
-        icon={<FiUserPlus />}
-        iconPosition="end"
-      >
-        Đăng ký
-      </StyledButton>
+      <Form.Item>
+        <StyledButton
+          type="primary"
+          htmlType="submit"
+          loading={loading}
+          icon={<FiUserPlus />}
+          iconPosition="end"
+        >
+          Đăng ký
+        </StyledButton>
+      </Form.Item>
 
-      <h1 className="text-right font-[500] my-4">
-        <span className="">Đã có tài khoản?</span>{" "}
-        <a className="text-secondary" href="/login">
+      <div className="text-center font-medium my-4">
+        Đã có tài khoản?{" "}
+        <a href="/login" className="text-secondary">
           Đăng nhập
         </a>
-      </h1>
+      </div>
     </Form>
   );
 };

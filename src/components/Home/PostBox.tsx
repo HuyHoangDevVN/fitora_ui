@@ -2,164 +2,255 @@ import { PlusOutlined } from "@ant-design/icons";
 import {
   Avatar,
   Button,
-  Space,
   Dropdown,
-  Modal,
   Form,
   Input,
+  Image,
   message,
+  Modal,
+  Space,
+  Skeleton,
 } from "antd";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { BsDot } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
-import axios from "axios";
 
-// Ví dụ hàm timeToLast, bạn có thể thay bằng logic khác
+import { interactRepository } from "@/_base/const/Repository";
 import { Post } from "@/interfaces/Post";
 import { timeToLast } from "@/utils/FunctionHelpper";
 
-type PostBoxProps = {
-  post: Post;
+const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
+const MEDIA_TYPES = {
+  IMAGE: ["jpg", "jpeg", "png", "gif", "bmp", "webp"],
+  VIDEO: ["mp4", "webm", "ogg"],
+  AUDIO: ["mp3", "wav", "ogg"],
+  PDF: ["pdf"],
 };
 
-const PostBox: React.FC<PostBoxProps> = ({ post }) => {
-  // Sử dụng avatar mặc định nếu API không trả về avatar
-  const defaultAvatar = "https://i.pravatar.cc/40";
+const getFileType = (url: string): string => {
+  const extension = url.split(".").pop()?.toLowerCase();
+  if (!extension) return "other";
+  if (MEDIA_TYPES.IMAGE.includes(extension)) return "image";
+  if (MEDIA_TYPES.VIDEO.includes(extension)) return "video";
+  if (MEDIA_TYPES.AUDIO.includes(extension)) return "audio";
+  if (MEDIA_TYPES.PDF.includes(extension)) return "pdf";
+  return "other";
+};
 
-  // Đặt mặc định cho vote và comment nếu API không có dữ liệu
-  const voteQuantity = 0;
-  const numberOfComments = 0;
+type PostBoxProps = { post: Post };
 
-  // State cho modal chỉnh sửa
+const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editMediaUrl, setEditMediaUrl] = useState(post.mediaUrl);
+  const [loading, setLoading] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(true);
 
-  // Xử lý khi chọn "Edit"
-  const handleEdit = () => {
-    setIsEditModalVisible(true);
-  };
+  const avatarSrc = useMemo(
+    () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
+    [post?.user?.profilePictureUrl]
+  );
+  const isMe = useMemo(
+    () => post?.user.id === localStorage.getItem("x-client-id"),
+    [post?.user.id]
+  );
 
-  // Xử lý cập nhật bài viết thông qua API PUT
-  const handleEditOk = async () => {
+  const toggleEditModal = useCallback(
+    (visible: boolean) => setIsEditModalVisible(visible),
+    []
+  );
+
+  const handleEditOk = useCallback(async () => {
+    setLoading(true);
     try {
-      await axios.put(`http://localhost:5005/api/post/update-post/${post.id}`, {
+      await interactRepository.put(`/post/update-post/${post.id}`, {
         content: editContent,
         mediaUrl: editMediaUrl,
-        privacy: 0,
+        privacy: post.privacy,
       });
-      setIsEditModalVisible(false);
+      toggleEditModal(false);
       message.success("Cập nhật bài viết thành công");
     } catch (error) {
       console.error("Error updating post:", error);
       message.error("Cập nhật bài viết thất bại");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [editContent, editMediaUrl, post.id, post.privacy, toggleEditModal]);
 
-  const handleEditCancel = () => {
-    setIsEditModalVisible(false);
-  };
-
-  // Xử lý khi chọn "Delete"
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     Modal.confirm({
       title: "Xóa bài viết",
       content: "Bạn có chắc muốn xóa bài viết này?",
       okText: "Xóa",
       cancelText: "Hủy",
       onOk: async () => {
+        setLoading(true);
         try {
-          await axios.delete(
-            `http://localhost:5005/api/post/delete-post/${post.id}`
-          );
+          await interactRepository.delete(`/post/delete-post/${post.id}`);
           message.success("Xóa bài viết thành công");
         } catch (error) {
           console.error("Error deleting post:", error);
           message.error("Xóa bài viết thất bại");
+        } finally {
+          setLoading(false);
         }
       },
     });
-  };
+  }, [post.id]);
 
-  // Các mục của dropdown
-  const menuItems = [
-    {
-      key: "edit",
-      label: "Edit",
+  const handleMenuClick = useCallback(
+    ({ key }: { key: string }) => {
+      if (key === "edit") toggleEditModal(true);
+      else if (key === "delete") handleDelete();
     },
-    {
-      key: "delete",
-      label: "Delete",
-    },
-  ];
+    [handleDelete, toggleEditModal]
+  );
 
-  // Xử lý khi chọn mục trong dropdown
-  const handleMenuClick = (e: any) => {
-    if (e.key === "edit") {
-      handleEdit();
-    } else if (e.key === "delete") {
-      handleDelete();
-    }
-  };
+  const renderMedia = useCallback(
+    (url: string) => {
+      const fileType = getFileType(url);
+      const commonStyles = {
+        maxHeight: "400px",
+        width: "100%",
+        height: "auto",
+      };
+
+      switch (fileType) {
+        case "image":
+          return (
+            <Image
+              src={url}
+              alt="post-media"
+              style={commonStyles}
+              preview={{ src: url }}
+              placeholder={<Skeleton.Image active style={commonStyles} />}
+            />
+          );
+        case "video":
+          return (
+            <>
+              {mediaLoading && <Skeleton.Image active style={commonStyles} />}
+              <video
+                controls
+                style={commonStyles}
+                onLoadedData={() => setMediaLoading(false)}
+              >
+                <source
+                  src={url}
+                  type={`video/${url.split(".").pop()?.toLowerCase()}`}
+                />
+                Trình duyệt không hỗ trợ video.
+              </video>
+            </>
+          );
+        case "audio":
+          return (
+            <>
+              {mediaLoading && <Skeleton active paragraph={{ rows: 1 }} />}
+              <audio
+                controls
+                style={{ width: "100%" }}
+                onLoadedData={() => setMediaLoading(false)}
+              >
+                <source
+                  src={url}
+                  type={`audio/${url.split(".").pop()?.toLowerCase()}`}
+                />
+                Trình duyệt không hỗ trợ audio.
+              </audio>
+            </>
+          );
+        case "pdf":
+          return (
+            <>
+              {mediaLoading && <Skeleton.Image active style={commonStyles} />}
+              <iframe
+                src={url}
+                width="100%"
+                height="600px"
+                title="PDF viewer"
+                onLoad={() => setMediaLoading(false)}
+              />
+            </>
+          );
+        default:
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Xem file đính kèm
+            </a>
+          );
+      }
+    },
+    [mediaLoading]
+  );
+
+  const menuItems = useMemo(
+    () => [
+      { key: "edit", label: "Chỉnh sửa" },
+      { key: "delete", label: "Xoá bài viết" },
+    ],
+    []
+  );
 
   return (
-    <div className="post-box mb-3 border rounded-md p-3 bg-white shadow-sm">
-      {/* Header */}
+    <div className="post-box mb-3 border rounded-lg p-3 bg-white shadow-sm">
       <div className="post-header flex justify-between items-center">
         <div className="post-info flex items-center gap-2">
-          <Avatar src={defaultAvatar} />
-          {/* Giả định categoryName là 'general' hoặc ẩn đi */}
+          <Avatar src={avatarSrc} size={40} />
           <h2 className="category-name text-xs font-semibold cursor-pointer">
-            f/general
+            {post.user.username}
           </h2>
           <BsDot />
           <span className="create-date text-xs font-semibold">
-            {timeToLast(new Date(post.createdDate))}
+            {timeToLast(new Date(post.createdAt))}
           </span>
         </div>
         <Space>
-          <Button
-            className="follow-btn bg-primary rounded-2xl hover:bg-primary"
-            icon={<PlusOutlined />}
-            type="primary"
-            size="small"
-          >
-            Theo dõi
-          </Button>
-          <Dropdown
-            menu={{
-              items: menuItems,
-              onClick: handleMenuClick,
-            }}
-            trigger={["click"]}
-          >
-            <IoIosMore className="icon-more cursor-pointer text-lg" />
-          </Dropdown>
+          {post.user.isFollowing && !isMe && (
+            <Button
+              className="follow-btn bg-primary rounded-2xl hover:bg-primary"
+              icon={<PlusOutlined />}
+              type="primary"
+              size="small"
+            >
+              Theo dõi
+            </Button>
+          )}
+          {isMe && (
+            <Dropdown
+              menu={{ items: menuItems, onClick: handleMenuClick }}
+              trigger={["click"]}
+            >
+              <IoIosMore className="icon-more cursor-pointer text-lg" />
+            </Dropdown>
+          )}
         </Space>
       </div>
 
-      {/* Nội dung */}
       <div className="post-content mt-3">
         <p className="post-text text-sm mb-2">{post.content}</p>
-        {post.mediaUrl && post.mediaUrl.trim() !== "" && (
-          <div className="w-full h-64 overflow-hidden rounded-md mt-2">
-            <img
-              src={post.mediaUrl}
-              alt="post-media"
-              className="w-full h-full object-cover"
-            />
+        {post.mediaUrl?.trim() && (
+          <div className="w-full mt-2 rounded-md">
+            {renderMedia(post.mediaUrl)}
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <div className="post-footer flex items-center gap-2 mt-3">
         <div className="vote-controls flex items-center bg-gray-100 rounded-2xl px-2">
           <Button type="text" icon={<PiArrowFatUpLight />} />
-          <span className="vote-count text-xs font-medium">{voteQuantity}</span>
+          <span className="vote-count text-xs font-medium">
+            {post.votesCount}
+          </span>
           <Button type="text" icon={<PiArrowFatDownLight />} />
         </div>
         <Button
@@ -168,7 +259,7 @@ const PostBox: React.FC<PostBoxProps> = ({ post }) => {
           type="text"
           size="small"
         >
-          {numberOfComments}
+          {post.commentsCount}
         </Button>
         <Button
           className="share-btn bg-gray-100 rounded-2xl flex items-center gap-1"
@@ -180,20 +271,22 @@ const PostBox: React.FC<PostBoxProps> = ({ post }) => {
         </Button>
       </div>
 
-      {/* Modal chỉnh sửa bài viết */}
       <Modal
         title="Chỉnh sửa bài viết"
-        visible={isEditModalVisible}
+        open={isEditModalVisible}
         onOk={handleEditOk}
-        onCancel={handleEditCancel}
+        onCancel={() => toggleEditModal(false)}
         okText="Cập nhật"
         cancelText="Hủy"
+        destroyOnClose
+        confirmLoading={loading}
       >
         <Form layout="vertical">
           <Form.Item label="Nội dung">
             <Input.TextArea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
             />
           </Form.Item>
           <Form.Item label="Media URL">
@@ -206,6 +299,8 @@ const PostBox: React.FC<PostBoxProps> = ({ post }) => {
       </Modal>
     </div>
   );
-};
+});
+
+PostBox.displayName = "PostBox";
 
 export default PostBox;

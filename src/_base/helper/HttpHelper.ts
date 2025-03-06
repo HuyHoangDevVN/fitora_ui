@@ -27,7 +27,7 @@ class Repository {
         if (error.response?.status === 401) {
           try {
             const response = await this.axiosInstance.post(
-              "http://localhost:5000/api/auth/refresh-token"
+              "https://localhost:5000/api/auth/refresh-token"
               // Giả sử API refresh token không cần dữ liệu body
             );
 

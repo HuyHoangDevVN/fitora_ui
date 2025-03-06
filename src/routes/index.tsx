@@ -6,6 +6,7 @@ import FriendRequestPage from "@/pages/FriendRequestPage";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import PageNotFound from "@/pages/PageNotFound";
+import PersonalPage from "@/pages/PersonalPage";
 import Profile from "@/pages/Profile";
 import ProfileSettings from "@/pages/ProfileSetting";
 import Register from "@/pages/Register";
@@ -46,6 +47,14 @@ const router = createBrowserRouter([
         element: (
           <LayoutWOSB>
             <FriendRequestPage />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/personal",
+        element: (
+          <LayoutWOSB>
+            <PersonalPage />
           </LayoutWOSB>
         ),
       },

@@ -15,8 +15,9 @@ const LeftSidebar: React.FC = () => {
   const menuItems = [
     {
       icon: <RiHomeLine size={20} color={colors.primary} />,
-      link: "/",
+      link: "/personal",
       title: "Trang chủ",
+      onClick: () => navigate("/personal"),
     },
     {
       icon: <FaUserFriends size={20} color={colors.primary} />,
@@ -47,7 +48,7 @@ const LeftSidebar: React.FC = () => {
   ];
 
   return (
-    <div className="bg-background text-textPrimary p-4 pb-32 h-full max-w-[250px] fixed border overflow-y-auto">
+    <div className="bg-background text-textPrimary p-4 pb-32 h-full max-w-[250px] left-0 sticky top-0 overflow-y-auto">
       <ListLinkButton listItems={menuItems} />
       <Divider style={{ borderColor: colors.border, margin: "15px 0px" }} />
       <h2 className="text-[20px] text-primary font-semibold mt-0 mb-6">

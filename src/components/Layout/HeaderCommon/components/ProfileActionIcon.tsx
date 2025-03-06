@@ -3,6 +3,7 @@ import colors from "@/styles/colors";
 import { UserOutlined } from "@ant-design/icons";
 import { Avatar, Divider, Popover, Space } from "antd";
 import { useState } from "react";
+import { IoLogOutOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
 const ProfileActionIcon = () => {
@@ -16,28 +17,32 @@ const ProfileActionIcon = () => {
   };
 
   const content = (
-    <div className="w-[200px] flex flex-col items-start gap-3">
+    <div className="w-[200px] p-0 flex flex-col gap-1 bg-white  rounded-lg">
       <button
-        className="flex flex-col items-start w-max"
-        onClick={() => navigate("/profile")}
+        className="flex flex-col items-start w-full text-left  p-2 rounded-md "
+        onClick={() => navigate("/personal")}
       >
-        <p>Profile</p>
-        <div className="flex flex-row items-center justify-between gap-2">
+        <span className="font-medium text-gray-800 pb-2">Profile</span>
+        <div className="flex flex-row items-center gap-2">
           <Avatar
-            size={25}
+            size={30}
             style={{ backgroundColor: colors.primary }}
             icon={<UserOutlined />}
           />
-          <p className="text-lg font-[500]">{userInfo.fullName}</p>
+          <span className="text-sm font-medium text-gray-700">
+            {userInfo?.fullName || "User"}
+          </span>
         </div>
       </button>
-      <Divider style={{ borderColor: colors.border, margin: "0px 0px" }} />
+
+      <Divider style={{ borderColor: colors.border, margin: 0, padding: 0 }} />
 
       <button
-        className="text-base hover:underline-offset-1"
-        onClick={() => logout()}
+        className="flex items-center gap-2 text-base text-gray-700 hover:text-primary hover:bg-slate-50 p-2 rounded-md w-full"
+        onClick={logout}
       >
-        Đăng xuất
+        <IoLogOutOutline className="text-xl text-primary" />
+        <span>Đăng xuất</span>
       </button>
     </div>
   );
