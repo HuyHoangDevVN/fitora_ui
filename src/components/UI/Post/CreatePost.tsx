@@ -189,7 +189,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         width={600}
         className="rounded-lg overflow-hidden"
         closable={false}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <div className="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
           <h2 className="text-lg font-bold">Tạo bài viết</h2>

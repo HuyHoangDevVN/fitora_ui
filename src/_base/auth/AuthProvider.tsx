@@ -30,12 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const storedLoginStatus = localStorage.getItem("isLoggedIn");
-    if (storedLoginStatus === "true") {
-      setIsLoggedIn(true);
-    } else {
-      checkLoginStatus();
-    }
+    checkLoginStatus();
   }, []);
 
   const checkLoginStatus = useCallback(async () => {
@@ -128,9 +123,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         message: "Đăng xuất",
         description: "Bạn đã đăng xuất thành công.",
       });
-      window.location.reload();
     } catch (error) {
       console.error("Lỗi khi đăng xuất:", error);
+      notification.error({
+        message: "Đăng xuất thất bại",
+        description: "Có lỗi xảy ra, vui lòng thử lại!",
+      });
     }
   }, []);
 

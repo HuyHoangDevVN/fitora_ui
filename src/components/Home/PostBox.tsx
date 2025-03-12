@@ -113,26 +113,34 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const renderMedia = useCallback(
     (url: string) => {
       const fileType = getFileType(url);
-      const commonStyles = {
+      const commonStyles: React.CSSProperties = {
         maxHeight: "400px",
+        maxWidth: "100%",
         width: "100%",
         height: "auto",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        objectFit: "cover",
       };
 
       switch (fileType) {
         case "image":
           return (
-            <Image
-              src={url}
-              alt="post-media"
-              style={commonStyles}
-              preview={{ src: url }}
-              placeholder={<Skeleton.Image active style={commonStyles} />}
-            />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Image
+                src={url}
+                alt="post-media"
+                style={commonStyles}
+                preview={{ src: url }}
+                loading="lazy"
+                onLoad={() => setMediaLoading(false)}
+              />
+            </div>
           );
         case "video":
           return (
-            <>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               {mediaLoading && <Skeleton.Image active style={commonStyles} />}
               <video
                 controls
@@ -145,7 +153,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
                 />
                 Trình duyệt không hỗ trợ video.
               </video>
-            </>
+            </div>
           );
         case "audio":
           return (
@@ -166,7 +174,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
           );
         case "pdf":
           return (
-            <>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               {mediaLoading && <Skeleton.Image active style={commonStyles} />}
               <iframe
                 src={url}
@@ -174,8 +182,9 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
                 height="600px"
                 title="PDF viewer"
                 onLoad={() => setMediaLoading(false)}
+                style={{ borderRadius: "8px" }}
               />
-            </>
+            </div>
           );
         default:
           return (
@@ -215,7 +224,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
           </span>
         </div>
         <Space>
-          {post.user.isFollowing && !isMe && (
+          {!post.user.isFollowing && !isMe && (
             <Button
               className="follow-btn bg-primary rounded-2xl hover:bg-primary"
               icon={<PlusOutlined />}

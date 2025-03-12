@@ -7,19 +7,25 @@ import { IoLogOutOutline } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
 const ProfileActionIcon = () => {
-  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") ?? "");
 
-  const handleVisibleChange = (newVisible) => {
-    setVisible(newVisible);
+  let userInfo;
+  try {
+    userInfo = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
+  } catch (error) {
+    userInfo = {};
+  }
+
+  const handleOpenChange = (newOpen) => {
+    setOpen(newOpen);
   };
 
   const content = (
-    <div className="w-[200px] p-0 flex flex-col gap-1 bg-white  rounded-lg">
+    <div className="w-[200px] p-0 flex flex-col gap-1 bg-white rounded-lg">
       <button
-        className="flex flex-col items-start w-full text-left  p-2 rounded-md "
+        className="flex flex-col items-start w-full text-left p-2 rounded-md"
         onClick={() => navigate("/personal")}
       >
         <span className="font-medium text-gray-800 pb-2">Profile</span>
@@ -52,8 +58,8 @@ const ProfileActionIcon = () => {
       <Popover
         content={content}
         trigger="click"
-        visible={visible}
-        onVisibleChange={handleVisibleChange}
+        open={open}
+        onOpenChange={handleOpenChange}
       >
         <Avatar
           size={35}
