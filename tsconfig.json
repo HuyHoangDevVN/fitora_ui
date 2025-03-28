@@ -17,9 +17,11 @@
       "@pages/*": ["pages/*"],
       "@api/*": ["api/*"],
       "@hooks/*": ["hooks/*"],
-      "@interfaces/*": ["interfaces/*"],
+      "@types/*": ["types/*"],
       "@utils/*": ["utils/*"],
       "@styles/*": ["styles/*"],
+      "@features/*": ["features/*"],
+      "@store/*": ["store/*"],
       "@layouts/*": ["layouts/*"]
     },
     "composite": true,

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, Suspense, lazy } from "react";
 import { message, Spin } from "antd";
-import { FriendInvite } from "@/interfaces/FriendInvite";
-import { userRepository } from "@/_base/const/Repository";
-import FriendMenu from "@/components/UI/Friend/FriendMenu";
+import { FriendInvite } from "@/types/friendInvite";
+import { userRepository } from "@/api/repository";
+import FriendMenu from "@/components/friend/FriendMenu";
 
 const FriendInvitationsGrid = lazy(
-  () => import("@/components/UI/Friend/FriendInvitationsGrid")
+  () => import("@/components/friend/FriendInvitationsGrid")
 );
 
 const FriendRequestPage: React.FC = () => {

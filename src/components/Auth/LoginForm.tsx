@@ -1,4 +1,6 @@
-import { useAuth } from "@/_base/auth/AuthProvider";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "@/features/auth/authSlice";
+import { RootState, AppDispatch } from "@/store/store";
 import colors from "@/styles/colors";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import styled from "@emotion/styled";
@@ -7,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaLock, FaUser } from "react-icons/fa";
 import { FiLogIn } from "react-icons/fi";
+import { useEffect } from "react";
 
 const StyledButton = styled(Button)`
   background-color: #ff4770;
@@ -32,19 +35,25 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const { login, loading } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { loading, isLoggedIn } = useSelector((state: RootState) => state.auth);
 
-  const onFinish = async (values: { username: string; password: string }) => {
-    const { username, password } = values;
-    try {
-      await login(username, password);
+  useEffect(() => {
+    if (isLoggedIn) {
       if (onSuccess) {
         onSuccess();
       } else {
         navigate("/");
       }
-    } catch {
+    }
+  }, [isLoggedIn, navigate, onSuccess]);
+
+  const onFinish = async (values: { username: string; password: string }) => {
+    const { username, password } = values;
+    try {
+      await dispatch(login({ username, password })).unwrap();
+    } catch (error) {
       console.error("Tài khoản hoặc mật khẩu không chính xác!");
     }
   };

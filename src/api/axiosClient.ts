@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import { notification } from "antd";
 import Cookies from "js-cookie";
-import { Delay } from "./FunctionHelper";
+import { Delay } from "@/utils/delay";
 
 class Repository {
   private axiosInstance: AxiosInstance;
@@ -28,7 +28,6 @@ class Repository {
           try {
             const response = await this.axiosInstance.post(
               "https://localhost:5000/api/auth/refresh-token"
-              // Giả sử API refresh token không cần dữ liệu body
             );
 
             if (response.data && response.data.token) {

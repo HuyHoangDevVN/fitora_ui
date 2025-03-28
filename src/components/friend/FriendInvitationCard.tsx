@@ -1,6 +1,6 @@
 import React from "react";
 import { Avatar, Button, Card } from "antd";
-import { FriendInvite } from "@/interfaces/FriendInvite";
+import { FriendInvite } from "@/types/FriendInvite";
 
 type FriendInvitationCardProps = {
   invite: FriendInvite;
@@ -18,7 +18,6 @@ const FriendInvitationCard: React.FC<FriendInvitationCardProps> = ({
       className="w-max rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
       bodyStyle={{ padding: 0 }}
     >
-      {/* Phần thông tin */}
       <div className="flex flex-col items-center p-4">
         <Avatar
           size={80}
@@ -30,10 +29,8 @@ const FriendInvitationCard: React.FC<FriendInvitationCardProps> = ({
         </p>
       </div>
 
-      {/* Đường kẻ ngang để tách nút */}
       <div className="border-t border-gray-200" />
 
-      {/* Phần nút hành động */}
       <div className="flex justify-center items-center gap-3 p-3">
         <Button type="primary" onClick={() => onAccept(invite.id)}>
           Xác nhận

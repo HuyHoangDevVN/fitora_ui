@@ -1,14 +1,14 @@
-import { userRepository } from "@/_base/const/Repository";
-import { FriendInvite } from "@/interfaces/FriendInvite";
-import { PaginatedResult } from "@/interfaces/PaginatedResult";
-import { ResponseBase } from "@/interfaces/ResponseBase";
+import { userRepository } from "@/api/repository";
+import { FriendInvite } from "@/types/FriendInvite";
+import { PaginatedResult } from "@/types/PaginatedResult";
+import { ResponseBase } from "@/types/ResponseBase";
 import colors from "@/styles/colors";
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Divider, Flex, Tooltip, message } from "antd";
 import { useEffect, useState } from "react";
 import FriendInvitation from "./components/FriendInvitation";
 import ListContactPerson from "./components/ListContactPerson";
-import { User } from "@/interfaces/User";
+import { User } from "@/types/User";
 
 const RightSideBar = () => {
   const [friendInvite, setFriendInvite] = useState<FriendInvite[]>([]);

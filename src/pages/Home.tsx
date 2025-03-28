@@ -1,79 +1,56 @@
-import { interactRepository } from "@/_base/const/Repository";
-import PostBox from "@/components/Home/PostBox";
-import { Post } from "@/interfaces/Post";
-import colors from "@/styles/colors";
-import { Divider, message, Skeleton } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import debounce from "lodash/debounce";
+import { Divider, message, Skeleton } from "antd";
+import PostBox from "@/components/posts/PostBox";
+import colors from "@/styles/colors";
 
-const LIMIT = 4;
+import { Post } from "@/types/post";
+import { RootState } from "@/store/store";
+import { fetchPosts } from "@/features/posts/postsSlice";
 
 const Home: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [errorCount, setErrorCount] = useState<number>(0);
+  const dispatch = useDispatch();
+  const { posts, status, error, nextCursor, hasMore, errorCount } = useSelector(
+    (state: RootState) => state.posts
+  );
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const nextCursorRef = useRef<number | null>(null);
   const isFetchingRef = useRef<boolean>(false);
 
-  const fetchPosts = useCallback(
-    debounce(async () => {
-      if (loading || !hasMore || isFetchingRef.current || errorCount >= 3)
+  const loadPosts = useCallback(
+    debounce(() => {
+      if (
+        status === "loading" ||
+        !hasMore ||
+        isFetchingRef.current ||
+        errorCount >= 3
+      )
         return;
 
       isFetchingRef.current = true;
-      setLoading(true);
-
-      try {
-        const url = `/post/newfeed?Limit=${LIMIT}${
-          nextCursorRef.current !== null
-            ? `&Cursor=${nextCursorRef.current}`
-            : ""
-        }`;
-
-        const response = await interactRepository.get(url);
-
-        if (response?.isSuccess && response.data) {
-          const newPosts = response.data.data.filter(
-            (post: Post) => !posts.some((p) => p.id === post.id)
-          );
-
-          setPosts((prev) => [...prev, ...newPosts]);
-          nextCursorRef.current = response.data.nextCursor;
-          setHasMore(response.data.nextCursor !== null);
-          setErrorCount(0);
-        } else {
-          throw new Error(response?.message || "Không thể tải bài viết");
-        }
-      } catch (error) {
-        setErrorCount((prev) => prev + 1);
-        message.error(
-          error instanceof Error
-            ? error.message
-            : "Có lỗi xảy ra khi tải bài viết!"
-        );
-        if (errorCount + 1 >= 3) {
-          setHasMore(false);
-          message.error("Đã xảy ra quá nhiều lỗi, vui lòng thử lại sau!");
-        }
-      } finally {
-        setLoading(false);
-        setTimeout(() => {
-          isFetchingRef.current = false;
-        }, 500);
-      }
+      dispatch(fetchPosts(nextCursor) as any)
+        .unwrap()
+        .catch((err) => {
+          message.error(err || "Có lỗi xảy ra khi tải bài viết!");
+        })
+        .finally(() => {
+          setTimeout(() => {
+            isFetchingRef.current = false;
+          }, 500);
+        });
     }, 300),
-    [loading, hasMore, posts, errorCount]
+    [dispatch, status, hasMore, nextCursor, errorCount]
   );
 
   useEffect(() => {
-    fetchPosts();
+    if (status === "idle") {
+      loadPosts();
+    }
     return () => {
-      fetchPosts.cancel();
+      loadPosts.cancel();
     };
-  }, [fetchPosts]);
+  }, [status, loadPosts]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -84,10 +61,10 @@ const Home: React.FC = () => {
         if (
           entries[0].isIntersecting &&
           hasMore &&
-          !loading &&
+          status !== "loading" &&
           !isFetchingRef.current
         ) {
-          fetchPosts();
+          loadPosts();
         }
       },
       { threshold: 0.1 }
@@ -95,7 +72,13 @@ const Home: React.FC = () => {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchPosts, hasMore, loading]);
+  }, [loadPosts, hasMore, status]);
+
+  useEffect(() => {
+    if (error) {
+      message.error(error);
+    }
+  }, [error]);
 
   const PostSkeleton = () => (
     <div style={{ padding: "15px 0" }}>
@@ -115,21 +98,23 @@ const Home: React.FC = () => {
 
   return (
     <div>
-      {posts.map((post) => (
+      {posts?.map((post: Post) => (
         <div key={post.id}>
           <PostBox post={post} />
           <Divider style={{ borderColor: colors.border, margin: "15px 0" }} />
         </div>
       ))}
-      {loading && (
+
+      {status === "loading" && (
         <div style={{ padding: "20px 0" }}>
           {Array(2)
-            .fill(0)
+            ?.fill(0)
             .map((_, index) => (
               <PostSkeleton key={index} />
             ))}
         </div>
       )}
+
       <div ref={sentinelRef} style={{ height: "1px" }} />
     </div>
   );

@@ -9,7 +9,6 @@ const Layout: React.FC = () => {
     <div className="min-h-screen container mx-auto px-4">
       <Header />
       <div className="flex flex-col lg:flex-row">
-        {/* Left Sidebar */}
         <aside className="hidden lg:block lg:w-[280px] bg-gray-50">
           <div className="sticky top-[74px]">
             <LeftSidebar />
@@ -20,7 +19,6 @@ const Layout: React.FC = () => {
           <Outlet />
         </main>
 
-        {/* Right Sidebar */}
         <aside className="hidden lg:block lg:w-[280px] bg-gray-50">
           <div className="sticky top-[74px]">
             <RightSideBar />

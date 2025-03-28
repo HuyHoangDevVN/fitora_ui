@@ -8,7 +8,7 @@ import MessageActionIcon from "./components/MessageActionIcon";
 import ProfileActionIcon from "./components/ProfileActionIcon";
 import CreatePostActionIcon from "./components/CreatePostActionIcon";
 import FriendActionIcon from "./components/FriendActionIcon";
-import CreatePostModal from "@/components/UI/Post/CreatePost";
+import CreatePostModal from "@/components/posts/CreatePost";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();

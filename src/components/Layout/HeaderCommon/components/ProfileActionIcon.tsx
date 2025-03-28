@@ -1,25 +1,31 @@
-import { useAuth } from "@/_base/auth/AuthProvider";
+import { AppDispatch, RootState } from "@/store/store";
 import colors from "@/styles/colors";
 import { UserOutlined } from "@ant-design/icons";
 import { Avatar, Divider, Popover, Space } from "antd";
 import { useState } from "react";
 import { IoLogOutOutline } from "react-icons/io5";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { logout } from "@/features/auth/authSlice";
 
 const ProfileActionIcon = () => {
-  const [open, setOpen] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { userInfo } = useSelector((state: RootState) => state.auth);
 
-  let userInfo;
-  try {
-    userInfo = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
-  } catch (error) {
-    userInfo = {};
-  }
+  const [open, setOpen] = useState(false);
 
   const handleOpenChange = (newOpen) => {
     setOpen(newOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      navigate("/login");
+    } catch (error) {
+      console.error("Đăng xuất thất bại:", error);
+    }
   };
 
   const content = (
@@ -45,7 +51,7 @@ const ProfileActionIcon = () => {
 
       <button
         className="flex items-center gap-2 text-base text-gray-700 hover:text-primary hover:bg-slate-50 p-2 rounded-md w-full"
-        onClick={logout}
+        onClick={handleLogout}
       >
         <IoLogOutOutline className="text-xl text-primary" />
         <span>Đăng xuất</span>

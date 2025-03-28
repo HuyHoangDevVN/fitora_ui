@@ -1,5 +1,5 @@
-import { FriendInvite } from "@/interfaces/FriendInvite";
-import { userRepository } from "@/_base/const/Repository";
+import { userRepository } from "@/api/repository";
+import { FriendInvite } from "@/types/friendInvite";
 import { Avatar, Button, Flex, message } from "antd";
 import { useState } from "react";
 

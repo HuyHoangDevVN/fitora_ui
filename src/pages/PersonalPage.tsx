@@ -1,14 +1,14 @@
-import { interactRepository, userRepository } from "@/_base/const/Repository";
-import PostBox from "@/components/Home/PostBox";
-import { PaginatedCursorResult } from "@/interfaces/PaginatedCrusorResult";
-import { Post } from "@/interfaces/Post";
-import { ProfileUser } from "@/interfaces/ProfileUser";
-import { ResponseBase } from "@/interfaces/ResponseBase";
+import { interactRepository, userRepository } from "@/api/repository";
+import PostBox from "@/components/posts/PostBox";
+import { Post } from "@/types/post";
+import { ResponseBase } from "@/types/responseBase";
 import { Avatar, Button, message, Skeleton, Spin } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { ProfileUser } from "@/types/profileUser";
+import { PaginatedCursorResult } from "@/types/paginatedCrusorResult";
 
 const PersonalPage = () => {
   const navigate = useNavigate();
@@ -338,7 +338,7 @@ const PersonalPage = () => {
                       <List
                         height={height}
                         itemCount={posts.length}
-                        itemSize={200}
+                        itemSize={570}
                         width={width}
                       >
                         {renderPost}

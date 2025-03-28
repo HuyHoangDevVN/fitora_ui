@@ -1,7 +1,7 @@
-import { userRepository } from "@/_base/const/Repository";
-import { ProfileUser, UserInfo } from "@/interfaces/ProfileUser";
-import { ResponseBase } from "@/interfaces/ResponseBase";
-import { uploadFile } from "@/utils/UploadFiles";
+import { userRepository } from "@/api/repository";
+import { ProfileUser, UserInfo } from "@/types/profileUser";
+import { ResponseBase } from "@/types/responseBase";
+import { uploadFile } from "@/utils/uploadFiles";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Avatar,

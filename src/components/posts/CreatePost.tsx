@@ -1,10 +1,10 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Modal, Button, Avatar, Select, Input, message, Spin } from "antd";
-import { PrivacyPost } from "@/enums/PrivacyPost";
 import axios from "axios";
-import { interactRepository } from "@/_base/const/Repository";
+import { interactRepository } from "@/api/repository";
 import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
 import { FaUserTag, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
+import { PrivacyPost } from "@/enums/privacyPost";
 
 const { TextArea } = Input;
 

@@ -4,12 +4,12 @@ import {
   Button,
   Dropdown,
   Form,
-  Input,
   Image,
+  Input,
   message,
   Modal,
-  Space,
   Skeleton,
+  Space,
 } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
 import { BsDot } from "react-icons/bs";
@@ -18,9 +18,12 @@ import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
-import { interactRepository } from "@/_base/const/Repository";
-import { Post } from "@/interfaces/Post";
-import { timeToLast } from "@/utils/FunctionHelpper";
+import { interactRepository } from "@/api/repository";
+import { votePost } from "@/features/posts/postsSlice";
+import { AppDispatch } from "@/store/store";
+import { Post } from "@/types/post";
+import { timeToLast } from "@/utils/functionHelpper";
+import { useDispatch } from "react-redux";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -43,6 +46,7 @@ const getFileType = (url: string): string => {
 type PostBoxProps = { post: Post };
 
 const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editMediaUrl, setEditMediaUrl] = useState(post.mediaUrl);
@@ -210,6 +214,50 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     []
   );
 
+  const handleVote = useCallback(
+    async (voteType: 1 | 2 | 3) => {
+      try {
+        setLoading(true);
+        const result = await dispatch(
+          votePost({
+            userId: localStorage.getItem("x-client-id") || "",
+            postId: post.id,
+            voteType,
+          })
+        ).unwrap();
+
+        if (result) {
+          if (voteType === 1) {
+            message.success("Upvote thành công!");
+          } else if (voteType === 2) {
+            message.success("Downvote thành công!");
+          } else {
+            message.success("Bỏ phiếu thành công!");
+          }
+        } else {
+          message.error(
+            voteType === 1
+              ? "Không thể upvote bài viết."
+              : voteType === 2
+              ? "Không thể downvote bài viết."
+              : "Không thể bỏ phiếu bài viết."
+          );
+        }
+      } catch {
+        message.error(
+          voteType === 1
+            ? "Không thể upvote bài viết."
+            : voteType === 2
+            ? "Không thể downvote bài viết."
+            : "Không thể bỏ phiếu bài viết."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dispatch, post.id]
+  );
+
   return (
     <div className="post-box mb-3 border rounded-lg p-3 bg-white shadow-sm">
       <div className="post-header flex justify-between items-center">
@@ -254,29 +302,61 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         )}
       </div>
 
-      <div className="post-footer flex items-center gap-2 mt-3">
-        <div className="vote-controls flex items-center bg-gray-100 rounded-2xl px-2">
-          <Button type="text" icon={<PiArrowFatUpLight />} />
-          <span className="vote-count text-xs font-medium">
+      <div className="post-footer flex items-center gap-6 mt-4 border-t pt-3">
+        <div className="vote-controls flex items-center gap-2">
+          <Button
+            type="text"
+            icon={
+              <PiArrowFatUpLight
+                className={`text-2xl transition-colors duration-300 ${
+                  post.userVoteType === 1
+                    ? "text-primary"
+                    : "text-gray-400 hover:text-primary"
+                }`}
+              />
+            }
+            onClick={
+              () => handleVote(post.userVoteType === 1 ? 3 : 1) // Unvote if already upvoted, otherwise upvote
+            }
+            loading={loading}
+          />
+          <span className="vote-count text-sm font-semibold text-gray-600">
             {post.votesCount}
           </span>
-          <Button type="text" icon={<PiArrowFatDownLight />} />
+          <Button
+            type="text"
+            icon={
+              <PiArrowFatDownLight
+                className={`text-2xl transition-colors duration-300 ${
+                  post.userVoteType === 2
+                    ? "text-primary"
+                    : "text-gray-400 hover:text-primary"
+                }`}
+              />
+            }
+            onClick={
+              () => handleVote(post.userVoteType === 2 ? 3 : 2) // Unvote if already downvoted, otherwise downvote
+            }
+            loading={loading}
+          />
         </div>
         <Button
-          className="comment-btn bg-gray-100 rounded-2xl flex items-center gap-1"
-          icon={<FaRegComment />}
+          className="comment-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
+          icon={<FaRegComment className="text-lg" />}
           type="text"
           size="small"
         >
-          {post.commentsCount}
+          <span className="text-sm font-medium">
+            {post.commentsCount} Comments
+          </span>
         </Button>
         <Button
-          className="share-btn bg-gray-100 rounded-2xl flex items-center gap-1"
-          icon={<RiShareForwardLine />}
+          className="share-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
+          icon={<RiShareForwardLine className="text-lg" />}
           type="text"
           size="small"
         >
-          Share
+          <span className="text-sm font-medium">Share</span>
         </Button>
       </div>
 

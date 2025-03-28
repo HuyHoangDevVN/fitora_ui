@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Input, Skeleton } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import { userRepository } from "@/_base/const/Repository";
-import { User } from "@/interfaces/User";
+import { userRepository } from "@/api/repository";
+import { User } from "@/types/User";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 

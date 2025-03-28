@@ -1,6 +1,6 @@
 import React from "react";
 import { Row, Col } from "antd";
-import { FriendInvite } from "@/interfaces/FriendInvite";
+import { FriendInvite } from "@/types/FriendInvite";
 import FriendInvitationCard from "./FriendInvitationCard";
 
 type FriendInvitationsGridProps = {

@@ -1,4 +1,6 @@
-import { useAuth } from "@/_base/auth/AuthProvider";
+import { useDispatch, useSelector } from "react-redux";
+import { register } from "@/features/auth/authSlice";
+import { RootState, AppDispatch } from "@/store/store";
 import colors from "@/styles/colors";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import styled from "@emotion/styled";
@@ -34,18 +36,14 @@ const formRules = {
 };
 
 const handleRegister = async (
-  register: (
-    username: string,
-    password: string,
-    fullName: string
-  ) => Promise<void>,
-  values: { username: string; password: string; fullName: string },
+  dispatch: AppDispatch,
+  values: { username: string; password: string; fullname: string },
   navigate: (path: string) => void,
   onSuccess?: () => void
 ) => {
-  const { username, password, fullName } = values;
+  const { username, password, fullname } = values;
   try {
-    await register(username, password, fullName);
+    await dispatch(register({ username, password, fullname })).unwrap();
     if (onSuccess) {
       onSuccess();
     } else {
@@ -64,16 +62,17 @@ interface RegisterFormProps {
 }
 
 const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
-  const { register, loading } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { loading } = useSelector((state: RootState) => state.auth);
   const [form] = Form.useForm();
 
   const onFinish = (values: {
     username: string;
     password: string;
-    fullName: string;
+    fullname: string;
   }) => {
-    handleRegister(register, values, navigate, onSuccess);
+    handleRegister(dispatch, values, navigate, onSuccess);
   };
 
   return (

@@ -1,4 +1,4 @@
-import { User } from "@/interfaces/User";
+import { User } from "@/types/User";
 import ContactPersonComponent from "./ContactPersonComponent";
 
 type ListContactPersonProp = {

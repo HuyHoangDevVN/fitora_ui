@@ -1,16 +1,16 @@
-import PrivateRoute from "@/_base/auth/PrivateRoute";
 import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
 import FriendRequestPage from "@/pages/FriendRequestPage";
 import Home from "@/pages/Home";
-import Login from "@/pages/Login";
+import Login from "@/features/auth/Login";
 import PageNotFound from "@/pages/PageNotFound";
 import PersonalPage from "@/pages/PersonalPage";
 import Profile from "@/pages/Profile";
 import ProfileSettings from "@/pages/ProfileSetting";
-import Register from "@/pages/Register";
+import Register from "@/features/auth/Register";
 import { createBrowserRouter } from "react-router-dom";
+import PrivateRoute from "./PrivateRoute";
 
 const router = createBrowserRouter([
   {

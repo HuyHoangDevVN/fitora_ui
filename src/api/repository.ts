@@ -1,4 +1,4 @@
-import Repository from "../helper/HttpHelper";
+import Repository from "./axiosClient";
 
 export const authRepository = new Repository("https://localhost:5000/api");
 export const userRepository = new Repository("https://localhost:5003/api");

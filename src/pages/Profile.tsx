@@ -1,6 +1,6 @@
-import { userRepository } from "@/_base/const/Repository";
-import { ProfileUser } from "@/interfaces/ProfileUser";
-import { ResponseBase } from "@/interfaces/ResponseBase";
+import { userRepository } from "@/api/repository";
+import { ProfileUser } from "@/types/profileUser";
+import { ResponseBase } from "@/types/responseBase";
 import { Avatar, Button, Card, message } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
