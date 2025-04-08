@@ -130,7 +130,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
 
   return (
     <div className="mt-4 px-4">
-      {/* Form thêm bình luận */}
       <div className="flex items-center gap-2 mb-4">
         <Input.TextArea
           rows={1}
@@ -141,14 +140,13 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
         />
         <Button
           type="primary"
-          className="rounded-md"
+          className="rounded-md bg-primary"
           onClick={handleAddComment}
         >
           <IoSendSharp />
         </Button>
       </div>
 
-      {/* Danh sách bình luận */}
       <List
         dataSource={comments}
         loading={loading && comments.length === 0}
@@ -231,7 +229,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
               </div>
             </div>
 
-            {/* Form trả lời */}
             {replyingTo === comment.id && (
               <div className="flex items-center gap-2 ml-12 mt-2">
                 <Input.TextArea
@@ -256,7 +253,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
               </div>
             )}
 
-            {/* Danh sách phản hồi */}
             {repliesByComment[comment.id]?.data?.length > 0 && (
               <div className=" ml-12 mt-2">
                 <List
@@ -335,7 +331,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
         )}
       />
 
-      {/* Sentinel để tải thêm bình luận */}
       {loading && comments.length > 0 && (
         <div className="flex justify-center mt-4">
           <Spin />

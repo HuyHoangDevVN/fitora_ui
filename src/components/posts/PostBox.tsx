@@ -18,6 +18,7 @@ import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
+import { followCategoryApi } from "@/api/categoryApi";
 import { interactRepository } from "@/api/repository";
 import { handleUserActionApi } from "@/api/userApi";
 import { votePost } from "@/features/posts/postsSlice";
@@ -27,7 +28,6 @@ import { timeToLast } from "@/utils/functionHelpper";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CommentList from "./CommentList";
-import { followCategoryApi } from "@/api/categoryApi";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -63,7 +63,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(post.user.isFollowing);
-  const [isCommentModalVisible, setIsCommentModalVisible] = useState(false); // Thêm state cho modal bình luận
+  const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
 
   const avatarSrc = useMemo(
     () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
@@ -220,12 +220,16 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   );
 
   const menuItems = useMemo(
-    () => [
-      { key: "edit", label: "Chỉnh sửa" },
-      { key: "delete", label: "Xoá bài viết" },
-      { key: "followCategory", label: "Theo dõi danh mục" },
-    ],
-    []
+    () =>
+      [
+        { key: "edit", label: "Chỉnh sửa" },
+        { key: "delete", label: "Xoá bài viết" },
+        !post?.isCategoryFollowed && {
+          key: "followCategory",
+          label: "Theo dõi danh mục",
+        },
+      ].filter(Boolean) as { key: string; label: string }[],
+    [post?.isCategoryFollowed]
   );
 
   const handleVote = useCallback(
@@ -311,7 +315,9 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
 
   return (
     <Badge.Ribbon
-      text={post?.categoryName}
+      text={
+        post?.isCategoryFollowed ? `⭐ ${post.categoryName}` : post.categoryName
+      }
       color={randomRibbonColor}
       placement="end"
       className="absolute top-[-5px]"
@@ -381,9 +387,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
                   }`}
                 />
               }
-              onClick={
-                () => handleVote(post.userVoteType === 1 ? 3 : 1) // Unvote if already upvoted, otherwise upvote
-              }
+              onClick={() => handleVote(post.userVoteType === 1 ? 3 : 1)}
               loading={loading}
             />
             <span className="vote-count text-sm font-semibold text-gray-600">
@@ -400,9 +404,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
                   }`}
                 />
               }
-              onClick={
-                () => handleVote(post.userVoteType === 2 ? 3 : 2) // Unvote if already downvoted, otherwise downvote
-              }
+              onClick={() => handleVote(post.userVoteType === 2 ? 3 : 2)}
               loading={loading}
             />
           </div>
@@ -411,7 +413,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             icon={<FaRegComment className="text-lg" />}
             type="text"
             size="small"
-            onClick={() => setIsCommentModalVisible(true)} // Mở modal bình luận
+            onClick={() => setIsCommentModalVisible(true)}
           >
             <span className="text-sm font-medium">
               {post.commentsCount} Comments
@@ -453,19 +455,17 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             </Form.Item>
           </Form>
         </Modal>
-        {/* Modal bình luận */}
         <Modal
           title="Bình luận"
           open={isCommentModalVisible}
           onCancel={() => setIsCommentModalVisible(false)}
           footer={null}
-          width={800}
+          width={"850px"}
           className="comment-modal"
         >
-          <div className="max-h-[70vh] overflow-y-auto">
-            <PostBox post={post} /> {/* Hiển thị lại bài viết trong modal */}
+          <div className="max-h-[70vh] p-4 overflow-y-auto">
+            <PostBox post={post} />
             <CommentList postId={post.id} />{" "}
-            {/* Hiển thị danh sách bình luận */}
           </div>
         </Modal>
       </div>
