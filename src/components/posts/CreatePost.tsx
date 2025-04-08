@@ -1,10 +1,17 @@
-import React, { useState, useRef, useCallback } from "react";
-import { Modal, Button, Avatar, Select, Input, message, Spin } from "antd";
-import axios from "axios";
 import { interactRepository } from "@/api/repository";
-import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
-import { FaUserTag, FaMapMarkerAlt, FaTimes } from "react-icons/fa";
 import { PrivacyPost } from "@/enums/privacyPost";
+import {
+  createCategory,
+  fetchCategoriesForPost,
+  followCategory,
+} from "@/features/category/categorySlice";
+import { AppDispatch } from "@/store/store";
+import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
+import axios from "axios";
+import React, { useCallback, useRef, useState } from "react";
+import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
+import { FaMapMarkerAlt, FaTimes, FaUserTag } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 
 const { TextArea } = Input;
 
@@ -17,20 +24,72 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   trigger,
   onPostCreated,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const { categoriesForPost } = useSelector(
+    (state: any) => state.category || {}
+  );
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [privacy, setPrivacy] = useState<PrivacyPost>(PrivacyPost.Private);
   const [content, setContent] = useState("");
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [keySearch, setKeySearch] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const showModal = useCallback(() => setIsModalOpen(true), []);
-  const handleCancel = useCallback(() => {
-    setIsModalOpen(false);
+  const showCategoryModal = useCallback(() => {
+    setIsCategoryModalOpen(true);
+    dispatch(fetchCategoriesForPost(keySearch));
+  }, [dispatch, keySearch]);
+
+  const handleCategoryModalOk = useCallback(async () => {
+    if (!selectedCategory && !newCategoryName.trim()) {
+      message.info("Vui lòng chọn hoặc tạo một Chủ đề!");
+      return;
+    }
+
+    try {
+      if (!selectedCategory && newCategoryName.trim()) {
+        // Tạo Chủ đề mới
+        const response = await dispatch(
+          createCategory({
+            name: newCategoryName,
+            description: description,
+          }) as any
+        ).unwrap();
+        setSelectedCategory(response.id);
+
+        // Follow Chủ đề vừa tạo
+        await dispatch(followCategory(response.id) as any);
+        message.success("Chủ đề đã được tạo và theo dõi!");
+      }
+
+      setIsCategoryModalOpen(false);
+      setIsPostModalOpen(true);
+    } catch (error) {
+      console.error("Lỗi khi tạo hoặc theo dõi Chủ đề:", error);
+      message.error("Có lỗi xảy ra khi tạo hoặc theo dõi Chủ đề!");
+    }
+  }, [selectedCategory, newCategoryName, dispatch]);
+
+  const handleCategoryModalCancel = useCallback(() => {
+    setIsCategoryModalOpen(false);
+    setSelectedCategory(null);
+    setNewCategoryName("");
+  }, []);
+
+  const handlePostModalCancel = useCallback(() => {
+    setIsPostModalOpen(false);
     setPreviewUrl("");
     setMediaUrl("");
+    setContent("");
+    setPrivacy(PrivacyPost.Private);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
@@ -76,7 +135,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     []
   );
 
-  const handleOk = useCallback(async () => {
+  const handlePostModalOk = useCallback(async () => {
     if (!content.trim()) {
       message.info("Bạn chưa viết gì cả!");
       return;
@@ -87,6 +146,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         content,
         mediaUrl,
         privacy,
+        categoryId: selectedCategory,
       };
 
       const response = await interactRepository.post("/post/create-post", data);
@@ -99,7 +159,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         setMediaUrl("");
         setPreviewUrl("");
         setPrivacy(PrivacyPost.Private);
-        setIsModalOpen(false);
+        setSelectedCategory(null);
+        setNewCategoryName("");
+        setIsPostModalOpen(false);
       } else {
         throw new Error("Có lỗi xảy ra!");
       }
@@ -107,7 +169,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.error("Lỗi khi tạo bài viết:", error);
       message.error("Có lỗi xảy ra, vui lòng thử lại!");
     }
-  }, [content, mediaUrl, privacy, onPostCreated]);
+  }, [content, mediaUrl, privacy, selectedCategory, onPostCreated]);
+
+  const handleSearchCategory = useCallback(
+    (value: string) => {
+      setKeySearch(value);
+      dispatch(fetchCategoriesForPost(value) as any);
+    },
+    [dispatch]
+  );
 
   const renderPreview = () => {
     if (uploading) {
@@ -173,18 +243,61 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   return (
     <>
       {trigger ? (
-        <div onClick={showModal} className="inline-block cursor-pointer">
+        <div
+          onClick={showCategoryModal}
+          className="inline-block cursor-pointer"
+        >
           {trigger}
         </div>
       ) : (
-        <Button type="primary" onClick={showModal}>
+        <Button type="primary" onClick={showCategoryModal}>
           Tạo bài viết
         </Button>
       )}
 
+      {/* Modal chọn danh mục */}
       <Modal
-        open={isModalOpen}
-        onCancel={handleCancel}
+        open={isCategoryModalOpen}
+        onCancel={handleCategoryModalCancel}
+        onOk={handleCategoryModalOk}
+        title="Chọn hoặc tạo danh mục"
+        okText="Tiếp tục"
+        cancelText="Hủy"
+      >
+        <Select
+          showSearch
+          placeholder="Tìm kiếm Chủ đề"
+          value={selectedCategory}
+          onChange={(value) => setSelectedCategory(value)}
+          onSearch={handleSearchCategory}
+          style={{ width: "100%" }}
+          allowClear
+          filterOption={false}
+        >
+          {categoriesForPost?.map((category: any) => (
+            <Select.Option key={category.id} value={category.id}>
+              {category.name}
+            </Select.Option>
+          ))}
+        </Select>
+        <Input
+          placeholder="Hoặc tạo Chủ đề mới"
+          value={newCategoryName}
+          onChange={(e) => setNewCategoryName(e.target.value)}
+          className="mt-2"
+        />
+        <Input
+          placeholder="Mô tả chủ đề mới"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="mt-2"
+        />
+      </Modal>
+
+      {/* Modal tạo bài viết */}
+      <Modal
+        open={isPostModalOpen}
+        onCancel={handlePostModalCancel}
         footer={null}
         width={600}
         className="rounded-lg overflow-hidden"
@@ -194,7 +307,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         <div className="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
           <h2 className="text-lg font-bold">Tạo bài viết</h2>
           <button
-            onClick={handleCancel}
+            onClick={handlePostModalCancel}
             className="text-gray-600 hover:text-gray-800"
           >
             <FaTimes size={18} />
@@ -223,12 +336,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 </Select.Option>
                 <Select.Option value={PrivacyPost.Private}>
                   Chỉ mình tôi
-                </Select.Option>
-                <Select.Option value={PrivacyPost.GroupOnly}>
-                  Nhóm
-                </Select.Option>
-                <Select.Option value={PrivacyPost.Custom}>
-                  Tùy chỉnh
                 </Select.Option>
               </Select>
             </div>
@@ -275,12 +382,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
           </div>
         </div>
-
         <div className="px-4 py-3 border-t bg-gray-50">
           <Button
             type="primary"
             className="rounded-full w-full"
-            onClick={handleOk}
+            onClick={handlePostModalOk}
             disabled={!content.trim() || uploading}
             loading={uploading}
           >

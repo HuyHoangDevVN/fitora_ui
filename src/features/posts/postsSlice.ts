@@ -10,7 +10,7 @@ export interface PostsState {
   posts: Post[];
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
-  nextCursor: number | null;
+  nextCursor: string | null;
   hasMore: boolean;
   errorCount: number;
 }
@@ -27,9 +27,17 @@ const initialState: PostsState = {
 // Fetch bài viết trên newfeed
 export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
-  async (cursor: number | null = null, thunkAPI) => {
+  async (
+    params: {
+      feedType: 1 | 2; // 1: All, 2: Category
+      categoryId?: string;
+      cursor?: string | null;
+      limit?: number;
+    },
+    thunkAPI
+  ) => {
     try {
-      const response = await fetchPostsApi(cursor);
+      const response = await fetchPostsApi(params);
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể tải bài viết"
@@ -46,7 +54,7 @@ export const fetchPosts = createAsyncThunk(
 export const fetchPersonalPosts = createAsyncThunk(
   "posts/fetchPersonalPosts",
   async (
-    { userId, cursor }: { userId: number; cursor: number | null },
+    { userId, cursor }: { userId: number; cursor: string | null },
     thunkAPI
   ) => {
     try {

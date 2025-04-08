@@ -11,7 +11,7 @@ const LayoutWOSB: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen container mx-auto px-4">
       <Header />
       <div className="flex flex-col lg:flex-row gap-4">
-        <main className="flex-1 px-4 max-w-[900px] mx-auto w-full">
+        <main className="flex-1 px-4 max-w-[1200px] mx-auto w-full">
           {children || <Outlet />}
         </main>
       </div>

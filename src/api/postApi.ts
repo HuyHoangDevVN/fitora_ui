@@ -1,17 +1,35 @@
 import { interactRepository } from "@/api/repository";
-import { ResponseBase } from "@/types/responseBase";
 import { Post } from "@/types/post";
+import { ResponseBase } from "@/types/responseBase";
 
 const LIMIT = 4;
 
 // API để lấy bài viết trên newfeed
-export const fetchPostsApi = async (
-  cursor: number | null = null
-): Promise<ResponseBase<{ data: Post[]; nextCursor: number | null }>> => {
-  let url = `/post/newfeed?Limit=${LIMIT}`;
-  if (cursor !== null) {
-    url += `&Cursor=${cursor}`;
+export const fetchPostsApi = async (params: {
+  feedType: 1 | 2; // 1: All, 2: Category
+  categoryId?: string; // Chỉ cần khi feedType là Category
+  cursor?: string | null;
+  limit?: number;
+}): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
+  const { feedType, categoryId, cursor, limit = LIMIT } = params;
+
+  // Xây dựng query string
+  const queryParams: Record<string, any> = {
+    FeedType: feedType,
+    Limit: limit,
+  };
+
+  if (cursor) {
+    queryParams.Cursor = cursor;
   }
+
+  if (feedType === 2 && categoryId) {
+    queryParams.CategoryId = categoryId;
+  }
+
+  const queryString = new URLSearchParams(queryParams).toString();
+  const url = `/post/newfeed?${queryString}`;
+
   const response = await interactRepository.get(url);
   if (!response) {
     throw new Error("Failed to fetch data from the repository.");
@@ -22,8 +40,8 @@ export const fetchPostsApi = async (
 // API để lấy bài viết cá nhân
 export const fetchPersonalPostsApi = async (
   userId: number,
-  cursor: number | null = null
-): Promise<ResponseBase<{ data: Post[]; nextCursor: number | null }>> => {
+  cursor: string | null = null
+): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
   let url = `/post/personal?Id=${userId}&Limit=${LIMIT}`;
   if (cursor !== null) {
     url += `&Cursor=${cursor}`;

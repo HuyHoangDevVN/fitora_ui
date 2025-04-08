@@ -1,5 +1,5 @@
 import { Avatar, Button, Flex } from "antd";
-import { User } from "@/types/User";
+import { User } from "@/types/user";
 import { fakeImage } from "../fakeData";
 import { useNavigate } from "react-router-dom";
 

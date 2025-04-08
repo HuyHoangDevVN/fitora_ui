@@ -1,4 +1,4 @@
-import { userRepository } from "@/api/repository";
+import { acceptFriendRequestApi, rejectFriendRequestApi } from "@/api/userApi";
 import { FriendInvite } from "@/types/friendInvite";
 import { Avatar, Button, Flex, message } from "antd";
 import { useState } from "react";
@@ -17,25 +17,35 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
   const userName = isReceived ? invite?.senderName : invite?.receiverName;
   const [status, setStatus] = useState<string | null>(null);
 
-  const handleAction = async (
-    apiEndpoint: string,
-    method: "PUT" | "DELETE",
-    successMessage: string,
-    newStatus: string | null
-  ) => {
+  const handleAccept = async () => {
     if (!invite?.id) {
       message.error("Không tìm thấy ID lời mời.");
       return;
     }
     try {
-      const response =
-        method === "PUT"
-          ? await userRepository.put(apiEndpoint, invite.senderId)
-          : await userRepository.delete(`${apiEndpoint}?id=${invite.senderId}`);
-
+      const response = await acceptFriendRequestApi(invite.senderId);
       if (response?.isSuccess) {
-        message.success(successMessage);
-        setStatus(newStatus);
+        message.success("Đã chấp nhận lời mời");
+        setStatus("accepted");
+        onUpdate();
+      } else {
+        message.error(response?.message || "Thao tác thất bại");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!invite?.id) {
+      message.error("Không tìm thấy ID lời mời.");
+      return;
+    }
+    try {
+      const response = await rejectFriendRequestApi(invite.senderId);
+      if (response?.isSuccess) {
+        message.success("Đã từ chối lời mời");
+        setStatus("deleted");
         onUpdate();
       } else {
         message.error(response?.message || "Thao tác thất bại");
@@ -69,28 +79,14 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
               <Button
                 type="primary"
                 className="full-width"
-                onClick={() =>
-                  handleAction(
-                    "friendShip/accept-friend-request",
-                    "PUT",
-                    "Đã chấp nhận lời mời",
-                    "accepted"
-                  )
-                }
+                onClick={handleAccept}
               >
                 Chấp nhận
               </Button>
               <Button
                 type="default"
                 className="full-width"
-                onClick={() =>
-                  handleAction(
-                    "friendShip/delete-request",
-                    "DELETE",
-                    "Đã từ chối lời mời",
-                    "deleted"
-                  )
-                }
+                onClick={handleDelete}
               >
                 Từ chối
               </Button>

@@ -175,7 +175,7 @@ const PersonalPage = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
-      <div className="relative w-full h-[350px]">
+      <div className="relative w-full h-[400px] rounded-e-md">
         <img
           src={
             user?.userInfo?.profileBackgroundPictureUrl ||
@@ -183,28 +183,28 @@ const PersonalPage = () => {
           }
           alt="Ảnh bìa"
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover rounded-b-lg"
+          className="absolute inset-0 w-full h-full object-cover rounded-b-md"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/10 rounded-b-lg"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 -mt-20 relative z-10">
-        <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="max-w-5xl mx-auto px-4 -mt-28 relative z-10">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
           {initialLoading ? (
             <div className="flex justify-center py-10">
               <Skeleton avatar paragraph={{ rows: 4 }} active />
             </div>
           ) : user ? (
             <>
-              <div className="flex flex-col md:flex-row items-center md:items-end justify-between border-b pb-4 mb-6">
+              <div className="flex flex-col md:flex-row items-center md:items-end justify-between pb-4 mb-6">
                 <div className="flex flex-col md:flex-row items-center">
                   <Avatar
-                    size={120}
+                    size={140}
                     src={user.userInfo.profilePictureUrl}
-                    className="border-4 border-white shadow-xl"
+                    className="border-4 border-white shadow-lg"
                   />
                   <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
-                    <h1 className="text-2xl font-semibold text-gray-800">
+                    <h1 className="text-3xl font-bold text-gray-800">
                       {user.userInfo.firstName} {user.userInfo.lastName}
                     </h1>
                     <p className="text-gray-600 text-sm mt-1">
@@ -236,7 +236,7 @@ const PersonalPage = () => {
                             ? ""
                             : "bg-blue-600 hover:bg-blue-700"
                         }`}
-                        size="large"
+                        size="middle"
                         onClick={() =>
                           handleAction(
                             relationship.isFollowing
@@ -260,7 +260,7 @@ const PersonalPage = () => {
                       <Button
                         type="default"
                         className="rounded-lg"
-                        size="large"
+                        size="middle"
                         onClick={() =>
                           handleAction(
                             "/friendship/add-friend",
@@ -331,20 +331,15 @@ const PersonalPage = () => {
                 </nav>
               </div>
 
-              <div className="space-y-0" style={{ height: "500px" }}>
+              <div className="space-y-6">
                 {posts.length > 0 ? (
-                  <AutoSizer>
-                    {({ height, width }) => (
-                      <List
-                        height={height}
-                        itemCount={posts.length}
-                        itemSize={570}
-                        width={width}
-                      >
-                        {renderPost}
-                      </List>
-                    )}
-                  </AutoSizer>
+                  <div className="flex flex-col space-y-4">
+                    {posts.map((post, index) => (
+                      <div key={post.id} className="bg-white rounded-lg px-4">
+                        <PostBox post={post} />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-gray-700 text-center">
                     Không có bài viết nào để hiển thị.

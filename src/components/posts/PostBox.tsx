@@ -1,6 +1,7 @@
 import { PlusOutlined } from "@ant-design/icons";
 import {
   Avatar,
+  Badge,
   Button,
   Dropdown,
   Form,
@@ -12,18 +13,21 @@ import {
   Space,
 } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
-import { BsDot } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
 import { interactRepository } from "@/api/repository";
+import { handleUserActionApi } from "@/api/userApi";
 import { votePost } from "@/features/posts/postsSlice";
 import { AppDispatch } from "@/store/store";
 import { Post } from "@/types/post";
 import { timeToLast } from "@/utils/functionHelpper";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import CommentList from "./CommentList";
+import { followCategoryApi } from "@/api/categoryApi";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -44,14 +48,22 @@ const getFileType = (url: string): string => {
 };
 
 type PostBoxProps = { post: Post };
+const RIBBON_COLORS = ["#FF4770", "#FF914D", "#FFC107", "#4CAF50", "#2196F3"];
 
 const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
+  const randomRibbonColor = useMemo(
+    () => RIBBON_COLORS[Math.floor(Math.random() * RIBBON_COLORS.length)],
+    []
+  );
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editMediaUrl, setEditMediaUrl] = useState(post.mediaUrl);
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(post.user.isFollowing);
+  const [isCommentModalVisible, setIsCommentModalVisible] = useState(false); // Thêm state cho modal bình luận
 
   const avatarSrc = useMemo(
     () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
@@ -110,6 +122,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     ({ key }: { key: string }) => {
       if (key === "edit") toggleEditModal(true);
       else if (key === "delete") handleDelete();
+      else if (key === "followCategory") handleFollowCategory();
     },
     [handleDelete, toggleEditModal]
   );
@@ -210,6 +223,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     () => [
       { key: "edit", label: "Chỉnh sửa" },
       { key: "delete", label: "Xoá bài viết" },
+      { key: "followCategory", label: "Theo dõi danh mục" },
     ],
     []
   );
@@ -258,135 +272,204 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     [dispatch, post.id]
   );
 
+  const handleFollow = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await handleUserActionApi(
+        "/follow/follow",
+        "POST",
+        post.user.id
+      );
+      if (response?.isSuccess) {
+        message.success("Đã theo dõi người dùng!");
+        setIsFollowing(true);
+      } else {
+        message.error(response?.message || "Không thể theo dõi người dùng.");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post.user.id]);
+
+  const handleFollowCategory = async () => {
+    try {
+      setLoading(true);
+      const response = await followCategoryApi(post?.categoryId ?? "");
+      if (response?.isSuccess) {
+        message.success("Đã theo dõi danh mục!");
+      } else {
+        message.error(response?.message || "Không thể theo dõi danh mục.");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="post-box mb-3 border rounded-lg p-3 bg-white shadow-sm">
-      <div className="post-header flex justify-between items-center">
-        <div className="post-info flex items-center gap-2">
-          <Avatar src={avatarSrc} size={40} />
-          <h2 className="category-name text-xs font-semibold cursor-pointer">
-            {post.user.username}
-          </h2>
-          <BsDot />
-          <span className="create-date text-xs font-semibold">
-            {timeToLast(new Date(post.createdAt))}
-          </span>
-        </div>
-        <Space>
-          {!post.user.isFollowing && !isMe && (
-            <Button
-              className="follow-btn bg-primary rounded-2xl hover:bg-primary"
-              icon={<PlusOutlined />}
-              type="primary"
-              size="small"
+    <Badge.Ribbon
+      text={post?.categoryName}
+      color={randomRibbonColor}
+      placement="end"
+      className="absolute top-[-5px]"
+    >
+      <div className="post-box mb-3 border rounded-lg p-3 bg-white shadow-sm">
+        <div className="post-header flex justify-between items-center">
+          <div className="post-info flex items-center gap-2">
+            <Avatar src={avatarSrc} size={40} />
+            <h2
+              className="flex items-center category-name text-xs font-semibold cursor-pointer"
+              onClick={() =>
+                navigate(`/personal`, {
+                  state: { isWatching: true, userId: post.user?.id },
+                })
+              }
             >
-              Theo dõi
-            </Button>
-          )}
-          {isMe && (
-            <Dropdown
-              menu={{ items: menuItems, onClick: handleMenuClick }}
-              trigger={["click"]}
-            >
-              <IoIosMore className="icon-more cursor-pointer text-lg" />
-            </Dropdown>
-          )}
-        </Space>
-      </div>
-
-      <div className="post-content mt-3">
-        <p className="post-text text-sm mb-2">{post.content}</p>
-        {post.mediaUrl?.trim() && (
-          <div className="w-full mt-2 rounded-md">
-            {renderMedia(post.mediaUrl)}
+              {post.user.username}
+            </h2>
+            -
+            <span className="create-date text-xs font-semibold">
+              {timeToLast(new Date(post.createdAt))}
+            </span>
           </div>
-        )}
-      </div>
+          <Space>
+            {!isFollowing && !isMe && (
+              <Button
+                className="follow-btn bg-primary rounded-2xl hover:bg-primary"
+                icon={<PlusOutlined />}
+                type="primary"
+                size="small"
+                onClick={handleFollow}
+              >
+                Theo dõi
+              </Button>
+            )}
 
-      <div className="post-footer flex items-center gap-6 mt-4 border-t pt-3">
-        <div className="vote-controls flex items-center gap-2">
-          <Button
-            type="text"
-            icon={
-              <PiArrowFatUpLight
-                className={`text-2xl transition-colors duration-300 ${
-                  post.userVoteType === 1
-                    ? "text-primary"
-                    : "text-gray-400 hover:text-primary"
-                }`}
-              />
-            }
-            onClick={
-              () => handleVote(post.userVoteType === 1 ? 3 : 1) // Unvote if already upvoted, otherwise upvote
-            }
-            loading={loading}
-          />
-          <span className="vote-count text-sm font-semibold text-gray-600">
-            {post.votesCount}
-          </span>
-          <Button
-            type="text"
-            icon={
-              <PiArrowFatDownLight
-                className={`text-2xl transition-colors duration-300 ${
-                  post.userVoteType === 2
-                    ? "text-primary"
-                    : "text-gray-400 hover:text-primary"
-                }`}
-              />
-            }
-            onClick={
-              () => handleVote(post.userVoteType === 2 ? 3 : 2) // Unvote if already downvoted, otherwise downvote
-            }
-            loading={loading}
-          />
+            {isMe && (
+              <Dropdown
+                menu={{ items: menuItems, onClick: handleMenuClick }}
+                trigger={["click"]}
+              >
+                <IoIosMore className="icon-more cursor-pointer text-lg" />
+              </Dropdown>
+            )}
+          </Space>
         </div>
-        <Button
-          className="comment-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
-          icon={<FaRegComment className="text-lg" />}
-          type="text"
-          size="small"
-        >
-          <span className="text-sm font-medium">
-            {post.commentsCount} Comments
-          </span>
-        </Button>
-        <Button
-          className="share-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
-          icon={<RiShareForwardLine className="text-lg" />}
-          type="text"
-          size="small"
-        >
-          <span className="text-sm font-medium">Share</span>
-        </Button>
-      </div>
 
-      <Modal
-        title="Chỉnh sửa bài viết"
-        open={isEditModalVisible}
-        onOk={handleEditOk}
-        onCancel={() => toggleEditModal(false)}
-        okText="Cập nhật"
-        cancelText="Hủy"
-        destroyOnClose
-        confirmLoading={loading}
-      >
-        <Form layout="vertical">
-          <Form.Item label="Nội dung">
-            <Input.TextArea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              rows={4}
+        <div className="post-content mt-3">
+          <p className="post-text text-sm mb-2">{post.content}</p>
+          {post.mediaUrl?.trim() && (
+            <div className="w-full mt-2 rounded-md">
+              {renderMedia(post.mediaUrl)}
+            </div>
+          )}
+        </div>
+
+        <div className="post-footer flex items-center gap-6 mt-4 border-t pt-2">
+          <div className="vote-controls flex items-center gap-2">
+            <Button
+              type="text"
+              icon={
+                <PiArrowFatUpLight
+                  className={`text-2xl transition-colors duration-300 ${
+                    post.userVoteType === 1
+                      ? "text-primary"
+                      : "text-gray-400 hover:text-primary"
+                  }`}
+                />
+              }
+              onClick={
+                () => handleVote(post.userVoteType === 1 ? 3 : 1) // Unvote if already upvoted, otherwise upvote
+              }
+              loading={loading}
             />
-          </Form.Item>
-          <Form.Item label="Media URL">
-            <Input
-              value={editMediaUrl}
-              onChange={(e) => setEditMediaUrl(e.target.value)}
+            <span className="vote-count text-sm font-semibold text-gray-600">
+              {post.votesCount}
+            </span>
+            <Button
+              type="text"
+              icon={
+                <PiArrowFatDownLight
+                  className={`text-2xl transition-colors duration-300 ${
+                    post.userVoteType === 2
+                      ? "text-primary"
+                      : "text-gray-400 hover:text-primary"
+                  }`}
+                />
+              }
+              onClick={
+                () => handleVote(post.userVoteType === 2 ? 3 : 2) // Unvote if already downvoted, otherwise downvote
+              }
+              loading={loading}
             />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+          </div>
+          <Button
+            className="comment-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
+            icon={<FaRegComment className="text-lg" />}
+            type="text"
+            size="small"
+            onClick={() => setIsCommentModalVisible(true)} // Mở modal bình luận
+          >
+            <span className="text-sm font-medium">
+              {post.commentsCount} Comments
+            </span>
+          </Button>
+          <Button
+            className="share-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
+            icon={<RiShareForwardLine className="text-lg" />}
+            type="text"
+            size="small"
+          >
+            <span className="text-sm font-medium">Share</span>
+          </Button>
+        </div>
+
+        <Modal
+          title="Chỉnh sửa bài viết"
+          open={isEditModalVisible}
+          onOk={handleEditOk}
+          onCancel={() => toggleEditModal(false)}
+          okText="Cập nhật"
+          cancelText="Hủy"
+          destroyOnClose
+          confirmLoading={loading}
+        >
+          <Form layout="vertical">
+            <Form.Item label="Nội dung">
+              <Input.TextArea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={4}
+              />
+            </Form.Item>
+            <Form.Item label="Media URL">
+              <Input
+                value={editMediaUrl}
+                onChange={(e) => setEditMediaUrl(e.target.value)}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
+        {/* Modal bình luận */}
+        <Modal
+          title="Bình luận"
+          open={isCommentModalVisible}
+          onCancel={() => setIsCommentModalVisible(false)}
+          footer={null}
+          width={800}
+          className="comment-modal"
+        >
+          <div className="max-h-[70vh] overflow-y-auto">
+            <PostBox post={post} /> {/* Hiển thị lại bài viết trong modal */}
+            <CommentList postId={post.id} />{" "}
+            {/* Hiển thị danh sách bình luận */}
+          </div>
+        </Modal>
+      </div>
+    </Badge.Ribbon>
   );
 });
 
