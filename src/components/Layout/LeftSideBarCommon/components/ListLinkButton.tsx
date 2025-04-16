@@ -6,12 +6,25 @@ import { FaCircleChevronDown, FaCircleChevronUp } from "react-icons/fa6";
 
 type ListLinkButtonProps = {
   listItems: MenuItem[];
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 };
 
-const ListLinkButton = ({ listItems }: ListLinkButtonProps) => {
+const ListLinkButton = ({
+  listItems,
+  onLoadMore,
+  hasMore,
+}: ListLinkButtonProps) => {
   const [showAll, setShowAll] = useState(false);
 
   const itemsToShow = showAll ? listItems : listItems.slice(0, 6);
+
+  const handleLoadMore = () => {
+    if (onLoadMore) {
+      onLoadMore();
+    }
+    setShowAll(true);
+  };
 
   return (
     <div>
@@ -27,10 +40,10 @@ const ListLinkButton = ({ listItems }: ListLinkButtonProps) => {
         ))}
       </ul>
 
-      {listItems.length > 6 && (
+      {listItems.length > 6 && hasMore && (
         <Flex flex={"row"} className="mt-4">
           <Button
-            onClick={() => setShowAll(!showAll)}
+            onClick={handleLoadMore}
             type="text"
             icon={showAll ? <FaCircleChevronUp /> : <FaCircleChevronDown />}
             className="text-primary bg-white font-medium w-full"

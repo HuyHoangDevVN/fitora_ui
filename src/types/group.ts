@@ -9,4 +9,5 @@ export interface GroupResponse {
   coverImageUrl?: string;
   avatarUrl?: string;
   status: GroupStatus;
+  memberCount: number;
 }

@@ -1,43 +1,73 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Avatar, Button, Card, Divider, List, Typography } from "antd";
 import {
   CommentOutlined,
   LikeOutlined,
   PlusOutlined,
   ShareAltOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Card, Divider, List, Typography } from "antd";
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import { groupApi } from "../api/groupApi";
+import { GroupResponse } from "@/types/group";
 
 const { Title, Text } = Typography;
 
 const Group: React.FC = () => {
   const navigate = useNavigate();
-  // Dữ liệu mẫu
-  const managedGroups = [
-    {
-      id: 1,
-      name: "Cộng đồng Công nghệ",
-      avatar: "https://via.placeholder.com/40",
-    },
-    {
-      id: 2,
-      name: "Nhóm Học Lập trình",
-      avatar: "https://via.placeholder.com/40",
-    },
-  ];
-  const joinedGroups = [
-    { id: 3, name: "Yêu Thú Cưng", avatar: "https://via.placeholder.com/40" },
-    {
-      id: 4,
-      name: "Du lịch Việt Nam",
-      avatar: "https://via.placeholder.com/40",
-    },
-    {
-      id: 5,
-      name: "Ẩm thực Sài Gòn",
-      avatar: "https://via.placeholder.com/40",
-    },
-  ];
+  const [managedGroups, setManagedGroups] = useState<GroupResponse[]>([]);
+  const [joinedGroups, setJoinedGroups] = useState<GroupResponse[]>([]);
+  const [loadingManagedGroups, setLoadingManagedGroups] = useState(false);
+  const [loadingJoinedGroups, setLoadingJoinedGroups] = useState(false);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoadingManagedGroups(true);
+      setLoadingJoinedGroups(true);
+
+      try {
+        const [managedResponse, joinedResponse] = await Promise.all([
+          groupApi.getManagedGroups({ PageIndex: 0, PageSize: 10 }),
+          groupApi.getJoinedGroups({ IsAll: true, PageIndex: 0, PageSize: 10 }),
+        ]);
+
+        setManagedGroups(managedResponse.data);
+        setJoinedGroups(joinedResponse.data);
+      } catch (error) {
+        console.error("Failed to fetch groups", error);
+      } finally {
+        setLoadingManagedGroups(false);
+        setLoadingJoinedGroups(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  const renderGroupList = (groups: GroupResponse[], loading: boolean) =>
+    loading ? (
+      <Text>Loading...</Text>
+    ) : (
+      <List
+        dataSource={groups}
+        renderItem={(group) => (
+          <List.Item
+            style={{ justifyContent: "start" }}
+            className="px-2 py-1 rounded-md hover:bg-gray-100 cursor-pointer"
+            onClick={() => handleViewGroup(group.id)}
+          >
+            <Avatar src={group.avatarUrl} size={40} className="mr-3" />
+            <Text className="text-base text-gray-900 font-[500]">
+              {group.name}
+            </Text>
+          </List.Item>
+        )}
+      />
+    );
+
+  const handleViewGroup = (id) => {
+    navigate(`/groups/${id}`);
+  };
+
   const posts = [
     {
       id: 1,
@@ -62,7 +92,6 @@ const Group: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar trái */}
           <div className="flex-2 w-full lg:w-80">
             <Button
               type="primary"
@@ -85,34 +114,16 @@ const Group: React.FC = () => {
               <Title level={5} className="text-gray-700 mb-3">
                 Nhóm do bạn quản lý
               </Title>
-              <List
-                dataSource={managedGroups}
-                renderItem={(group) => (
-                  <List.Item className="px-2 py-1 rounded-md hover:bg-gray-100 cursor-pointer">
-                    <Avatar src={group.avatar} size={32} className="mr-3" />
-                    <Text className="text-gray-900">{group.name}</Text>
-                  </List.Item>
-                )}
-              />
+              {renderGroupList(managedGroups, loadingManagedGroups)}
               <Divider className="my-3" />
               <Title level={5} className="text-gray-700 mb-3">
                 Nhóm của bạn
               </Title>
-              <List
-                dataSource={joinedGroups}
-                renderItem={(group) => (
-                  <List.Item className="px-2 py-1 rounded-md hover:bg-gray-100 cursor-pointer">
-                    <Avatar src={group.avatar} size={32} className="mr-3" />
-                    <Text className="text-gray-900">{group.name}</Text>
-                  </List.Item>
-                )}
-              />
+              {renderGroupList(joinedGroups, loadingJoinedGroups)}
             </Card>
           </div>
 
-          {/* Khu vực bài viết bên phải */}
           <div className="flex-1 flex justify-center mx-auto lg:mx-0">
-            {/* Danh sách bài viết */}
             <List
               dataSource={posts}
               renderItem={(post) => (

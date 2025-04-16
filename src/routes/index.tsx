@@ -13,6 +13,7 @@ import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
 import Group from "@/pages/Group";
 import CreateGroup from "@/features/groups/CreateGroup";
+import GroupDetailPage from "@/features/groups/GroupDetailPage";
 
 const router = createBrowserRouter([
   {
@@ -73,6 +74,14 @@ const router = createBrowserRouter([
         element: (
           <LayoutWOSB>
             <CreateGroup />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/groups/:idGroup",
+        element: (
+          <LayoutWOSB>
+            <GroupDetailPage />
           </LayoutWOSB>
         ),
       },
