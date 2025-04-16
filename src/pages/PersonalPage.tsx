@@ -1,42 +1,48 @@
 import { interactRepository, userRepository } from "@/api/repository";
 import PostBox from "@/components/posts/PostBox";
-import { Post } from "@/types/post";
-import { ResponseBase } from "@/types/responseBase";
-import { Avatar, Button, message, Skeleton, Spin } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { FixedSizeList as List } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { ProfileUser } from "@/types/profileUser";
+import { RootState } from "@/store/store";
 import { PaginatedCursorResult } from "@/types/paginatedCrusorResult";
+import { Post } from "@/types/post";
+import { ProfileUser } from "@/types/profileUser";
+import { ResponseBase } from "@/types/responseBase";
+import { Avatar, Button, Skeleton, Spin, message } from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const PersonalPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile } = useSelector((state: RootState) => state.user);
   const { isWatching, userId } = location.state || {};
 
-  const [user, setUser] = useState<ProfileUser | null>(null);
+  const [user, setUser] = useState<ProfileUser | null>(profile);
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
-  const [initialLoading, setInitialLoading] = useState<boolean>(true);
-  const [relationship, setRelationship] = useState({
-    isFriend: false,
-    isFriendRequest: false,
-    isFollowing: false,
-  });
+  const [relationship, setRelationship] = useState(
+    profile?.relationship || {
+      isFriend: false,
+      isFriendRequest: false,
+      isFollowing: false,
+    }
+  );
+  const [isProfileLoading, setIsProfileLoading] = useState<boolean>(false);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef<boolean>(false);
 
   const fetchProfile = useCallback(async () => {
+    setIsProfileLoading(true);
     try {
-      const url =
+      const response =
         isWatching && userId
-          ? `/user/get-user?GetId=${userId}`
-          : `/user/profile`;
-      const response = await userRepository.get<ResponseBase<ProfileUser>>(url);
+          ? await userRepository.get<ResponseBase<ProfileUser>>(
+              `/user/get-user?GetId=${userId}`
+            )
+          : { isSuccess: true, data: profile };
+
       if (response?.isSuccess && response.data) {
         setUser(response.data);
         setRelationship(
@@ -47,27 +53,26 @@ const PersonalPage = () => {
           }
         );
       } else {
-        message.error(response?.message || "Không thể tải hồ sơ");
+        message.error("Không thể tải hồ sơ");
       }
-    } catch (error) {
+    } catch {
       message.error("Lỗi khi tải hồ sơ, vui lòng thử lại!");
+    } finally {
+      setIsProfileLoading(false);
     }
-  }, [isWatching, userId]);
+  }, [isWatching, userId, profile]);
 
   const fetchPosts = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      let url =
-        isWatching && userId
-          ? `/post/personal?Id=${userId}&Limit=4`
-          : `/post/personal?Limit=4`;
-      if (nextCursor) {
-        url += `&Cursor=${nextCursor}`;
-      }
+      const url = `/post/personal?${
+        isWatching && userId ? `Id=${userId}&` : ""
+      }Limit=4${nextCursor ? `&Cursor=${nextCursor}` : ""}`;
       const response = await interactRepository.get<
         ResponseBase<PaginatedCursorResult<Post>>
       >(url);
+
       if (response?.isSuccess && response.data) {
         setPosts((prev) => {
           const newPosts = response.data.data.filter(
@@ -80,29 +85,34 @@ const PersonalPage = () => {
       } else {
         message.error(response?.message || "Không thể tải bài viết");
       }
-    } catch (error) {
+    } catch {
       message.error("Lỗi khi tải bài viết, vui lòng thử lại!");
     } finally {
       setLoading(false);
-      if (initialLoadRef.current === false) setInitialLoading(false);
     }
   }, [isWatching, userId, nextCursor, loading, hasMore]);
 
   useEffect(() => {
-    if (!initialLoadRef.current) {
-      Promise.all([fetchProfile(), fetchPosts()])
-        .then(() => {
-          initialLoadRef.current = true;
-        })
-        .catch(() => {
-          setInitialLoading(false);
-          message.error("Không thể tải dữ liệu ban đầu!");
-        });
-    }
-  }, [fetchProfile, fetchPosts]);
+    if (initialLoadRef.current) return;
+
+    const loadInitialData = async () => {
+      try {
+        if (isWatching && userId) {
+          await fetchProfile();
+        }
+        await fetchPosts();
+        initialLoadRef.current = true;
+      } catch {
+        message.error("Không thể tải dữ liệu ban đầu!");
+      }
+    };
+
+    loadInitialData();
+  }, [fetchProfile, fetchPosts, isWatching, userId]);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
+    const currentRef = loadMoreRef.current;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
@@ -111,9 +121,9 @@ const PersonalPage = () => {
       },
       { threshold: 1.0 }
     );
-    observer.observe(loadMoreRef.current);
+    observer.observe(currentRef);
     return () => {
-      if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
+      observer.unobserve(currentRef);
     };
   }, [fetchPosts, hasMore, loading]);
 
@@ -154,23 +164,11 @@ const PersonalPage = () => {
         } else {
           message.error(response?.message || "Thao tác thất bại");
         }
-      } catch (error) {
+      } catch {
         message.error("Lỗi hệ thống, vui lòng thử lại!");
       }
     },
     [userId]
-  );
-
-  const renderPost = ({
-    index,
-    style,
-  }: {
-    index: number;
-    style: React.CSSProperties;
-  }) => (
-    <div style={style} className="p-2">
-      <PostBox post={posts[index]} />
-    </div>
   );
 
   return (
@@ -190,9 +188,9 @@ const PersonalPage = () => {
 
       <div className="max-w-5xl mx-auto px-4 -mt-28 relative z-10">
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          {initialLoading ? (
+          {isProfileLoading ? (
             <div className="flex justify-center py-10">
-              <Skeleton avatar paragraph={{ rows: 4 }} active />
+              <Spin size="large" />
             </div>
           ) : user ? (
             <>
@@ -334,7 +332,7 @@ const PersonalPage = () => {
               <div className="space-y-6">
                 {posts.length > 0 ? (
                   <div className="flex flex-col space-y-4">
-                    {posts.map((post, index) => (
+                    {posts.map((post) => (
                       <div key={post.id} className="bg-white rounded-lg px-4">
                         <PostBox post={post} />
                       </div>

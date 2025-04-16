@@ -1,14 +1,6 @@
+import { categoryApi } from "@/api/categoryApi";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import {
-  createCategoryApi,
-  fetchCategoriesApi,
-  fetchFollowedCategoriesApi,
-  fetchTrendingCategoriesApi,
-  followCategoryApi,
-  unfollowCategoryApi,
-} from "../../api/categoryApi";
 
-// Define types for state
 interface Category {
   id: string;
   name: string;
@@ -36,8 +28,10 @@ export const fetchCategoriesForNewfeed = createAsyncThunk(
   "category/fetchCategoriesForNewfeed",
   async (_, { rejectWithValue }) => {
     try {
-      const followed = await fetchFollowedCategoriesApi();
-      const trending = await fetchTrendingCategoriesApi({ limit: 10 });
+      const followed = await categoryApi.fetchFollowedCategories();
+      const trending = await categoryApi.fetchTrendingCategories({
+        limit: 10,
+      });
       return { followed, trending };
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "An error occurred");
@@ -50,7 +44,7 @@ export const fetchCategoriesForPost = createAsyncThunk(
   "category/fetchCategoriesForPost",
   async (keySearch: string | undefined, { rejectWithValue }) => {
     try {
-      return await fetchCategoriesApi(keySearch);
+      return await categoryApi.fetchCategories(keySearch);
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "An error occurred");
     }
@@ -62,7 +56,7 @@ export const createCategory = createAsyncThunk(
   "category/create",
   async (categoryData: any, { rejectWithValue }) => {
     try {
-      return await createCategoryApi(categoryData);
+      return await categoryApi.createCategory(categoryData);
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "An error occurred");
     }
@@ -74,7 +68,7 @@ export const followCategory = createAsyncThunk(
   "category/follow",
   async (id: string, { rejectWithValue }) => {
     try {
-      return await followCategoryApi(id);
+      return await categoryApi.followCategory(id);
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "An error occurred");
     }
@@ -86,7 +80,7 @@ export const unfollowCategory = createAsyncThunk(
   "category/unfollow",
   async (id: string, { rejectWithValue }) => {
     try {
-      return await unfollowCategoryApi(id);
+      return await categoryApi.unfollowCategory(id);
     } catch (error: any) {
       return rejectWithValue(error.response?.data || "An error occurred");
     }

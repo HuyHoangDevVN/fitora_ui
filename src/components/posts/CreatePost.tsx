@@ -1,5 +1,5 @@
 import { interactRepository } from "@/api/repository";
-import { PrivacyPost } from "@/enums/privacyPost";
+import { PrivacyPost } from "@/enums/post";
 import {
   createCategory,
   fetchCategoriesForPost,
@@ -50,13 +50,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleCategoryModalOk = useCallback(async () => {
     if (!selectedCategory && !newCategoryName.trim()) {
-      message.info("Vui lòng chọn hoặc tạo một Chủ đề!");
+      message.info("Vui lòng chọn hoặc tạo một chủ đề!");
       return;
     }
 
     try {
       if (!selectedCategory && newCategoryName.trim()) {
-        // Tạo Chủ đề mới
+        // Tạo chủ đề mới
         const response = await dispatch(
           createCategory({
             name: newCategoryName,
@@ -65,16 +65,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         ).unwrap();
         setSelectedCategory(response.id);
 
-        // Follow Chủ đề vừa tạo
+        // Follow chủ đề vừa tạo
         await dispatch(followCategory(response.id) as any);
-        message.success("Chủ đề đã được tạo và theo dõi!");
+        message.success("chủ đề đã được tạo và theo dõi!");
       }
 
       setIsCategoryModalOpen(false);
       setIsPostModalOpen(true);
     } catch (error) {
-      console.error("Lỗi khi tạo hoặc theo dõi Chủ đề:", error);
-      message.error("Có lỗi xảy ra khi tạo hoặc theo dõi Chủ đề!");
+      console.error("Lỗi khi tạo hoặc theo dõi chủ đề:", error);
+      message.error("Có lỗi xảy ra khi tạo hoặc theo dõi chủ đề!");
     }
   }, [selectedCategory, newCategoryName, dispatch]);
 
@@ -255,18 +255,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </Button>
       )}
 
-      {/* Modal chọn danh mục */}
       <Modal
         open={isCategoryModalOpen}
         onCancel={handleCategoryModalCancel}
         onOk={handleCategoryModalOk}
-        title="Chọn hoặc tạo danh mục"
+        title="Chọn hoặc tạo chủ đề"
         okText="Tiếp tục"
         cancelText="Hủy"
       >
         <Select
           showSearch
-          placeholder="Tìm kiếm Chủ đề"
+          placeholder="Tìm kiếm chủ đề"
           value={selectedCategory}
           onChange={(value) => setSelectedCategory(value)}
           onSearch={handleSearchCategory}
@@ -281,7 +280,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           ))}
         </Select>
         <Input
-          placeholder="Hoặc tạo Chủ đề mới"
+          placeholder="Hoặc tạo chủ đề mới"
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
           className="mt-2"
@@ -294,7 +293,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         />
       </Modal>
 
-      {/* Modal tạo bài viết */}
       <Modal
         open={isPostModalOpen}
         onCancel={handlePostModalCancel}
@@ -366,7 +364,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <input
                 type="file"
                 ref={fileInputRef}
-                accept="image/*,video/*"
                 style={{ display: "none" }}
                 onChange={handleFileChange}
               />

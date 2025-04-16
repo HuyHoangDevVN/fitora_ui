@@ -1,10 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import {
-  fetchPostsApi,
-  fetchPersonalPostsApi,
-  votePostApi,
-} from "@/api/postApi";
+
 import { Post } from "@/types/post";
+import { postApi } from "@/api/postApi";
 
 export interface PostsState {
   posts: Post[];
@@ -37,7 +34,7 @@ export const fetchPosts = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await fetchPostsApi(params);
+      const response = await postApi.fetchPosts(params);
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể tải bài viết"
@@ -58,7 +55,7 @@ export const fetchPersonalPosts = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await fetchPersonalPostsApi(userId, cursor);
+      const response = await postApi.fetchPersonalPosts({ userId, cursor });
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể tải bài viết cá nhân"
@@ -83,7 +80,7 @@ export const votePost = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await votePostApi(userId, postId, voteType);
+      const response = await postApi.votePost({ userId, postId, voteType });
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể thực hiện hành động vote"

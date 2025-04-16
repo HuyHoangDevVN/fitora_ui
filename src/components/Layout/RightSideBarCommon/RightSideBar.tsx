@@ -1,60 +1,37 @@
-import { userRepository } from "@/api/repository";
-import { FriendInvite } from "@/types/FriendInvite";
-import { PaginatedResult } from "@/types/PaginatedResult";
-import { ResponseBase } from "@/types/ResponseBase";
+import {
+  fetchFriends,
+  fetchFriendInvitations,
+} from "@/features/users/userSlice";
+import { AppDispatch, RootState } from "@/store/store";
 import colors from "@/styles/colors";
 import { SearchOutlined } from "@ant-design/icons";
-import { Button, Divider, Flex, Tooltip, message } from "antd";
-import { useEffect, useState } from "react";
+import { Button, Divider, Flex, Tooltip } from "antd";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import FriendInvitation from "./components/FriendInvitation";
 import ListContactPerson from "./components/ListContactPerson";
-import { User } from "@/types/User";
 
 const RightSideBar = () => {
-  const [friendInvite, setFriendInvite] = useState<FriendInvite[]>([]);
-  const [listContacts, setListContacts] = useState<User[]>([]);
-
-  const getFriendInvitations = async () => {
-    try {
-      const response = await userRepository.get<
-        ResponseBase<PaginatedResult<FriendInvite>>
-      >(`/friendship/get-received-friend-requests`);
-      const data = response?.data.data;
-      if (response?.isSuccess && data) {
-        setFriendInvite(data);
-      }
-    } catch (error) {
-      message.error("Không thể tải lời mời kết bạn");
-    }
-  };
-
-  const getListContacts = async () => {
-    try {
-      const response = await userRepository.get<
-        ResponseBase<PaginatedResult<User>>
-      >(`/friendship/get-friends`);
-      const data = response?.data.data;
-      if (response?.isSuccess && data) {
-        setListContacts(data);
-      }
-    } catch (error) {
-      message.error("Không thể tải danh sách bạn bè");
-    }
-  };
+  const dispatch = useDispatch<AppDispatch>();
+  const {
+    friendInvitations,
+    contacts,
+    loading: _loading,
+  } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
-    getFriendInvitations();
-    getListContacts();
-  }, []);
+    dispatch(fetchFriendInvitations());
+    dispatch(fetchFriends({ pageIndex: 0, pageSize: 15 }));
+  }, [dispatch]);
 
   const handleUpdate = () => {
-    getFriendInvitations();
-    getListContacts();
+    dispatch(fetchFriendInvitations());
+    dispatch(fetchFriends({ pageIndex: 0, pageSize: 15 }));
   };
 
   return (
     <div className="bg-background text-textPrimary p-4 pb-32 h-full w-[280px] right-0 sticky top-0 overflow-y-auto">
-      {friendInvite.length !== 0 && (
+      {friendInvitations.length !== 0 && (
         <>
           <Flex flex={"row"} justify="space-between" align="center">
             <h2 className="text-[20] font-semibold">Lời mời kết bạn</h2>
@@ -63,7 +40,7 @@ const RightSideBar = () => {
             </h2>
           </Flex>
           <FriendInvitation
-            invite={friendInvite[0]}
+            invite={friendInvitations[0]}
             type="received"
             onUpdate={handleUpdate}
           />
@@ -80,7 +57,7 @@ const RightSideBar = () => {
           />
         </Tooltip>
       </Flex>
-      <ListContactPerson people={listContacts} />
+      <ListContactPerson people={contacts} />
     </div>
   );
 };

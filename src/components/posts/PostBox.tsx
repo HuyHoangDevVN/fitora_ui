@@ -1,4 +1,3 @@
-import { PlusOutlined } from "@ant-design/icons";
 import {
   Avatar,
   Badge,
@@ -18,9 +17,9 @@ import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
-import { followCategoryApi } from "@/api/categoryApi";
+import { categoryApi } from "@/api/categoryApi";
 import { interactRepository } from "@/api/repository";
-import { handleUserActionApi } from "@/api/userApi";
+import { userApi } from "@/api/userApi";
 import { votePost } from "@/features/posts/postsSlice";
 import { AppDispatch } from "@/store/store";
 import { Post } from "@/types/post";
@@ -28,6 +27,7 @@ import { timeToLast } from "@/utils/functionHelpper";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CommentList from "./CommentList";
+import colors from "@/styles/colors";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -222,8 +222,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const menuItems = useMemo(
     () =>
       [
-        { key: "edit", label: "Chỉnh sửa" },
-        { key: "delete", label: "Xoá bài viết" },
+        isMe && { key: "edit", label: "Chỉnh sửa" },
+        isMe && { key: "delete", label: "Xoá bài viết" },
         !post?.isCategoryFollowed && {
           key: "followCategory",
           label: "Theo dõi danh mục",
@@ -231,11 +231,10 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       ].filter(Boolean) as { key: string; label: string }[],
     [post?.isCategoryFollowed]
   );
-
   const handleVote = useCallback(
     async (voteType: 1 | 2 | 3) => {
+      setLoading(true);
       try {
-        setLoading(true);
         const result = await dispatch(
           votePost({
             userId: localStorage.getItem("x-client-id") || "",
@@ -245,30 +244,27 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         ).unwrap();
 
         if (result) {
-          if (voteType === 1) {
-            message.success("Upvote thành công!");
-          } else if (voteType === 2) {
-            message.success("Downvote thành công!");
-          } else {
-            message.success("Bỏ phiếu thành công!");
-          }
+          const messages = {
+            1: "Upvote thành công!",
+            2: "Downvote thành công!",
+            3: "Bỏ phiếu thành công!",
+          };
+          message.success(messages[voteType]);
         } else {
-          message.error(
-            voteType === 1
-              ? "Không thể upvote bài viết."
-              : voteType === 2
-              ? "Không thể downvote bài viết."
-              : "Không thể bỏ phiếu bài viết."
-          );
+          const errorMessages = {
+            1: "Không thể upvote bài viết.",
+            2: "Không thể downvote bài viết.",
+            3: "Không thể bỏ phiếu bài viết.",
+          };
+          message.error(errorMessages[voteType]);
         }
       } catch {
-        message.error(
-          voteType === 1
-            ? "Không thể upvote bài viết."
-            : voteType === 2
-            ? "Không thể downvote bài viết."
-            : "Không thể bỏ phiếu bài viết."
-        );
+        const errorMessages = {
+          1: "Không thể upvote bài viết.",
+          2: "Không thể downvote bài viết.",
+          3: "Không thể bỏ phiếu bài viết.",
+        };
+        message.error(errorMessages[voteType]);
       } finally {
         setLoading(false);
       }
@@ -279,7 +275,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const handleFollow = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await handleUserActionApi(
+      const response = await userApi.handleUserAction(
         "/follow/follow",
         "POST",
         post.user.id
@@ -300,7 +296,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const handleFollowCategory = async () => {
     try {
       setLoading(true);
-      const response = await followCategoryApi(post?.categoryId ?? "");
+      const response = await categoryApi.followCategory(post?.categoryId ?? "");
       if (response?.isSuccess) {
         message.success("Đã theo dõi danh mục!");
       } else {
@@ -342,7 +338,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             </span>
           </div>
           <Space>
-            {!isFollowing && !isMe && (
+            {/* {!isFollowing && !isMe && (
               <Button
                 className="follow-btn bg-primary rounded-2xl hover:bg-primary"
                 icon={<PlusOutlined />}
@@ -352,16 +348,16 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
               >
                 Theo dõi
               </Button>
-            )}
+            )} */}
 
-            {isMe && (
+            {
               <Dropdown
                 menu={{ items: menuItems, onClick: handleMenuClick }}
                 trigger={["click"]}
               >
                 <IoIosMore className="icon-more cursor-pointer text-lg" />
               </Dropdown>
-            )}
+            }
           </Space>
         </div>
 
@@ -378,34 +374,28 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
           <div className="vote-controls flex items-center gap-2">
             <Button
               type="text"
-              icon={
-                <PiArrowFatUpLight
-                  className={`text-2xl transition-colors duration-300 ${
-                    post.userVoteType === 1
-                      ? "text-primary"
-                      : "text-gray-400 hover:text-primary"
-                  }`}
-                />
-              }
-              onClick={() => handleVote(post.userVoteType === 1 ? 3 : 1)}
-              loading={loading}
+              className={`text-xl transition-colors duration-300 ${
+                post?.userVoteType === 1
+                  ? "text-primary"
+                  : "text-gray-400 hover:text-primary"
+              }`}
+              icon={<PiArrowFatUpLight />}
+              onClick={() => handleVote(post?.userVoteType === 1 ? 3 : 1)}
+              loading={loading && post?.userVoteType === 1}
             />
-            <span className="vote-count text-sm font-semibold text-gray-600">
-              {post.votesCount}
+            <span className={`vote-count text-sm font-semibold`}>
+              {post?.votesCount}
             </span>
             <Button
               type="text"
-              icon={
-                <PiArrowFatDownLight
-                  className={`text-2xl transition-colors duration-300 ${
-                    post.userVoteType === 2
-                      ? "text-primary"
-                      : "text-gray-400 hover:text-primary"
-                  }`}
-                />
-              }
-              onClick={() => handleVote(post.userVoteType === 2 ? 3 : 2)}
-              loading={loading}
+              className={`text-xl transition-colors duration-300 ${
+                post?.userVoteType === 2
+                  ? "text-primary"
+                  : "text-gray-400 hover:text-primary"
+              }`}
+              icon={<PiArrowFatDownLight />}
+              onClick={() => handleVote(post?.userVoteType === 2 ? 3 : 2)}
+              loading={loading && post?.userVoteType === 2}
             />
           </div>
           <Button
@@ -416,7 +406,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             onClick={() => setIsCommentModalVisible(true)}
           >
             <span className="text-sm font-medium">
-              {post.commentsCount} Comments
+              {post?.commentsCount} Comments
             </span>
           </Button>
           <Button

@@ -1,6 +1,6 @@
 import React from "react";
 import { Avatar, Button, Card } from "antd";
-import { FriendInvite } from "@/types/FriendInvite";
+import { FriendInvite } from "@/types/friendInvite";
 
 type FriendInvitationCardProps = {
   invite: FriendInvite;

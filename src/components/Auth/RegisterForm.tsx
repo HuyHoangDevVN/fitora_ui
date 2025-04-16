@@ -84,7 +84,7 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       className="flex flex-col justify-center items-center my-auto"
       style={{ width: FORM_WIDTH }}
     >
-      <Form.Item name="fullName" rules={formRules.fullName}>
+      <Form.Item name="fullname" rules={formRules.fullName}>
         <Input
           size="large"
           placeholder="Họ và tên"

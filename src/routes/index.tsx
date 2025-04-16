@@ -11,6 +11,8 @@ import ProfileSettings from "@/pages/ProfileSetting";
 import Register from "@/features/auth/Register";
 import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
+import Group from "@/pages/Group";
+import CreateGroup from "@/features/groups/CreateGroup";
 
 const router = createBrowserRouter([
   {
@@ -55,6 +57,22 @@ const router = createBrowserRouter([
         element: (
           <LayoutWOSB>
             <PersonalPage />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/groups",
+        element: (
+          <LayoutWOSB>
+            <Group />
+          </LayoutWOSB>
+        ),
+      },
+      {
+        path: "/groups/create",
+        element: (
+          <LayoutWOSB>
+            <CreateGroup />
           </LayoutWOSB>
         ),
       },

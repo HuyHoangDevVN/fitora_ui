@@ -2,72 +2,83 @@ import { interactRepository } from "@/api/repository";
 import { Post } from "@/types/post";
 import { ResponseBase } from "@/types/responseBase";
 
-const LIMIT = 4;
+const LIMIT = 4; // Số lượng bài viết mặc định mỗi lần lấy
 
-// API để lấy bài viết trên newfeed
-export const fetchPostsApi = async (params: {
+//#region Interface
+
+interface FetchPostsRequest {
   feedType: 1 | 2; // 1: All, 2: Category
   categoryId?: string; // Chỉ cần khi feedType là Category
   cursor?: string | null;
   limit?: number;
-}): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
-  const { feedType, categoryId, cursor, limit = LIMIT } = params;
+}
 
-  // Xây dựng query string
-  const queryParams: Record<string, any> = {
-    FeedType: feedType,
-    Limit: limit,
-  };
+interface FetchPersonalPostsRequest {
+  userId: number;
+  cursor?: string | null;
+  limit?: number;
+}
 
-  if (cursor) {
-    queryParams.Cursor = cursor;
-  }
+interface VotePostRequest {
+  userId: string;
+  postId: string;
+  voteType: 1 | 2 | 3; // 1: Upvote, 2: Downvote, 3: Unvote
+}
 
-  if (feedType === 2 && categoryId) {
-    queryParams.CategoryId = categoryId;
-  }
+//#region API
+export const postApi = {
+  // Lấy bài viết trên newfeed
+  fetchPosts: async (
+    request: FetchPostsRequest
+  ): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
+    const { feedType, categoryId, cursor, limit = LIMIT } = request;
 
-  const queryString = new URLSearchParams(queryParams).toString();
-  const url = `/post/newfeed?${queryString}`;
+    const queryParams: Record<string, any> = {
+      FeedType: feedType,
+      Limit: limit,
+    };
 
-  const response = await interactRepository.get(url);
-  if (!response) {
-    throw new Error("Failed to fetch data from the repository.");
-  }
-  return response;
-};
+    if (cursor) {
+      queryParams.Cursor = cursor;
+    }
 
-// API để lấy bài viết cá nhân
-export const fetchPersonalPostsApi = async (
-  userId: number,
-  cursor: string | null = null
-): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
-  let url = `/post/personal?Id=${userId}&Limit=${LIMIT}`;
-  if (cursor !== null) {
-    url += `&Cursor=${cursor}`;
-  }
-  const response = await interactRepository.get(url);
-  if (!response) {
-    throw new Error("Failed to fetch data from the repository.");
-  }
-  return response;
-};
+    if (feedType === 2 && categoryId) {
+      queryParams.CategoryId = categoryId;
+    }
 
-// API để thực hiện upvote hoặc downvote bài viết
-export const votePostApi = async (
-  userId: string,
-  postId: string,
-  voteType: 1 | 2 | 3 // 1: Upvote, 2: Downvote, 3: Unvote
-): Promise<ResponseBase<null>> => {
-  const url = `/post/vote`;
-  const payload = {
-    userId,
-    postId,
-    voteType,
-  };
-  const response = await interactRepository.put(url, payload);
-  if (!response) {
-    throw new Error("Failed to vote on the post.");
-  }
-  return response;
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `/post/newfeed?${queryString}`;
+
+    const response = await interactRepository.get(url);
+    return response;
+  },
+
+  // Lấy bài viết cá nhân
+  fetchPersonalPosts: async (
+    request: FetchPersonalPostsRequest
+  ): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
+    const { userId, cursor, limit = LIMIT } = request;
+
+    const queryParams: Record<string, any> = {
+      Id: userId,
+      Limit: limit,
+    };
+
+    if (cursor) {
+      queryParams.Cursor = cursor;
+    }
+
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `/post/personal?${queryString}`;
+
+    const response = await interactRepository.get(url);
+    return response;
+  },
+
+  // Thực hiện upvote hoặc downvote bài viết
+  votePost: async (request: VotePostRequest): Promise<ResponseBase<null>> => {
+    const url = `/post/vote`;
+    const response = await interactRepository.put(url, request);
+    return response;
+  },
 };

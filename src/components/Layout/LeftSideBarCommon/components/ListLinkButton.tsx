@@ -16,13 +16,12 @@ const ListLinkButton = ({ listItems }: ListLinkButtonProps) => {
   return (
     <div>
       <ul className="space-y-5">
-        {itemsToShow.map((item, index) => (
+        {itemsToShow?.map((item, index) => (
           <li key={index}>
             <LinkButton
               icon={item.icon}
-              link={item.link}
+              link={item?.link ?? ""}
               title={item.title}
-              onClick={item.onClick}
             />
           </li>
         ))}

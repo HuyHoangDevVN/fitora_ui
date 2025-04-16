@@ -1,4 +1,4 @@
-import { acceptFriendRequestApi, rejectFriendRequestApi } from "@/api/userApi";
+import { userApi } from "@/api/userApi";
 import { FriendInvite } from "@/types/friendInvite";
 import { Avatar, Button, Flex, message } from "antd";
 import { useState } from "react";
@@ -23,7 +23,7 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
       return;
     }
     try {
-      const response = await acceptFriendRequestApi(invite.senderId);
+      const response = await userApi.acceptFriendRequest(invite.senderId);
       if (response?.isSuccess) {
         message.success("Đã chấp nhận lời mời");
         setStatus("accepted");
@@ -42,7 +42,7 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
       return;
     }
     try {
-      const response = await rejectFriendRequestApi(invite.senderId);
+      const response = await userApi.rejectFriendRequest(invite.senderId);
       if (response?.isSuccess) {
         message.success("Đã từ chối lời mời");
         setStatus("deleted");

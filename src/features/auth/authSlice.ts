@@ -16,30 +16,24 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-  isLoggedIn: !!localStorage.getItem("isLoggedIn"), // Lấy trạng thái từ localStorage
+  isLoggedIn: !!localStorage.getItem("isLoggedIn"),
   loading: false,
   userInfo: null,
   error: null,
 };
 
-// Kiểm tra trạng thái đăng nhập
 export const checkLoginStatus = createAsyncThunk(
   "auth/checkLoginStatus",
   async (_, { rejectWithValue }) => {
     try {
       const response = await getUserInfo();
-      if (response?.isSuccess) {
-        return true; // Chỉ trả về trạng thái đăng nhập
-      } else {
-        return rejectWithValue("Not logged in");
-      }
-    } catch (error) {
+      return response?.isSuccess ? true : rejectWithValue("Not logged in");
+    } catch {
       return rejectWithValue("Error checking login status");
     }
   }
 );
 
-// Đăng nhập
 export const login = createAsyncThunk(
   "auth/login",
   async (
@@ -48,18 +42,15 @@ export const login = createAsyncThunk(
   ) => {
     try {
       const response = await loginUser(username, password);
-      if (response?.isSuccess) {
-        return response.user;
-      } else {
-        return rejectWithValue(response?.message || "Login failed");
-      }
-    } catch (error) {
+      return response?.isSuccess
+        ? response.user
+        : rejectWithValue(response?.message || "Login failed");
+    } catch {
       return rejectWithValue("Login error");
     }
   }
 );
 
-// Đăng ký
 export const register = createAsyncThunk(
   "auth/register",
   async (
@@ -72,55 +63,47 @@ export const register = createAsyncThunk(
   ) => {
     try {
       const response = await registerUser(username, password, fullname);
-      if (response?.isSuccess) {
-        return { username, password };
-      } else {
-        return rejectWithValue(response?.message || "Registration failed");
-      }
-    } catch (error) {
+      return response?.isSuccess
+        ? { username, password }
+        : rejectWithValue(response?.message || "Registration failed");
+    } catch {
       return rejectWithValue("Registration error");
     }
   }
 );
 
-// Đăng xuất
 export const logout = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
       await logoutUser();
-      return;
-    } catch (error) {
+    } catch {
       return rejectWithValue("Logout error");
     }
   }
 );
 
-// Làm mới token
 export const refreshToken = createAsyncThunk(
   "auth/refreshToken",
   async (_, { rejectWithValue }) => {
     try {
       await refreshAccessToken();
-      return;
-    } catch (error) {
+    } catch {
       return rejectWithValue("Token refresh error");
     }
   }
 );
 
-// Slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     clearError(state) {
-      state.error = null; // Xóa lỗi
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Kiểm tra trạng thái đăng nhập
       .addCase(checkLoginStatus.pending, (state) => {
         state.loading = true;
       })
@@ -131,12 +114,11 @@ const authSlice = createSlice({
       })
       .addCase(checkLoginStatus.rejected, (state) => {
         state.isLoggedIn = false;
-        state.userInfo = null; // Xóa thông tin người dùng nếu không đăng nhập
+        state.userInfo = null;
         state.loading = false;
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("userInfo");
       })
-      // Đăng nhập
       .addCase(login.pending, (state) => {
         state.loading = true;
       })
@@ -145,7 +127,6 @@ const authSlice = createSlice({
         state.userInfo = action.payload;
         state.loading = false;
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userInfo", JSON.stringify(action.payload));
         localStorage.setItem("x-client-id", action.payload.id);
         notification.success({
           message: "Đăng nhập thành công",
@@ -164,7 +145,6 @@ const authSlice = createSlice({
           description: action.payload as string,
         });
       })
-      // Đăng ký
       .addCase(register.pending, (state) => {
         state.loading = true;
       })
@@ -183,7 +163,6 @@ const authSlice = createSlice({
           description: action.payload as string,
         });
       })
-      // Đăng xuất
       .addCase(logout.fulfilled, (state) => {
         state.isLoggedIn = false;
         state.userInfo = null;
@@ -200,7 +179,6 @@ const authSlice = createSlice({
           description: action.payload as string,
         });
       })
-      // Làm mới token
       .addCase(refreshToken.fulfilled, (state) => {
         state.isLoggedIn = true;
         localStorage.setItem("isLoggedIn", "true");

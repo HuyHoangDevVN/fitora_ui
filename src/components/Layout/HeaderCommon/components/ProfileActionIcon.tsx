@@ -1,30 +1,28 @@
+import { logout } from "@/features/auth/authSlice";
 import { AppDispatch, RootState } from "@/store/store";
 import colors from "@/styles/colors";
 import { UserOutlined } from "@ant-design/icons";
-import { Avatar, Divider, Popover, Space } from "antd";
+import { Avatar, Divider, Popover, Space, Typography } from "antd";
 import { useState } from "react";
 import { IoLogOutOutline } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "@/features/auth/authSlice";
 
 const ProfileActionIcon = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { userInfo } = useSelector((state: RootState) => state.auth);
+  const { profile } = useSelector((state: RootState) => state.user);
 
   const [open, setOpen] = useState(false);
 
-  const handleOpenChange = (newOpen) => {
-    setOpen(newOpen);
-  };
+  const handleOpenChange = (newOpen: boolean) => setOpen(newOpen);
 
   const handleLogout = async () => {
     try {
       await dispatch(logout()).unwrap();
       navigate("/login");
     } catch (error) {
-      console.error("Đăng xuất thất bại:", error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -40,9 +38,10 @@ const ProfileActionIcon = () => {
             size={30}
             style={{ backgroundColor: colors.primary }}
             icon={<UserOutlined />}
+            src={profile?.userInfo?.profilePictureUrl || ""}
           />
           <span className="text-sm font-medium text-gray-700">
-            {userInfo?.fullName || "User"}
+            {profile?.userInfo?.firstName || "User"}
           </span>
         </div>
       </button>
@@ -54,7 +53,7 @@ const ProfileActionIcon = () => {
         onClick={handleLogout}
       >
         <IoLogOutOutline className="text-xl text-primary" />
-        <span>Đăng xuất</span>
+        <Typography className="font-normal">Đăng xuất</Typography>
       </button>
     </div>
   );

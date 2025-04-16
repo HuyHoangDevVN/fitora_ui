@@ -4,9 +4,9 @@ import { Badge, Button, Divider, message, Skeleton, Spin } from "antd";
 import debounce from "lodash/debounce";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
 import { fetchCategoriesForNewfeed } from "@/features/category/categorySlice";
 import { fetchPosts, resetPosts } from "@/features/posts/postsSlice";
+import { fetchUserProfile } from "@/features/users/userSlice";
 import { RootState } from "@/store/store";
 import { Post } from "@/types/post";
 import { FaFire, FaHeart, FaHome } from "react-icons/fa";
@@ -25,41 +25,41 @@ const Home: React.FC = () => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef<boolean>(false);
 
-  const loadPosts = useCallback(
-    debounce(() => {
-      if (
-        status === "loading" ||
-        !hasMore ||
-        isFetchingRef.current ||
-        errorCount >= 3
-      )
-        return;
+  const debouncedLoadPosts = debounce(() => {
+    if (
+      status === "loading" ||
+      !hasMore ||
+      isFetchingRef.current ||
+      errorCount >= 3
+    )
+      return;
 
-      isFetchingRef.current = true;
-      dispatch(
-        fetchPosts({
-          feedType: activeTab === "all" ? 1 : 2,
-          categoryId: activeTab && activeTab !== "all" ? activeTab : undefined,
-          cursor: nextCursor,
-        }) as any
-      )
-        .unwrap()
-        .catch((err) => {
-          message.error(err || "Có lỗi xảy ra khi tải bài viết!");
-        })
-        .finally(() => {
-          setTimeout(() => {
-            isFetchingRef.current = false;
-          }, 500);
-        });
-    }, 300),
-    [dispatch, status, hasMore, nextCursor, errorCount, activeTab]
-  );
+    isFetchingRef.current = true;
+    dispatch(
+      fetchPosts({
+        feedType: activeTab === "all" ? 1 : 2,
+        categoryId: activeTab && activeTab !== "all" ? activeTab : undefined,
+        cursor: nextCursor,
+      }) as any
+    )
+      .unwrap()
+      .catch((err) => {
+        message.error(err || "Có lỗi xảy ra khi tải bài viết!");
+      })
+      .finally(() => {
+        setTimeout(() => {
+          isFetchingRef.current = false;
+        }, 500);
+      });
+  }, 300);
 
-  // Gọi API khi chuyển tab
+  const loadPosts = useCallback(() => {
+    debouncedLoadPosts();
+  }, [debouncedLoadPosts]);
+
   useEffect(() => {
-    dispatch(resetPosts()); // Reset danh sách bài viết khi chuyển tab
-    loadPosts(); // Gọi API để tải bài viết mới
+    dispatch(resetPosts());
+    loadPosts();
   }, [activeTab, dispatch]);
 
   useEffect(() => {
@@ -92,6 +92,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchCategoriesForNewfeed() as any);
+    dispatch(fetchUserProfile() as any);
   }, [dispatch]);
 
   const PostSkeleton = () => (
@@ -113,7 +114,6 @@ const Home: React.FC = () => {
   return (
     <div>
       <div className="tab-newfeed flex flex-row gap-3 mb-4 whitespace-nowrap px-4 md:px-0">
-        {/* Tab "Home" */}
         <Button
           className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 cursor-pointer flex items-center h-10 ${
             activeTab === "all"
@@ -126,7 +126,6 @@ const Home: React.FC = () => {
           Home
         </Button>
 
-        {/* Danh mục đã follow */}
         {followedCategories?.map((category) => (
           <Button
             key={category.id}
@@ -142,7 +141,6 @@ const Home: React.FC = () => {
           </Button>
         ))}
 
-        {/* Danh mục trending */}
         {categoriesForNewfeed
           ?.filter(
             (category) =>
@@ -177,6 +175,7 @@ const Home: React.FC = () => {
                     borderRadius: "12px",
                     padding: "0 8px",
                     boxShadow: "0 0 0 1px #d9d9d9",
+                    zIndex: 100,
                   }}
                 />
               )}
@@ -184,12 +183,11 @@ const Home: React.FC = () => {
           ))}
       </div>
 
-      {/* Danh sách bài viết */}
       {status === "loading" && posts.length === 0 ? (
-        <Spin
-          tip="Đang tải bài viết..."
-          className="w-full flex justify-center"
-        />
+        <div className="w-full flex justify-center gap-2">
+          <Spin spinning={true}></Spin>
+          <div>Đang tải bài viết...</div>
+        </div>
       ) : (
         posts?.map((post: Post) => (
           <div key={post.id} className="relative">
@@ -199,7 +197,6 @@ const Home: React.FC = () => {
         ))
       )}
 
-      {/* Hiển thị skeleton khi đang tải thêm */}
       {status === "loading" && posts.length > 0 && (
         <div style={{ padding: "20px 0" }}>
           {Array(2)
@@ -210,7 +207,6 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {/* Sentinel để tải thêm bài viết */}
       <div ref={sentinelRef} style={{ height: "1px" }} />
     </div>
   );

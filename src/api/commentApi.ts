@@ -2,9 +2,9 @@ import { interactRepository } from "@/api/repository";
 import { CommentResponse } from "@/types/post";
 import { ResponseBase } from "@/types/responseBase";
 
-const LIMIT = 10; // Số lượng comment mặc định mỗi lần lấy
+const LIMIT = 10;
 
-// Interfaces
+//#region Interfaces
 interface CreateCommentFormBody {
   postId: string;
   parentCommentId?: string;
@@ -38,14 +38,7 @@ interface GetCommentRepliesRequest {
   limit?: number;
 }
 
-// Interfaces
-interface VoteCommentRequest {
-  userId: string;
-  commentId: string;
-  voteType: 1 | 2 | 3; // 1: Upvote, 2: Downvote, 3: Unvote
-}
-
-// API
+//#region API
 export const commentApi = {
   // Tạo comment
   createComment: async (

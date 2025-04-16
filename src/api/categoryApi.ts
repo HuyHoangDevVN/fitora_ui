@@ -2,52 +2,61 @@ import { interactRepository } from "./repository";
 
 const API_BASE_URL = "/category";
 
-const getWithParams = async (url: string, params?: Record<string, any>) => {
-  const queryString = params
-    ? `?${new URLSearchParams(params).toString()}`
-    : "";
-  const response = await interactRepository.get(`${url}${queryString}`);
-  return response.data;
-};
+export const categoryApi = {
+  createCategory: async (categoryData: any): Promise<any> => {
+    const url = `${API_BASE_URL}/create`;
+    const response = await interactRepository.post(url, categoryData);
+    return response.data;
+  },
 
-const postWithBody = async (url: string, body: any) => {
-  const response = await interactRepository.post(url, body);
-  return response.data;
-};
+  fetchCategories: async (keySearch?: string): Promise<any> => {
+    const url = `${API_BASE_URL}/get-list`;
+    const queryParams = keySearch ? { keySearch } : undefined;
+    const queryString = queryParams
+      ? `?${new URLSearchParams(queryParams).toString()}`
+      : "";
+    const response = await interactRepository.get(`${url}${queryString}`);
+    return response.data;
+  },
 
-export const createCategoryApi = async (categoryData: any) => {
-  return await postWithBody(`${API_BASE_URL}/create`, categoryData);
-};
+  fetchCategory: async (id: string): Promise<any> => {
+    const url = `${API_BASE_URL}/get`;
+    const queryString = `?id=${id}`;
+    const response = await interactRepository.get(`${url}${queryString}`);
+    return response.data;
+  },
 
-export const fetchCategoriesApi = async (keySearch?: string) => {
-  return await getWithParams(
-    `${API_BASE_URL}/get-list`,
-    keySearch ? { keySearch } : undefined
-  );
-};
+  followCategory: async (id: string): Promise<any> => {
+    const url = `${API_BASE_URL}/follow`;
+    const response = await interactRepository.post(url, id);
+    return response.data;
+  },
 
-export const fetchCategoryApi = async (id: string) => {
-  return await getWithParams(`${API_BASE_URL}/get`, { id });
-};
+  unfollowCategory: async (id: string): Promise<any> => {
+    const url = `${API_BASE_URL}/unfollow`;
+    const response = await interactRepository.post(url, id);
+    return response.data;
+  },
 
-export const followCategoryApi = async (id: string) => {
-  return await postWithBody(`${API_BASE_URL}/follow`, id);
-};
+  fetchFollowedCategories: async (keySearch?: string): Promise<any> => {
+    const url = `${API_BASE_URL}/get-followed`;
+    const queryParams = keySearch ? { keySearch } : undefined;
+    const queryString = queryParams
+      ? `?${new URLSearchParams(queryParams).toString()}`
+      : "";
+    const response = await interactRepository.get(`${url}${queryString}`);
+    return response.data;
+  },
 
-export const unfollowCategoryApi = async (id: string) => {
-  return await postWithBody(`${API_BASE_URL}/unfollow`, id);
-};
-
-export const fetchFollowedCategoriesApi = async (keySearch?: string) => {
-  return await getWithParams(
-    `${API_BASE_URL}/get-followed`,
-    keySearch ? { keySearch } : undefined
-  );
-};
-
-export const fetchTrendingCategoriesApi = async (params: {
-  limit?: number;
-  timeRange?: string;
-}) => {
-  return await getWithParams(`${API_BASE_URL}/get-trending`, params);
+  fetchTrendingCategories: async (params: {
+    limit?: number;
+    timeRange?: string;
+  }): Promise<any> => {
+    const url = `${API_BASE_URL}/get-trending`;
+    const queryString = params
+      ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
+      : "";
+    const response = await interactRepository.get(`${url}${queryString}`);
+    return response.data;
+  },
 };

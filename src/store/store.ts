@@ -2,6 +2,8 @@ import authReducer from "@features/auth/authSlice";
 import postsReducer from "@features/posts/postsSlice";
 import categoryReducer from "@features/category/categorySlice";
 import commentReducer from "@features/comments/commentSlice";
+import groupReducer from "@features/groups/groupsSlice";
+import userReducer from "@features/users/userSlice";
 import { configureStore } from "@reduxjs/toolkit";
 
 const store = configureStore({
@@ -10,6 +12,8 @@ const store = configureStore({
     posts: postsReducer,
     category: categoryReducer,
     comment: commentReducer,
+    group: groupReducer,
+    user: userReducer,
   },
 });
 

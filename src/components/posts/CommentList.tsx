@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { List, Avatar, Button, Input, Spin, message } from "antd";
 import {
-  fetchCommentsByPost,
   createComment,
-  voteComment,
   fetchCommentReplies,
+  fetchCommentsByPost,
+  voteComment,
 } from "@/features/comments/commentSlice";
 import { AppDispatch, RootState } from "@/store/store";
-import { debounce } from "lodash";
-import { PiArrowFatUpLight, PiArrowFatDownLight } from "react-icons/pi";
 import { CommentResponse } from "@/types/post";
+import { Avatar, Button, Input, List, message, Spin, Tooltip } from "antd";
+import { debounce } from "lodash";
+import React, { useEffect, useRef, useState } from "react";
 import { IoSendSharp } from "react-icons/io5";
+import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
+import { useDispatch, useSelector } from "react-redux";
 
 const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,19 +22,17 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
   const nextCursor = commentsByPost[postId]?.nextCursor || null;
   const [isFetching, setIsFetching] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const userId = localStorage.getItem("x-client-id") || "current-user-id"; // Thay bằng logic lấy userId thực tế
+  const userId = localStorage.getItem("x-client-id") || "current-user-id";
   const [commentContent, setCommentContent] = useState("");
   const [replyContent, setReplyContent] = useState<{ [key: string]: string }>(
     {}
-  ); // Lưu nội dung trả lời cho từng bình luận
-  const [replyingTo, setReplyingTo] = useState<string | null>(null); // ID của bình luận đang trả lời
+  );
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  // Lấy danh sách bình luận khi component mount
   useEffect(() => {
     dispatch(fetchCommentsByPost({ postId, userId, limit: 10 }));
   }, [dispatch, postId, userId]);
 
-  // Tải thêm bình luận khi cuộn đến cuối danh sách
   const loadMoreComments = debounce(() => {
     if (isFetching || !nextCursor) return;
     setIsFetching(true);
@@ -79,7 +77,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
       ).unwrap();
       setCommentContent("");
       message.success("Đã thêm bình luận!");
-    } catch (error) {
+    } catch (_error) {
       message.error("Không thể thêm bình luận!");
     }
   };
@@ -102,7 +100,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
       setReplyContent((prev) => ({ ...prev, [parentCommentId]: "" }));
       setReplyingTo(null);
       message.success("Đã thêm trả lời!");
-    } catch (error) {
+    } catch (_error) {
       message.error("Không thể thêm trả lời!");
     }
   };
@@ -115,7 +113,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
       message.success(
         `Đã ${voteType === 1 ? "thích" : "không thích"} bình luận!`
       );
-    } catch (error) {
+    } catch (_error) {
       message.error("Không thể vote bình luận!");
     }
   };
@@ -138,13 +136,15 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
           placeholder="Viết bình luận..."
           className="rounded-md flex-1 border-gray-300 focus:border-primary focus:ring-primary"
         />
-        <Button
-          type="primary"
-          className="rounded-md bg-primary"
-          onClick={handleAddComment}
-        >
-          <IoSendSharp />
-        </Button>
+        <Tooltip title="Gửi bình luận" placement="top">
+          <Button
+            type="primary"
+            className="rounded-md bg-primary"
+            onClick={handleAddComment}
+          >
+            <IoSendSharp />
+          </Button>
+        </Tooltip>
       </div>
 
       <List
@@ -155,15 +155,15 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
             <div className="flex items-start gap-3">
               <Avatar
                 src={
-                  comment.user.profilePictureUrl || "https://i.pravatar.cc/40"
+                  comment.user?.profilePictureUrl || "https://i.pravatar.cc/40"
                 }
-                alt={comment.user.username}
+                alt={comment.user?.username}
                 size={40}
               />
               <div className="flex-1">
                 <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
                   <span className="font-semibold text-gray-800">
-                    {comment.user.username}
+                    {comment.user?.username}
                   </span>
                   <p className="mt-1 text-gray-700">{comment.content}</p>
                 </div>
@@ -188,7 +188,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                       }
                     />
                     <span className="text-sm font-semibold text-gray-600">
-                      {comment.votes}
+                      {comment?.votes ?? 0}
                     </span>
                     <Button
                       type="text"
@@ -243,18 +243,20 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                   placeholder="Viết trả lời..."
                   className="rounded-md  border-gray-300 focus:border-primary focus:ring-primary"
                 />
-                <Button
-                  type="primary"
-                  className="rounded-md"
-                  onClick={() => handleAddReply(comment.id)}
-                >
-                  <IoSendSharp />
-                </Button>
+                <Tooltip title="Gửi bình luận" placement="top">
+                  <Button
+                    type="primary"
+                    className="rounded-md bg-primary"
+                    onClick={() => handleAddReply(comment.id)}
+                  >
+                    <IoSendSharp />
+                  </Button>
+                </Tooltip>
               </div>
             )}
 
             {repliesByComment[comment.id]?.data?.length > 0 && (
-              <div className=" ml-12 mt-2">
+              <div className="ml-12 mt-2">
                 <List
                   dataSource={repliesByComment[comment.id].data}
                   renderItem={(reply: CommentResponse) => (
@@ -262,16 +264,16 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                       <div className="flex items-start gap-3">
                         <Avatar
                           src={
-                            reply.user.profilePictureUrl ||
+                            reply.user?.profilePictureUrl ||
                             "https://i.pravatar.cc/40"
                           }
-                          alt={reply.user.username}
+                          alt={reply.user?.username}
                           size={32}
                         />
                         <div className="flex-1">
                           <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
                             <span className="font-semibold text-gray-800">
-                              {reply.user.username}
+                              {reply.user?.username}
                             </span>
                             <p className="mt-1 text-gray-700">
                               {reply.content}
@@ -330,7 +332,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
           </div>
         )}
       />
-
       {loading && comments.length > 0 && (
         <div className="flex justify-center mt-4">
           <Spin />

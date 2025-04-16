@@ -1,29 +1,24 @@
 import React from "react";
 import { Divider } from "antd";
-import { useNavigate } from "react-router-dom";
-import { RiHomeLine } from "react-icons/ri";
-import { FaUserFriends, FaBookmark, FaChartLine } from "react-icons/fa";
+import { FaBookmark, FaChartLine, FaUserFriends } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
 import { MdOutlineCategory } from "react-icons/md";
+import { RiHomeLine } from "react-icons/ri";
 import colors from "@/styles/colors";
 import ListLinkButton from "./components/ListLinkButton";
 import { fakeGroupData } from "./fakeData";
 
 const LeftSidebar: React.FC = () => {
-  const navigate = useNavigate();
-
   const menuItems = [
     {
       icon: <RiHomeLine size={20} color={colors.primary} />,
       link: "/personal",
       title: "Trang chủ",
-      onClick: () => navigate("/personal"),
     },
     {
       icon: <FaUserFriends size={20} color={colors.primary} />,
       link: "/friend-requests",
       title: "Bạn bè",
-      onClick: () => navigate("/friend-requests"),
     },
     {
       icon: <FaBookmark size={20} color={colors.primary} />,
