@@ -7,6 +7,7 @@ const LIMIT = 4; // Số lượng bài viết mặc định mỗi lần lấy
 //#region Interface
 
 interface FetchPostsRequest {
+  groupId?: string;
   feedType: 1 | 2; // 1: All, 2: Category
   categoryId?: string; // Chỉ cần khi feedType là Category
   cursor?: string | null;
@@ -31,7 +32,15 @@ export const postApi = {
   fetchPosts: async (
     request: FetchPostsRequest
   ): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
-    const { feedType, categoryId, cursor, limit = LIMIT } = request;
+    const { categoryId } = request;
+    const {
+      groupId,
+      feedType: originalFeedType,
+      cursor,
+      limit = LIMIT,
+    } = request;
+
+    const feedType = groupId ? 1 : originalFeedType; // Nếu có groupId thì feedType luôn bằng 1
 
     const queryParams: Record<string, any> = {
       FeedType: feedType,
@@ -40,6 +49,10 @@ export const postApi = {
 
     if (cursor) {
       queryParams.Cursor = cursor;
+    }
+
+    if (groupId) {
+      queryParams.GroupId = groupId;
     }
 
     if (feedType === 2 && categoryId) {

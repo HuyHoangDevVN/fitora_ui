@@ -1,5 +1,7 @@
+import { postApi } from "@/api/postApi";
 import { interactRepository } from "@/api/repository";
-import { GroupPrivacy } from "@/enums/group";
+import PostBox from "@/components/posts/PostBox";
+import { GroupPrivacy, GroupRole } from "@/enums/group";
 import { PrivacyPost } from "@/enums/post";
 import {
   createCategory,
@@ -7,16 +9,14 @@ import {
   followCategory,
 } from "@/features/category/categorySlice";
 import { AppDispatch, RootState } from "@/store/store";
-import { GroupResponse } from "@/types/group";
+import colors from "@/styles/colors";
+import { GroupResponse, MemberResponse } from "@/types/group";
 import {
   CalendarOutlined,
-  CommentOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
-  LikeOutlined,
   MenuOutlined,
   PictureOutlined,
-  ShareAltOutlined,
   TagsOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -37,64 +37,20 @@ import {
 } from "antd";
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
+import { FaLock } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import { groupApi } from "../../api/groupApi";
-import { FaLock } from "react-icons/fa";
+import { groupApi, UpdateGroupRequest } from "../../api/groupApi";
+import InviteMembersModal from "./InviteMembersModal";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
-
-const PostCard: React.FC<{ post: any }> = ({ post }) => (
-  <Card
-    key={post.id}
-    className="mb-4 rounded-lg shadow-md border border-gray-300 hover:shadow-lg transition-shadow duration-300"
-    bodyStyle={{ padding: "20px" }}
-  >
-    <div className="flex items-start gap-4 mb-4">
-      <Avatar
-        src={post.authorAvatar || "https://via.placeholder.com/40"}
-        size={50}
-        className="shadow-md"
-      />
-      <div>
-        <Text className="text-lg font-bold text-gray-900">{post.author}</Text>
-        <Text className="text-sm text-gray-500 block">{post.time}</Text>
-      </div>
-    </div>
-    <Paragraph className="text-gray-800 mb-4 text-base leading-relaxed">
-      {post.content}
-    </Paragraph>
-    <div className="flex justify-between border-t border-gray-300 pt-3">
-      <Button
-        type="text"
-        icon={<LikeOutlined />}
-        className="text-gray-600 hover:text-blue-500 font-medium"
-      >
-        Thích
-      </Button>
-      <Button
-        type="text"
-        icon={<CommentOutlined />}
-        className="text-gray-600 hover:text-blue-500 font-medium"
-      >
-        Bình luận
-      </Button>
-      <Button
-        type="text"
-        icon={<ShareAltOutlined />}
-        className="text-gray-600 hover:text-blue-500 font-medium"
-      >
-        Chia sẻ
-      </Button>
-    </div>
-  </Card>
-);
 
 const GroupDetailPage: React.FC = () => {
   const { idGroup } = useParams();
   const { profile } = useSelector((state: RootState) => state.user);
 
+  const [member, setMember] = useState<MemberResponse | null>();
   const [groupData, setGroupData] = useState<GroupResponse | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -117,12 +73,17 @@ const GroupDetailPage: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [members, setMembers] = useState<MemberResponse[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState<boolean>(true);
+  const [inviteModalVisible, setInviteModalVisible] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchGroupData = async () => {
       if (idGroup) {
         try {
           const response = await groupApi.getGroupById(idGroup);
-          setGroupData(response ?? null);
+          setGroupData(response?.group ?? null);
+          setMember(response?.groupMember ?? null);
         } catch (error) {
           console.error("Failed to fetch group data", error);
           setError("Không thể tải dữ liệu nhóm. Vui lòng thử lại sau.");
@@ -133,6 +94,46 @@ const GroupDetailPage: React.FC = () => {
     };
 
     fetchGroupData();
+  }, [idGroup]);
+
+  const fetchPostsByGroupId = async (groupId: string) => {
+    try {
+      const response = await postApi.fetchPosts({
+        groupId,
+        feedType: 1, // Fetch all posts for the group
+      });
+      if (response?.isSuccess) {
+        setPosts(response.data.data);
+      } else {
+        throw new Error("Failed to fetch posts");
+      }
+    } catch (error) {
+      console.error("Error fetching posts by groupId:", error);
+      message.error("Có lỗi xảy ra khi tải bài viết!");
+    }
+  };
+
+  useEffect(() => {
+    if (idGroup) {
+      fetchPostsByGroupId(idGroup);
+    }
+  }, [idGroup]);
+
+  useEffect(() => {
+    const fetchGroupMembers = async () => {
+      if (idGroup) {
+        try {
+          const response = await groupApi.getGroupMembers(idGroup, 0, 20);
+          setMembers(response.data);
+        } catch (error) {
+          console.error("Failed to fetch group members", error);
+        } finally {
+          setLoadingMembers(false);
+        }
+      }
+    };
+
+    fetchGroupMembers();
   }, [idGroup]);
 
   const toggleDrawer = () => {
@@ -206,7 +207,8 @@ const GroupDetailPage: React.FC = () => {
         content: newPostContent,
         mediaUrl: mediaUrl,
         privacy: PrivacyPost.Public,
-        groupId: idGroup,
+        groupId: idGroup || "",
+        categoryId: selectedCategory,
       };
 
       const response = await interactRepository.post("/post/create-post", data);
@@ -216,6 +218,17 @@ const GroupDetailPage: React.FC = () => {
         setNewPostContent("");
         setMediaUrl("");
         setPreviewUrl("");
+
+        try {
+          await groupApi.createGroupPost({
+            postId: response.data.id,
+            groupId: idGroup || "",
+            authorId: profile?.userInfo?.userId || "",
+            isApproved: true,
+          });
+        } catch (error) {
+          console.error("Lỗi khi gọi API createGroupPost:", error);
+        }
       } else {
         throw new Error("Có lỗi xảy ra!");
       }
@@ -330,6 +343,124 @@ const GroupDetailPage: React.FC = () => {
     dispatch(fetchCategoriesForPost(value) as any);
   };
 
+  const handleAssignRole = async (memberId: string, role: number) => {
+    try {
+      const response = await groupApi.assignRoleMember({
+        assignedBy: profile?.userInfo?.userId || "",
+        groupId: idGroup || "",
+        memberId,
+        role,
+      });
+      if (response?.isSuccess) {
+        message.success("Phân quyền thành công!");
+        setMembers((prevMembers) =>
+          prevMembers.map((member) =>
+            member.id === memberId ? { ...member, role } : member
+          )
+        );
+      } else {
+        throw new Error(response?.message || "Phân quyền thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi khi phân quyền:", error);
+      message.error("Phân quyền thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleDeleteMember = async (memberId: string) => {
+    try {
+      const response = await groupApi.deleteGroup(memberId);
+      if (response?.isSuccess) {
+        message.success("Xóa thành viên thành công!");
+        setMembers((prevMembers) =>
+          prevMembers.filter((member) => member.id !== memberId)
+        );
+      } else {
+        throw new Error(response?.message || "Xóa thành viên thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa thành viên:", error);
+      message.error("Xóa thành viên thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleEditGroup = async (updatedGroupData: UpdateGroupRequest) => {
+    try {
+      const response = await groupApi.updateGroup(updatedGroupData);
+      if (response?.isSuccess) {
+        message.success("Cập nhật nhóm thành công!");
+        setGroupData((prevGroupData) => {
+          if (!prevGroupData) return null;
+          return {
+            ...prevGroupData,
+            ...updatedGroupData,
+            id: updatedGroupData.Id || prevGroupData.id, // Ensure 'id' is always defined
+          };
+        });
+      } else {
+        throw new Error(response?.message || "Cập nhật nhóm thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật nhóm:", error);
+      message.error("Cập nhật nhóm thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const renderMemberRole = (role: number | null) => {
+    switch (role) {
+      case GroupRole.Owner:
+        return "Chủ Nhóm";
+      case GroupRole.Admin:
+        return "Quản Trị Viên";
+      case GroupRole.Moderator:
+        return "Điều Hành Viên";
+      default:
+        return "Thành Viên";
+    }
+  };
+
+  const renderMemberActions = (member: MemberResponse) => {
+    if (member.role === GroupRole.Owner) {
+      return null; // Chủ nhóm không có hành động nào
+    }
+
+    return (
+      <div className="flex gap-2 mt-2">
+        {member.role !== GroupRole.Admin && (
+          <Button
+            size="small"
+            onClick={() => handleAssignRole(member.id, GroupRole.Admin)}
+          >
+            Phân quyền Admin
+          </Button>
+        )}
+        <Button
+          size="small"
+          onClick={() =>
+            handleEditGroup({
+              Id: groupData?.id || "",
+              Name: groupData?.name || "",
+              Description: groupData?.description || "",
+              Privacy: groupData?.privacy || GroupPrivacy.Public,
+              RequirePostApproval: groupData?.requirePostApproval || false,
+              CoverImageUrl: groupData?.coverImageUrl || "",
+              AvatarUrl: groupData?.avatarUrl || "",
+            })
+          }
+        >
+          Chỉnh sửa nhóm
+        </Button>
+        <Button
+          size="small"
+          danger
+          onClick={() => handleDeleteMember(member.id)}
+        >
+          Xóa
+        </Button>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-200">
@@ -349,7 +480,69 @@ const GroupDetailPage: React.FC = () => {
   if (!groupData) {
     return (
       <div className="text-center text-gray-500 bg-gray-100 p-4 rounded-md shadow-md">
-        Group not found
+        Nhóm không tồn tại
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="relative w-full h-[300px]">
+          <img
+            src={groupData?.coverImageUrl || "https://via.placeholder.com/300"}
+            alt="Group Cover"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent"></div>
+        </div>
+        <div className="text-center mt-4">
+          <Avatar
+            size={100}
+            src={groupData?.avatarUrl || "https://via.placeholder.com/100"}
+            className="mx-auto mb-2 border-4 border-white"
+          />
+          <Title level={3} className="text-gray-900 truncate">
+            {groupData?.name}
+          </Title>
+          <Text className="text-gray-600 block mb-4">
+            {groupData?.description || "Nhóm này chưa có mô tả."}
+          </Text>
+          <Button
+            type="primary"
+            size="large"
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            Tham gia nhóm
+          </Button>
+        </div>
+        <div className="mt-6 w-full max-w-4xl px-4">
+          <Card className="shadow-lg rounded-lg">
+            <Title level={4} className="text-gray-900 mb-2">
+              Giới thiệu nhóm
+            </Title>
+            <Text className="text-gray-600 block mb-4">
+              {groupData?.description || "Nhóm này chưa có mô tả."}
+            </Text>
+            <div className="flex flex-col gap-2">
+              <Text className="text-gray-600">
+                <strong>Thành viên:</strong> {groupData?.memberCount}
+              </Text>
+              <Text className="text-gray-600">
+                <strong>Quyền riêng tư:</strong>{" "}
+                {getPrivacy(groupData?.privacy ?? GroupPrivacy.Public)}
+              </Text>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingMembers) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-200">
+        <Spin size="large" />
       </div>
     );
   }
@@ -360,20 +553,17 @@ const GroupDetailPage: React.FC = () => {
         className="w-full lg:w-1/4 bg-white shadow-lg hidden lg:block rounded-lg p-4"
         bordered={false}
       >
-        <div className="text-center mb-6">
+        <div className="text-center mb-2">
           <Avatar
             size={80}
-            src={groupData.avatarUrl || "https://via.placeholder.com/80"}
+            src={groupData?.avatarUrl || "https://via.placeholder.com/80"}
             className="mx-auto mb-2"
           />
           <Title level={4} className="text-gray-900 truncate">
-            {groupData.name}
+            {groupData?.name}
           </Title>
-          <Text className="text-gray-600">
-            {groupData.memberCount} thành viên
-          </Text>
         </div>
-        <Divider />
+        <Divider style={{ borderColor: colors.border, margin: "15px 0px" }} />
         <ul className="space-y-3">
           <li>
             <Button
@@ -412,16 +602,10 @@ const GroupDetailPage: React.FC = () => {
             </Button>
           </li>
         </ul>
-        <Divider className="my-4" />
-        <div className="text-center">
-          <Text className="text-gray-600">
-            <UserOutlined className="mr-2" /> {groupData.memberCount} thành viên
-          </Text>
-        </div>
       </Card>
 
       <Drawer
-        title={groupData.name}
+        title={groupData?.name}
         placement="left"
         closable
         onClose={toggleDrawer}
@@ -466,11 +650,12 @@ const GroupDetailPage: React.FC = () => {
               <div className="flex flex-col md:flex-row items-center gap-4 my-4">
                 <div className="flex flex-col gap-1 text-center md:text-left">
                   <Text className="text-xl font-[600] text-gray-900">
-                    {groupData.name}
+                    {groupData?.name}
                   </Text>
                   <Text className="flex items-center gap-2 text-gray-600">
-                    <FaLock /> {getPrivacy(groupData.privacy)} •{" "}
-                    {groupData.memberCount} thành viên
+                    <FaLock />{" "}
+                    {getPrivacy(groupData?.privacy ?? GroupPrivacy.Public)} •{" "}
+                    {groupData?.memberCount} thành viên
                   </Text>
                 </div>
               </div>
@@ -478,13 +663,8 @@ const GroupDetailPage: React.FC = () => {
                 <Button
                   type="primary"
                   size="middle"
-                  className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
-                >
-                  Tham gia nhóm
-                </Button>
-                <Button
-                  size="middle"
-                  className="bg-gray-200 hover:bg-gray-300 w-full md:w-auto"
+                  className="bg-primary hover:bg-gray-300 w-full md:w-auto"
+                  onClick={() => setInviteModalVisible(true)}
                 >
                   Mời bạn bè
                 </Button>
@@ -554,59 +734,66 @@ const GroupDetailPage: React.FC = () => {
                             Giới thiệu nhóm
                           </Title>
                           <Text className="text-gray-600 block mb-4">
-                            {groupData.description || "Nhóm này chưa có mô tả."}
+                            {groupData?.description ||
+                              "Nhóm này chưa có mô tả."}
                           </Text>
                           <div className="flex flex-col gap-2">
                             <Text className="text-gray-600">
                               <strong>Thành viên:</strong>{" "}
-                              {groupData.memberCount}
+                              {groupData?.memberCount}
                             </Text>
                             <Text className="text-gray-600">
                               <strong>Quyền riêng tư:</strong>{" "}
-                              {getPrivacy(groupData.privacy)}
+                              {getPrivacy(
+                                groupData?.privacy ?? GroupPrivacy.Public
+                              )}
                             </Text>
                           </div>
                         </Card>
                       </div>
                     </div>
-                    <div className="posts-list-section">
+                    <div className="posts-list-section lg:w-2/3 p-2">
                       <List
                         dataSource={posts}
-                        renderItem={(post) => <PostCard post={post} />}
+                        renderItem={(post) => <PostBox post={post} />}
                       />
                     </div>
                   </div>
                 </div>
               </Tabs.TabPane>
-              <Tabs.TabPane tab="Thành viên" key="2">
+              <Tabs.TabPane tab="Thành Viên" key="2">
                 <List
-                  dataSource={[
-                    {
-                      id: 1,
-                      name: "Nguyen Van A",
-                      role: "Admin",
-                      avatar: "https://via.placeholder.com/40",
-                    },
-                    {
-                      id: 2,
-                      name: "Tran Thi B",
-                      role: "Member",
-                      avatar: "https://via.placeholder.com/40",
-                    },
-                    {
-                      id: 3,
-                      name: "Le Van C",
-                      role: "Member",
-                      avatar: "https://via.placeholder.com/40",
-                    },
-                  ]}
+                  grid={{ gutter: 16, column: 2 }}
+                  dataSource={members}
                   renderItem={(member) => (
                     <List.Item>
-                      <List.Item.Meta
-                        avatar={<Avatar src={member.avatar} />}
-                        title={member.name}
-                        description={member.role}
-                      />
+                      <Card hoverable className="shadow-md rounded-lg">
+                        <Card.Meta
+                          avatar={
+                            <Avatar
+                              src={member.profilePictureUrl}
+                              size={50}
+                              className="border border-gray-300"
+                            />
+                          }
+                          title={
+                            <span className="font-semibold text-gray-800">
+                              {member.userName || "Không Xác Định"}
+                            </span>
+                          }
+                          description={
+                            <div className="text-gray-600">
+                              <p className="mb-1">
+                                {member.bio || "Chưa Có Thông Tin"}
+                              </p>
+                              <p className="text-sm font-medium">
+                                {renderMemberRole(member.role ?? null)}
+                              </p>
+                              {renderMemberActions(member)}
+                            </div>
+                          }
+                        />
+                      </Card>
                     </List.Item>
                   )}
                 />
@@ -652,6 +839,11 @@ const GroupDetailPage: React.FC = () => {
           className="mt-2"
         />
       </Modal>
+      <InviteMembersModal
+        groupId={idGroup || ""}
+        visible={inviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
+      />
     </div>
   );
 };

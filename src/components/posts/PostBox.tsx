@@ -58,11 +58,11 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editContent, setEditContent] = useState(post.content);
-  const [editMediaUrl, setEditMediaUrl] = useState(post.mediaUrl);
+  const [editContent, setEditContent] = useState(post?.content);
+  const [editMediaUrl, setEditMediaUrl] = useState(post?.mediaUrl);
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(post.user.isFollowing);
+  const [isFollowing, setIsFollowing] = useState(post?.user?.isFollowing);
   const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
 
   const avatarSrc = useMemo(
@@ -70,8 +70,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     [post?.user?.profilePictureUrl]
   );
   const isMe = useMemo(
-    () => post?.user.id === localStorage.getItem("x-client-id"),
-    [post?.user.id]
+    () => post?.user?.id === localStorage.getItem("x-client-id"),
+    [post?.user?.id]
   );
 
   const toggleEditModal = useCallback(
@@ -82,10 +82,10 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const handleEditOk = useCallback(async () => {
     setLoading(true);
     try {
-      await interactRepository.put(`/post/update-post/${post.id}`, {
+      await interactRepository.put(`/post/update-post/${post?.id}`, {
         content: editContent,
         mediaUrl: editMediaUrl,
-        privacy: post.privacy,
+        privacy: post?.privacy,
       });
       toggleEditModal(false);
       message.success("Cập nhật bài viết thành công");
@@ -95,7 +95,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     } finally {
       setLoading(false);
     }
-  }, [editContent, editMediaUrl, post.id, post.privacy, toggleEditModal]);
+  }, [editContent, editMediaUrl, post?.id, post?.privacy, toggleEditModal]);
 
   const handleDelete = useCallback(() => {
     Modal.confirm({
@@ -106,7 +106,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       onOk: async () => {
         setLoading(true);
         try {
-          await interactRepository.delete(`/post/delete-post/${post.id}`);
+          await interactRepository.delete(`/post/delete-post/${post?.id}`);
           message.success("Xóa bài viết thành công");
         } catch (error) {
           console.error("Error deleting post:", error);
@@ -116,7 +116,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         }
       },
     });
-  }, [post.id]);
+  }, [post?.id]);
 
   const handleMenuClick = useCallback(
     ({ key }: { key: string }) => {
@@ -238,7 +238,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         const result = await dispatch(
           votePost({
             userId: localStorage.getItem("x-client-id") || "",
-            postId: post.id,
+            postId: post?.id,
             voteType,
           })
         ).unwrap();
@@ -269,7 +269,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         setLoading(false);
       }
     },
-    [dispatch, post.id]
+    [dispatch, post?.id]
   );
 
   const handleFollow = useCallback(async () => {
@@ -278,7 +278,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       const response = await userApi.handleUserAction(
         "/follow/follow",
         "POST",
-        post.user.id
+        post?.user?.id
       );
       if (response?.isSuccess) {
         message.success("Đã theo dõi người dùng!");
@@ -291,7 +291,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     } finally {
       setLoading(false);
     }
-  }, [post.user.id]);
+  }, [post?.user?.id]);
 
   const handleFollowCategory = async () => {
     try {
@@ -312,7 +312,9 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   return (
     <Badge.Ribbon
       text={
-        post?.isCategoryFollowed ? `⭐ ${post.categoryName}` : post.categoryName
+        post?.isCategoryFollowed
+          ? `⭐ ${post?.categoryName}`
+          : post?.categoryName
       }
       color={randomRibbonColor}
       placement="end"
@@ -326,15 +328,15 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
               className="flex items-center category-name text-xs font-semibold cursor-pointer"
               onClick={() =>
                 navigate(`/personal`, {
-                  state: { isWatching: true, userId: post.user?.id },
+                  state: { isWatching: true, userId: post?.user?.id },
                 })
               }
             >
-              {post.user.username}
+              {post?.user?.username}
             </h2>
             -
             <span className="create-date text-xs font-semibold">
-              {timeToLast(new Date(post.createdAt))}
+              {timeToLast(new Date(post?.createdAt))}
             </span>
           </div>
           <Space>
@@ -362,10 +364,10 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         </div>
 
         <div className="post-content mt-3">
-          <p className="post-text text-sm mb-2">{post.content}</p>
-          {post.mediaUrl?.trim() && (
+          <p className="post-text text-sm mb-2">{post?.content}</p>
+          {post?.mediaUrl?.trim() && (
             <div className="w-full mt-2 rounded-md">
-              {renderMedia(post.mediaUrl)}
+              {renderMedia(post?.mediaUrl)}
             </div>
           )}
         </div>
@@ -455,7 +457,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         >
           <div className="max-h-[70vh] p-4 overflow-y-auto">
             <PostBox post={post} />
-            <CommentList postId={post.id} />{" "}
+            <CommentList postId={post?.id} />{" "}
           </div>
         </Modal>
       </div>

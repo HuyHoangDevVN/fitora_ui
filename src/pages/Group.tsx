@@ -1,14 +1,12 @@
+import PostBox from "@/components/posts/PostBox";
+import { GroupResponse } from "@/types/group";
+import { Post } from "@/types/post";
+import { PlusOutlined } from "@ant-design/icons";
+import { Avatar, Button, Card, Divider, List, Typography } from "antd";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Avatar, Button, Card, Divider, List, Typography } from "antd";
-import {
-  CommentOutlined,
-  LikeOutlined,
-  PlusOutlined,
-  ShareAltOutlined,
-} from "@ant-design/icons";
 import { groupApi } from "../api/groupApi";
-import { GroupResponse } from "@/types/group";
+import { postApi } from "../api/postApi";
 
 const { Title, Text } = Typography;
 
@@ -18,6 +16,8 @@ const Group: React.FC = () => {
   const [joinedGroups, setJoinedGroups] = useState<GroupResponse[]>([]);
   const [loadingManagedGroups, setLoadingManagedGroups] = useState(false);
   const [loadingJoinedGroups, setLoadingJoinedGroups] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -40,7 +40,26 @@ const Group: React.FC = () => {
       }
     };
 
+    const fetchPosts = async () => {
+      setLoadingPosts(true);
+      try {
+        const response = await postApi.fetchPosts({
+          feedType: 1, // Fetch all posts
+        });
+        if (response?.isSuccess) {
+          setPosts(response.data.data);
+        } else {
+          throw new Error("Failed to fetch posts");
+        }
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+
     fetchGroups();
+    fetchPosts();
   }, []);
 
   const renderGroupList = (groups: GroupResponse[], loading: boolean) =>
@@ -67,26 +86,6 @@ const Group: React.FC = () => {
   const handleViewGroup = (id) => {
     navigate(`/groups/${id}`);
   };
-
-  const posts = [
-    {
-      id: 1,
-      group: "Yêu Thú Cưng",
-      groupAvatar: "https://via.placeholder.com/40",
-      author: "Nguyễn Văn A",
-      time: "2 giờ trước",
-      content:
-        "Mọi người có ai biết chỗ nào bán thức ăn cho mèo chất lượng không ạ?",
-    },
-    {
-      id: 2,
-      group: "Cộng đồng Công nghệ",
-      groupAvatar: "https://via.placeholder.com/40",
-      author: "Trần Thị B",
-      time: "5 giờ trước",
-      content: "React 19 sắp ra mắt, mọi người đã thử các tính năng mới chưa?",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,59 +122,15 @@ const Group: React.FC = () => {
             </Card>
           </div>
 
-          <div className="flex-1 flex justify-center mx-auto lg:mx-0">
-            <List
-              dataSource={posts}
-              renderItem={(post) => (
-                <Card
-                  key={post.id}
-                  className="mb-6 rounded-lg shadow-sm border-gray-200"
-                  bodyStyle={{ padding: "16px" }}
-                >
-                  <div className="flex items-start space-x-3 mb-3">
-                    <Avatar src={post.groupAvatar} size={40} />
-                    <div>
-                      <Text className="text-sm font-semibold text-gray-900">
-                        {post.author}{" "}
-                        <span className="text-gray-500">trong</span>{" "}
-                        <span className="text-[#1b74e4] hover:underline cursor-pointer">
-                          {post.group}
-                        </span>
-                      </Text>
-                      <Text className="text-xs text-gray-500 block">
-                        {post.time}
-                      </Text>
-                    </div>
-                  </div>
-                  <Text className="text-gray-900 mb-4 block">
-                    {post.content}
-                  </Text>
-                  <div className="flex justify-between border-t border-gray-200 pt-2">
-                    <Button
-                      type="text"
-                      icon={<LikeOutlined />}
-                      className="text-gray-600 hover:text-[#1b74e4]"
-                    >
-                      Thích
-                    </Button>
-                    <Button
-                      type="text"
-                      icon={<CommentOutlined />}
-                      className="text-gray-600 hover:text-[#1b74e4]"
-                    >
-                      Bình luận
-                    </Button>
-                    <Button
-                      type="text"
-                      icon={<ShareAltOutlined />}
-                      className="text-gray-600 hover:text-[#1b74e4]"
-                    >
-                      Chia sẻ
-                    </Button>
-                  </div>
-                </Card>
-              )}
-            />
+          <div className="flex-1 flex max-w-[650px] justify-center items-center mx-auto ">
+            {loadingPosts ? (
+              <Text>Loading posts...</Text>
+            ) : (
+              <List
+                dataSource={posts}
+                renderItem={(post) => <PostBox post={post} />}
+              />
+            )}
           </div>
         </div>
       </div>

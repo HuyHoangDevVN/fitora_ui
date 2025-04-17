@@ -9,6 +9,8 @@ import { Avatar, Button, Skeleton, Spin, message } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import { User } from "@/types/user";
+import { userApi } from "@/api/userApi";
 
 const PersonalPage = () => {
   const navigate = useNavigate();
@@ -29,6 +31,8 @@ const PersonalPage = () => {
     }
   );
   const [isProfileLoading, setIsProfileLoading] = useState<boolean>(false);
+  const [friends, setFriends] = useState<User[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("posts");
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef<boolean>(false);
@@ -91,6 +95,22 @@ const PersonalPage = () => {
       setLoading(false);
     }
   }, [isWatching, userId, nextCursor, loading, hasMore]);
+
+  const fetchFriends = useCallback(async () => {
+    try {
+      const response = await userApi.getListFriends({
+        pageIndex: 0,
+        pageSize: 10,
+      });
+      if (response?.isSuccess && response.data) {
+        setFriends(response.data.data);
+      } else {
+        message.error(response?.message || "Không thể tải danh sách bạn bè");
+      }
+    } catch {
+      message.error("Lỗi khi tải danh sách bạn bè, vui lòng thử lại!");
+    }
+  }, []);
 
   useEffect(() => {
     if (initialLoadRef.current) return;
@@ -284,63 +304,71 @@ const PersonalPage = () => {
 
               <div className="mb-6">
                 <nav className="flex space-x-6 border-b pb-2 overflow-x-auto">
-                  <a
-                    href="#"
-                    className="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2 whitespace-nowrap"
+                  <button
+                    onClick={() => setActiveTab("posts")}
+                    className={`${
+                      activeTab === "posts"
+                        ? "text-blue-600 font-semibold border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-blue-600"
+                    } pb-2 whitespace-nowrap`}
                   >
                     Bài viết
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
-                  >
-                    Giới thiệu
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("friends");
+                      fetchFriends();
+                    }}
+                    className={`${
+                      activeTab === "friends"
+                        ? "text-blue-600 font-semibold border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-blue-600"
+                    } pb-2 whitespace-nowrap`}
                   >
                     Bạn bè
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
-                  >
-                    Ảnh
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
-                  >
-                    Video
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
-                  >
-                    Reels
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-blue-600 pb-2 whitespace-nowrap"
-                  >
-                    Xem thêm
-                  </a>
+                  </button>
                 </nav>
               </div>
 
               <div className="space-y-6">
-                {posts.length > 0 ? (
+                {activeTab === "posts" ? (
+                  posts.length > 0 ? (
+                    <div className="flex flex-col space-y-4">
+                      {posts.map((post) => (
+                        <div key={post.id} className="bg-white rounded-lg px-4">
+                          <PostBox post={post} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-700 text-center">
+                      Không có bài viết nào để hiển thị.
+                    </p>
+                  )
+                ) : friends.length > 0 ? (
                   <div className="flex flex-col space-y-4">
-                    {posts.map((post) => (
-                      <div key={post.id} className="bg-white rounded-lg px-4">
-                        <PostBox post={post} />
+                    {friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="bg-white rounded-lg px-4 py-2"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <Avatar src={friend.profilePictureUrl} />
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {friend.firstName} {friend.lastName}
+                            </p>
+                            <p className="text-gray-600 text-sm">
+                              @{friend.email}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-gray-700 text-center">
-                    Không có bài viết nào để hiển thị.
+                    Không có bạn bè nào để hiển thị.
                   </p>
                 )}
                 <div ref={loadMoreRef} />
