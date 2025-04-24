@@ -31,5 +31,6 @@ export const refreshAccessToken = async () => {
 
 export const getUserInfo = async () => {
   const response = await authRepository.get("/auth/me");
+
   return response;
 };

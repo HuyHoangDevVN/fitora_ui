@@ -10,6 +10,7 @@ import { groupApi } from "@/api/groupApi";
 import { GroupResponse } from "@/types/group";
 
 const LeftSidebar: React.FC = () => {
+  const userId = localStorage.getItem("x-client-id") || "0";
   const [groupData, setGroupData] = useState<GroupResponse[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -17,7 +18,7 @@ const LeftSidebar: React.FC = () => {
   const menuItems = [
     {
       icon: <RiHomeLine size={20} color={colors.primary} />,
-      link: "/personal",
+      link: `/profile/${userId}`,
       title: "Trang chủ",
     },
     {
@@ -89,12 +90,12 @@ const LeftSidebar: React.FC = () => {
           icon: (
             <img
               width={20}
-              src={group.avatarUrl}
+              src={group?.avatarUrl ?? ""}
               style={{ aspectRatio: "1 / 1" }}
-              alt={group.name}
+              alt={group?.name ?? ""}
             />
           ),
-          title: group.name,
+          title: group.name ?? "Unknown Group",
           link: `/groups/${group.id}`,
         }))}
         onLoadMore={loadMoreGroups}

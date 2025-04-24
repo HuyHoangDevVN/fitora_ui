@@ -5,6 +5,7 @@ import { groupApi } from "@/api/groupApi";
 
 const NotificationActionIcon = () => {
   interface Invite {
+    id: string;
     groupId: string;
     groupName: string;
     groupImageUrl: string;
@@ -84,14 +85,14 @@ const NotificationActionIcon = () => {
               <Button
                 type="link"
                 className="text-blue-500"
-                onClick={() => handleAccept(item.groupId)}
+                onClick={() => handleAccept(item.id)}
               >
                 Chấp nhận
               </Button>
               <Button
                 type="link"
                 className="text-red-500"
-                onClick={() => handleDeny(item.groupId)}
+                onClick={() => handleDeny(item.id)}
               >
                 Từ chối
               </Button>

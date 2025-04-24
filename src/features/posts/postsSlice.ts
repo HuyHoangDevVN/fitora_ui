@@ -26,7 +26,7 @@ export const fetchPosts = createAsyncThunk(
   "posts/fetchPosts",
   async (
     params: {
-      feedType: 1 | 2; // 1: All, 2: Category
+      feedType: 1 | 2;
       categoryId?: string;
       cursor?: string | null;
       limit?: number;
@@ -34,14 +34,27 @@ export const fetchPosts = createAsyncThunk(
     thunkAPI
   ) => {
     try {
+      if (
+        !params.feedType ||
+        (params.feedType !== 1 && params.feedType !== 2)
+      ) {
+        return thunkAPI.rejectWithValue("Loại feed không hợp lệ");
+      }
+
       const response = await postApi.fetchPosts(params);
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể tải bài viết"
         );
       }
+
+      if (!response.data || !Array.isArray(response.data.data)) {
+        return thunkAPI.rejectWithValue("Dữ liệu bài viết không hợp lệ");
+      }
+
       return response.data;
     } catch (error) {
+      console.error("Error fetching posts:", error);
       return thunkAPI.rejectWithValue("Có lỗi xảy ra khi tải bài viết");
     }
   }
@@ -86,7 +99,7 @@ export const votePost = createAsyncThunk(
           response.message || "Không thể thực hiện hành động vote"
         );
       }
-      return { postId, voteType }; // Trả về thông tin để cập nhật Redux store
+      return { postId, voteType };
     } catch (error) {
       return thunkAPI.rejectWithValue(
         "Có lỗi xảy ra khi thực hiện hành động vote"
@@ -119,13 +132,10 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.status = "succeeded";
-
         const { data, nextCursor } = action.payload;
-
         const uniquePosts = data.filter(
           (post: Post) => !state.posts.some((p) => p.id === post.id)
         );
-
         state.posts = [...state.posts, ...uniquePosts];
         state.nextCursor = nextCursor;
         state.hasMore = nextCursor !== null;
@@ -143,13 +153,10 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPersonalPosts.fulfilled, (state, action) => {
         state.status = "succeeded";
-
         const { data, nextCursor } = action.payload;
-
         const uniquePosts = data.filter(
           (post: Post) => !state.posts.some((p) => p.id === post.id)
         );
-
         state.posts = [...state.posts, ...uniquePosts];
         state.nextCursor = nextCursor;
         state.hasMore = nextCursor !== null;
@@ -166,18 +173,15 @@ const postsSlice = createSlice({
         const post = state.posts.find((p) => p.id === postId);
         if (post) {
           if (voteType === 3) {
-            // Unvote logic
-            if (post.userVoteType === 1) post.votesCount -= 1; // Hủy upvote
-            if (post.userVoteType === 2) post.votesCount += 1; // Hủy downvote
-            post.userVoteType = null; // Reset trạng thái vote
+            if (post.userVoteType === 1) post.votesCount -= 1;
+            if (post.userVoteType === 2) post.votesCount += 1;
+            post.userVoteType = null;
           } else if (post.userVoteType === voteType) {
-            // Nếu đã vote cùng loại, hủy vote
             post.userVoteType = null;
             post.votesCount += voteType === 1 ? -1 : 1;
           } else {
-            // Nếu vote khác loại, cập nhật vote
-            if (post.userVoteType === 1) post.votesCount -= 1; // Hủy upvote trước đó
-            if (post.userVoteType === 2) post.votesCount += 1; // Hủy downvote trước đó
+            if (post.userVoteType === 1) post.votesCount -= 1;
+            if (post.userVoteType === 2) post.votesCount += 1;
             post.userVoteType = voteType;
             post.votesCount += voteType === 1 ? 1 : -1;
           }

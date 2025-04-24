@@ -5,8 +5,6 @@ import FriendRequestPage from "@/pages/FriendRequestPage";
 import Home from "@/pages/Home";
 import Login from "@/features/auth/Login";
 import PageNotFound from "@/pages/PageNotFound";
-import PersonalPage from "@/pages/PersonalPage";
-import Profile from "@/pages/Profile";
 import ProfileSettings from "@/pages/ProfileSetting";
 import Register from "@/features/auth/Register";
 import { createBrowserRouter } from "react-router-dom";
@@ -14,6 +12,10 @@ import PrivateRoute from "./PrivateRoute";
 import Group from "@/pages/Group";
 import CreateGroup from "@/features/groups/CreateGroup";
 import GroupDetailPage from "@/features/groups/GroupDetailPage";
+import Profile from "@/pages/Profile";
+import Trending from "@/pages/Trending";
+import Saved from "@/pages/Saved";
+import Explore from "@/pages/Explore";
 
 const router = createBrowserRouter([
   {
@@ -27,10 +29,13 @@ const router = createBrowserRouter([
         children: [
           { path: "/", element: <Home /> },
           { path: "about", element: <About /> },
+          { path: "trending", element: <Trending /> },
+          { path: "saved", element: <Saved /> },
+          { path: "explore", element: <Explore /> },
         ],
       },
       {
-        path: "profile",
+        path: "/profile/:userId",
         element: (
           <LayoutWOSB>
             <Profile />
@@ -50,14 +55,6 @@ const router = createBrowserRouter([
         element: (
           <LayoutWOSB>
             <FriendRequestPage />
-          </LayoutWOSB>
-        ),
-      },
-      {
-        path: "/personal",
-        element: (
-          <LayoutWOSB>
-            <PersonalPage />
           </LayoutWOSB>
         ),
       },

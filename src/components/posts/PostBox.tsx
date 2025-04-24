@@ -12,12 +12,13 @@ import {
   Space,
 } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
-import { FaRegComment } from "react-icons/fa";
+import { FaLock, FaRegComment, FaUserFriends } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
 import { RiShareForwardLine } from "react-icons/ri";
 
 import { categoryApi } from "@/api/categoryApi";
+import { postApi } from "@/api/postApi";
 import { interactRepository } from "@/api/repository";
 import { userApi } from "@/api/userApi";
 import { votePost } from "@/features/posts/postsSlice";
@@ -27,7 +28,8 @@ import { timeToLast } from "@/utils/functionHelpper";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CommentList from "./CommentList";
-import colors from "@/styles/colors";
+import { PrivacyPost } from "@/enums/post";
+import { IoEarthSharp } from "react-icons/io5";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -47,10 +49,10 @@ const getFileType = (url: string): string => {
   return "other";
 };
 
-type PostBoxProps = { post: Post };
+type PostBoxProps = { post: Post; isSaved?: boolean };
 const RIBBON_COLORS = ["#FF4770", "#FF914D", "#FFC107", "#4CAF50", "#2196F3"];
 
-const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
+const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
   const randomRibbonColor = useMemo(
     () => RIBBON_COLORS[Math.floor(Math.random() * RIBBON_COLORS.length)],
     []
@@ -63,6 +65,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(post?.user?.isFollowing);
+  const [numberOfVotes, setNumberOfVotes] = useState(post?.votesCount);
+  const [voteType, setVoteType] = useState<1 | 2 | null>(post?.userVoteType);
   const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
 
   const avatarSrc = useMemo(
@@ -89,8 +93,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       });
       toggleEditModal(false);
       message.success("Cập nhật bài viết thành công");
-    } catch (error) {
-      console.error("Error updating post:", error);
+    } catch (_error) {
+      console.error("Error updating post:", _error);
       message.error("Cập nhật bài viết thất bại");
     } finally {
       setLoading(false);
@@ -108,8 +112,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
         try {
           await interactRepository.delete(`/post/delete-post/${post?.id}`);
           message.success("Xóa bài viết thành công");
-        } catch (error) {
-          console.error("Error deleting post:", error);
+        } catch (_error) {
+          console.error("Error deleting post:", _error);
           message.error("Xóa bài viết thất bại");
         } finally {
           setLoading(false);
@@ -117,12 +121,27 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       },
     });
   }, [post?.id]);
-
   const handleMenuClick = useCallback(
     ({ key }: { key: string }) => {
-      if (key === "edit") toggleEditModal(true);
-      else if (key === "delete") handleDelete();
-      else if (key === "followCategory") handleFollowCategory();
+      switch (key) {
+        case "edit":
+          toggleEditModal(true);
+          break;
+        case "delete":
+          handleDelete();
+          break;
+        case "followCategory":
+          handleFollowCategory();
+          break;
+        case "save":
+          handleSave();
+          break;
+        case "unsave":
+          handleUnSave();
+          break;
+        default:
+          break;
+      }
     },
     [handleDelete, toggleEditModal]
   );
@@ -219,6 +238,19 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
     [mediaLoading]
   );
 
+  const renderIconPrivacy = useMemo(() => {
+    switch (post?.privacy) {
+      case PrivacyPost.Public:
+        return <IoEarthSharp size={12} />; // Public icon
+      case PrivacyPost.FriendsOnly:
+        return <FaUserFriends size={12} />; // Friends icon
+      case PrivacyPost.Private:
+        return <FaLock size={12} />; // Private icon
+      default:
+        return null; // Default case to handle unexpected values
+    }
+  }, [post?.privacy]);
+
   const menuItems = useMemo(
     () =>
       [
@@ -228,18 +260,21 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
           key: "followCategory",
           label: "Theo dõi danh mục",
         },
+        !isSaved && { key: "save", label: "Lưu bài viết" },
+        isSaved && { key: "unsave", label: "Bỏ lưu bài viết" },
       ].filter(Boolean) as { key: string; label: string }[],
     [post?.isCategoryFollowed]
   );
+
   const handleVote = useCallback(
-    async (voteType: 1 | 2 | 3) => {
+    async (newVoteType: 1 | 2 | 3) => {
       setLoading(true);
       try {
         const result = await dispatch(
           votePost({
             userId: localStorage.getItem("x-client-id") || "",
             postId: post?.id,
-            voteType,
+            voteType: newVoteType,
           })
         ).unwrap();
 
@@ -249,14 +284,32 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             2: "Downvote thành công!",
             3: "Bỏ phiếu thành công!",
           };
-          message.success(messages[voteType]);
+          message.success(messages[newVoteType]);
+
+          const votesCont = post?.votesCount;
+
+          setNumberOfVotes(() => {
+            const voteChanges = {
+              "1->3": -1, // Remove upvote
+              "2->3": 1, // Remove downvote
+              "1->2": -2, // Change from upvote to downvote
+              "2->1": 2, // Change from downvote to upvote
+              "null->1": 1, // Upvote
+              "null->2": -1, // Downvote
+            };
+
+            const key = `${post?.userVoteType ?? "null"}->${newVoteType}`;
+            return votesCont + (voteChanges[key] || 0);
+          });
+
+          setVoteType(newVoteType === 3 ? null : newVoteType);
         } else {
           const errorMessages = {
             1: "Không thể upvote bài viết.",
             2: "Không thể downvote bài viết.",
             3: "Không thể bỏ phiếu bài viết.",
           };
-          message.error(errorMessages[voteType]);
+          message.error(errorMessages[newVoteType]);
         }
       } catch {
         const errorMessages = {
@@ -264,13 +317,48 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
           2: "Không thể downvote bài viết.",
           3: "Không thể bỏ phiếu bài viết.",
         };
-        message.error(errorMessages[voteType]);
+        message.error(errorMessages[newVoteType]);
       } finally {
         setLoading(false);
       }
     },
-    [dispatch, post?.id]
+    [dispatch, post?.id, voteType]
   );
+
+  const handleSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.savePost({
+        userId: localStorage.getItem("x-client-id") || "",
+        postId: post?.id,
+      });
+      if (response?.isSuccess) {
+        message.success("Đã lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post]);
+
+  const handleUnSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.unSavePost(post?.id);
+      if (response?.isSuccess) {
+        message.success("Đã bỏ lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể bỏ lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post]);
 
   const handleFollow = useCallback(async () => {
     try {
@@ -286,7 +374,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       } else {
         message.error(response?.message || "Không thể theo dõi người dùng.");
       }
-    } catch (error) {
+    } catch (_error) {
       message.error("Lỗi hệ thống, vui lòng thử lại!");
     } finally {
       setLoading(false);
@@ -302,7 +390,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       } else {
         message.error(response?.message || "Không thể theo dõi danh mục.");
       }
-    } catch (error) {
+    } catch (_error) {
       message.error("Lỗi hệ thống, vui lòng thử lại!");
     } finally {
       setLoading(false);
@@ -320,24 +408,31 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
       placement="end"
       className="absolute top-[-5px]"
     >
-      <div className="post-box mb-3 border rounded-lg p-3 bg-white shadow-sm">
+      <div className="post-box mb-3 border rounded-lg p-3 min-w-[500px]  bg-white shadow-sm">
         <div className="post-header flex justify-between items-center">
           <div className="post-info flex items-center gap-2">
             <Avatar src={avatarSrc} size={40} />
-            <h2
-              className="flex items-center category-name text-xs font-semibold cursor-pointer"
-              onClick={() =>
-                navigate(`/personal`, {
-                  state: { isWatching: true, userId: post?.user?.id },
-                })
-              }
-            >
-              {post?.user?.username}
-            </h2>
-            -
-            <span className="create-date text-xs font-semibold">
-              {timeToLast(new Date(post?.createdAt))}
-            </span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <h2
+                  className="flex items-center category-name text-sm font-semibold cursor-pointer"
+                  onClick={() =>
+                    navigate(`/profile/${post?.user?.id}`, {
+                      state: { isWatching: true },
+                    })
+                  }
+                >
+                  {post?.user?.username}
+                </h2>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="create-date text-xs font-[450]">
+                  {timeToLast(new Date(post?.createdAt))}
+                </span>
+                <span className="dot-separator text-xs font-[450]">•</span>
+                {renderIconPrivacy}
+              </div>
+            </div>
           </div>
           <Space>
             {/* {!isFollowing && !isMe && (
@@ -377,27 +472,27 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post }) => {
             <Button
               type="text"
               className={`text-xl transition-colors duration-300 ${
-                post?.userVoteType === 1
+                voteType === 1
                   ? "text-primary"
                   : "text-gray-400 hover:text-primary"
               }`}
               icon={<PiArrowFatUpLight />}
-              onClick={() => handleVote(post?.userVoteType === 1 ? 3 : 1)}
-              loading={loading && post?.userVoteType === 1}
+              onClick={() => handleVote(voteType === 1 ? 3 : 1)}
+              loading={loading && voteType === 1}
             />
             <span className={`vote-count text-sm font-semibold`}>
-              {post?.votesCount}
+              {numberOfVotes}
             </span>
             <Button
               type="text"
               className={`text-xl transition-colors duration-300 ${
-                post?.userVoteType === 2
+                voteType === 2
                   ? "text-primary"
                   : "text-gray-400 hover:text-primary"
               }`}
               icon={<PiArrowFatDownLight />}
-              onClick={() => handleVote(post?.userVoteType === 2 ? 3 : 2)}
-              loading={loading && post?.userVoteType === 2}
+              onClick={() => handleVote(voteType === 2 ? 3 : 2)}
+              loading={loading && voteType === 2}
             />
           </div>
           <Button

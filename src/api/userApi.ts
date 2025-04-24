@@ -12,6 +12,22 @@ export interface GetListFriendsRequest {
 }
 
 export const userApi = {
+  async getUsers(
+    keySearch: string,
+    pageIndex: number,
+    pageSize: number
+  ): Promise<ResponseBase<PaginatedResult<User>>> {
+    const url = `/user/get-users?KeySearch=${encodeURIComponent(
+      keySearch
+    )}&PageIndex=${pageIndex}&PageSize=${pageSize}`;
+    const response = await userRepository.get<
+      ResponseBase<PaginatedResult<User>>
+    >(url);
+    if (!response) {
+      throw new Error("Failed to fetch users");
+    }
+    return response;
+  },
   acceptFriendRequest: async (
     senderId: string
   ): Promise<ResponseBase<null>> => {
@@ -35,6 +51,7 @@ export const userApi = {
   async fetchUserProfile(userId?: string): Promise<ResponseBase<ProfileUser>> {
     const url = userId ? `/user/get-user?GetId=${userId}` : `/user/profile`;
     const response = await userRepository.get<ResponseBase<ProfileUser>>(url);
+    localStorage.setItem("userInfo", JSON.stringify(response?.data?.userInfo));
     if (!response) throw new Error("Failed to fetch user profile");
     return response;
   },

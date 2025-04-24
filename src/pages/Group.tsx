@@ -122,7 +122,7 @@ const Group: React.FC = () => {
             </Card>
           </div>
 
-          <div className="flex-1 flex max-w-[650px] justify-center items-center mx-auto ">
+          <div className="flex-1 flex min-w-[650px] max-w-[650px] justify-center items-center mx-auto">
             {loadingPosts ? (
               <Text>Loading posts...</Text>
             ) : (

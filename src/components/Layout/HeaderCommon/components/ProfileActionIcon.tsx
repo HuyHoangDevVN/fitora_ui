@@ -1,17 +1,18 @@
 import { logout } from "@/features/auth/authSlice";
-import { AppDispatch, RootState } from "@/store/store";
+import { AppDispatch } from "@/store/store";
 import colors from "@/styles/colors";
 import { UserOutlined } from "@ant-design/icons";
 import { Avatar, Divider, Popover, Space, Typography } from "antd";
 import { useState } from "react";
 import { IoLogOutOutline } from "react-icons/io5";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 const ProfileActionIcon = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { profile } = useSelector((state: RootState) => state.user);
+  const userId = localStorage.getItem("x-client-id");
+  const profile = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
 
   const [open, setOpen] = useState(false);
 
@@ -30,7 +31,7 @@ const ProfileActionIcon = () => {
     <div className="w-[200px] p-0 flex flex-col gap-1 bg-white rounded-lg">
       <button
         className="flex flex-col items-start w-full text-left p-2 rounded-md"
-        onClick={() => navigate("/personal")}
+        onClick={() => navigate(`/profile/${userId}`)}
       >
         <span className="font-medium text-gray-800 pb-2">Profile</span>
         <div className="flex flex-row items-center gap-2">
@@ -38,10 +39,10 @@ const ProfileActionIcon = () => {
             size={30}
             style={{ backgroundColor: colors.primary }}
             icon={<UserOutlined />}
-            src={profile?.userInfo?.profilePictureUrl || ""}
+            src={profile?.profilePictureUrl || ""}
           />
           <span className="text-sm font-medium text-gray-700">
-            {profile?.userInfo?.firstName || "User"}
+            {profile?.firstName || "User"}
           </span>
         </div>
       </button>

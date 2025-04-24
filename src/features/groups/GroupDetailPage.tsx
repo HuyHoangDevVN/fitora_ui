@@ -3,12 +3,8 @@ import { interactRepository } from "@/api/repository";
 import PostBox from "@/components/posts/PostBox";
 import { GroupPrivacy, GroupRole } from "@/enums/group";
 import { PrivacyPost } from "@/enums/post";
-import {
-  createCategory,
-  fetchCategoriesForPost,
-  followCategory,
-} from "@/features/category/categorySlice";
-import { AppDispatch, RootState } from "@/store/store";
+
+import { AppDispatch } from "@/store/store";
 import colors from "@/styles/colors";
 import { GroupResponse, MemberResponse } from "@/types/group";
 import {
@@ -40,15 +36,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaLock } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { categoryApi } from "../../api/categoryApi";
 import { groupApi, UpdateGroupRequest } from "../../api/groupApi";
 import InviteMembersModal from "./InviteMembersModal";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const GroupDetailPage: React.FC = () => {
   const { idGroup } = useParams();
-  const { profile } = useSelector((state: RootState) => state.user);
+  const profile = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
 
   const [member, setMember] = useState<MemberResponse | null>();
   const [groupData, setGroupData] = useState<GroupResponse | null>(null);
@@ -223,7 +220,7 @@ const GroupDetailPage: React.FC = () => {
           await groupApi.createGroupPost({
             postId: response.data.id,
             groupId: idGroup || "",
-            authorId: profile?.userInfo?.userId || "",
+            authorId: profile.userId || "",
             isApproved: true,
           });
         } catch (error) {
@@ -301,9 +298,16 @@ const GroupDetailPage: React.FC = () => {
     return null;
   };
 
-  const showCategoryModal = () => {
+  const showCategoryModal = async () => {
     setIsCategoryModalOpen(true);
-    dispatch(fetchCategoriesForPost(keySearch));
+    try {
+      const categories = await categoryApi.fetchCategories(keySearch);
+      // Assuming categoriesForPost is set from the fetched categories
+      dispatch({ type: "SET_CATEGORIES_FOR_POST", payload: categories });
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      message.error("Có lỗi xảy ra khi tải danh mục!");
+    }
   };
 
   const handleCategoryModalOk = async () => {
@@ -314,14 +318,12 @@ const GroupDetailPage: React.FC = () => {
 
     try {
       if (!selectedCategory && newCategoryName.trim()) {
-        const response = await dispatch(
-          createCategory({
-            name: newCategoryName,
-            description: description,
-          }) as any
-        ).unwrap();
-        setSelectedCategory(response.id);
-        await dispatch(followCategory(response.id) as any);
+        const newCategory = await categoryApi.createCategory({
+          name: newCategoryName,
+          description: description,
+        });
+        setSelectedCategory(newCategory.id);
+        await categoryApi.followCategory(newCategory.id);
         message.success("Chủ đề đã được tạo và theo dõi!");
       }
 
@@ -338,15 +340,22 @@ const GroupDetailPage: React.FC = () => {
     setNewCategoryName("");
   };
 
-  const handleSearchCategory = (value: string) => {
+  const handleSearchCategory = async (value: string) => {
     setKeySearch(value);
-    dispatch(fetchCategoriesForPost(value) as any);
+    try {
+      const categories = await categoryApi.fetchCategories(value);
+      // Assuming categoriesForPost is set from the fetched categories
+      dispatch({ type: "SET_CATEGORIES_FOR_POST", payload: categories });
+    } catch (error) {
+      console.error("Error searching categories:", error);
+      message.error("Có lỗi xảy ra khi tìm kiếm danh mục!");
+    }
   };
 
   const handleAssignRole = async (memberId: string, role: number) => {
     try {
       const response = await groupApi.assignRoleMember({
-        assignedBy: profile?.userInfo?.userId || "",
+        assignedBy: profile.userId || "",
         groupId: idGroup || "",
         memberId,
         role,
@@ -421,7 +430,7 @@ const GroupDetailPage: React.FC = () => {
 
   const renderMemberActions = (member: MemberResponse) => {
     if (member.role === GroupRole.Owner) {
-      return null; // Chủ nhóm không có hành động nào
+      return null;
     }
 
     return (
@@ -434,28 +443,13 @@ const GroupDetailPage: React.FC = () => {
             Phân quyền Admin
           </Button>
         )}
-        <Button
-          size="small"
-          onClick={() =>
-            handleEditGroup({
-              Id: groupData?.id || "",
-              Name: groupData?.name || "",
-              Description: groupData?.description || "",
-              Privacy: groupData?.privacy || GroupPrivacy.Public,
-              RequirePostApproval: groupData?.requirePostApproval || false,
-              CoverImageUrl: groupData?.coverImageUrl || "",
-              AvatarUrl: groupData?.avatarUrl || "",
-            })
-          }
-        >
-          Chỉnh sửa nhóm
-        </Button>
+
         <Button
           size="small"
           danger
           onClick={() => handleDeleteMember(member.id)}
         >
-          Xóa
+          Xóa khỏi nhóm
         </Button>
       </div>
     );
@@ -637,7 +631,7 @@ const GroupDetailPage: React.FC = () => {
             <div className="relative w-full h-[300px] rounded-e-md">
               <img
                 src={
-                  profile?.userInfo?.profileBackgroundPictureUrl ||
+                  profile.profileBackgroundPictureUrl ||
                   "https://fastly.picsum.photos/id/14/536/354.jpg?hmac=p8F6lcJ45rfP_j7N_J8IqhUE9-iUu1deD1BhGiLoV2Q"
                 }
                 alt="Ảnh bìa"
@@ -678,10 +672,7 @@ const GroupDetailPage: React.FC = () => {
                       <div className="create-post-section lg:w-2/3">
                         <Card className="shadow-lg rounded-lg ">
                           <div className="flex items-start gap-3">
-                            <Avatar
-                              size={40}
-                              src={profile?.userInfo?.profilePictureUrl}
-                            />
+                            <Avatar size={40} src={profile.profilePictureUrl} />
                             <TextArea
                               placeholder="Bạn đang nghĩ gì..."
                               autoSize={{ minRows: 2, maxRows: 4 }}
@@ -765,31 +756,33 @@ const GroupDetailPage: React.FC = () => {
                 <List
                   grid={{ gutter: 16, column: 2 }}
                   dataSource={members}
-                  renderItem={(member) => (
+                  renderItem={(memberItem) => (
                     <List.Item>
                       <Card hoverable className="shadow-md rounded-lg">
                         <Card.Meta
                           avatar={
                             <Avatar
-                              src={member.profilePictureUrl}
+                              src={memberItem.profilePictureUrl}
                               size={50}
                               className="border border-gray-300"
                             />
                           }
                           title={
                             <span className="font-semibold text-gray-800">
-                              {member.userName || "Không Xác Định"}
+                              {memberItem.userName || "Không Xác Định"}
                             </span>
                           }
                           description={
                             <div className="text-gray-600">
                               <p className="mb-1">
-                                {member.bio || "Chưa Có Thông Tin"}
+                                {memberItem.bio || "Chưa Có Thông Tin"}
                               </p>
                               <p className="text-sm font-medium">
-                                {renderMemberRole(member.role ?? null)}
+                                {renderMemberRole(memberItem.role ?? null)}
                               </p>
-                              {renderMemberActions(member)}
+                              {(member.role == GroupRole.Owner ||
+                                member.role == GroupRole.Admin) &&
+                                renderMemberActions(memberItem)}
                             </div>
                           }
                         />

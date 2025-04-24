@@ -1,8 +1,8 @@
-import { GroupPrivacy, GroupStatus } from "@/enums/group";
+import { GroupPrivacy } from "@/enums/group";
 import { GroupResponse, MemberResponse } from "@/types/group";
+import { PaginatedResult } from "@/types/paginatedResult";
 import { ResponseBase } from "@/types/responseBase";
 import { userRepository } from "./repository";
-import { PaginatedResult } from "@/types/paginatedResult";
 
 //#region Interface
 export interface CreateGroupFormBody {
@@ -64,25 +64,22 @@ export interface GetSentGroupInvitesRequest {
   PageSize: number;
 }
 
-// Add API to get received group invites
 export interface GetReceivedGroupInvitesRequest {
   PageIndex: number;
   PageSize: number;
 }
 
-// Add API to accept group invite
 export interface AcceptGroupInviteRequest {
   Id: string;
 }
 
-// Add API to delete group invite
 export interface DeleteGroupInviteRequest {
   Id: string;
 }
 
 //#region API
 export const groupApi = {
-  // Group Management: Create, Update, Delete, and Get by ID
+  // Group Management: Create, Update, Delete, Get by ID and get list
   createGroup: async (
     formBody: CreateGroupFormBody
   ): Promise<ResponseBase<any>> => {
@@ -120,6 +117,26 @@ export const groupApi = {
     const url = `/group/get-by-id?id=${id}`;
     const response = await userRepository.get<any>(`${url}`);
     return response.data ?? undefined;
+  },
+
+  getGroupList: async (
+    keySearch: string,
+    pageIndex: number,
+    pageSize: number
+  ): Promise<PaginatedResult<GroupResponse>> => {
+    const url = `/group/get-list`;
+    const queryParams = new URLSearchParams({
+      Keysearch: keySearch,
+      PageIndex: pageIndex.toString(),
+      PageSize: pageSize.toString(),
+    }).toString();
+    const response = await userRepository.get<PaginatedResult<GroupResponse>>(
+      `${url}?${queryParams}`
+    );
+    if (!response) {
+      throw new Error("Failed to fetch group list");
+    }
+    return response;
   },
 
   // Group Membership: Assign roles, invite members, delete members, and get members

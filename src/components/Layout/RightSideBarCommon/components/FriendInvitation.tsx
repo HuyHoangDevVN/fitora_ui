@@ -1,7 +1,7 @@
 import { userApi } from "@/api/userApi";
 import { FriendInvite } from "@/types/friendInvite";
 import { Avatar, Button, Flex, message } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type FriendInvitationProp = {
   invite?: FriendInvite;
@@ -17,6 +17,15 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
   const userName = isReceived ? invite?.senderName : invite?.receiverName;
   const [status, setStatus] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (status === "accepted" || status === "deleted") {
+      const timer = setTimeout(() => {
+        onUpdate();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, onUpdate]);
+
   const handleAccept = async () => {
     if (!invite?.id) {
       message.error("Không tìm thấy ID lời mời.");
@@ -27,7 +36,6 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
       if (response?.isSuccess) {
         message.success("Đã chấp nhận lời mời");
         setStatus("accepted");
-        onUpdate();
       } else {
         message.error(response?.message || "Thao tác thất bại");
       }
@@ -46,7 +54,6 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
       if (response?.isSuccess) {
         message.success("Đã từ chối lời mời");
         setStatus("deleted");
-        onUpdate();
       } else {
         message.error(response?.message || "Thao tác thất bại");
       }
@@ -67,7 +74,7 @@ const FriendInvitation = ({ invite, type, onUpdate }: FriendInvitationProp) => {
     <div className="friend-invitation">
       <Flex align="center" gap={10} className="friend-invitation-container">
         <Avatar size={50} src={userImageUrl} />
-        <Flex vertical gap={5} className="friend-invitation-info">
+        <Flex vertical gap={10} className="friend-invitation-info">
           <h2 className="font-semibold text-sm">{userName}</h2>
           {isReceived && (
             <Flex

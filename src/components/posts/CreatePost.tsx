@@ -1,17 +1,12 @@
+import { categoryApi } from "@/api/categoryApi";
 import { interactRepository } from "@/api/repository";
 import { PrivacyPost } from "@/enums/post";
-import {
-  createCategory,
-  fetchCategoriesForPost,
-  followCategory,
-} from "@/features/category/categorySlice";
-import { AppDispatch } from "@/store/store";
 import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
 import axios from "axios";
+import _ from "lodash";
 import React, { useCallback, useRef, useState } from "react";
 import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
 import { FaMapMarkerAlt, FaTimes, FaUserTag } from "react-icons/fa";
-import { useDispatch, useSelector } from "react-redux";
 
 const { TextArea } = Input;
 
@@ -24,10 +19,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   trigger,
   onPostCreated,
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { categoriesForPost } = useSelector(
-    (state: any) => state.category || {}
-  );
+  const profile = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -40,13 +32,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [newCategoryName, setNewCategoryName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [keySearch, setKeySearch] = useState<string>("");
+  const [categoriesForPost, setCategoriesForPost] = useState<any[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const showCategoryModal = useCallback(() => {
     setIsCategoryModalOpen(true);
-    dispatch(fetchCategoriesForPost(keySearch));
-  }, [dispatch, keySearch]);
+    categoryApi.fetchCategories(keySearch).then((categories) => {
+      setCategoriesForPost(categories);
+    });
+  }, [keySearch]);
 
   const handleCategoryModalOk = useCallback(async () => {
     if (!selectedCategory && !newCategoryName.trim()) {
@@ -57,17 +52,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     try {
       if (!selectedCategory && newCategoryName.trim()) {
         // Tạo chủ đề mới
-        const response = await dispatch(
-          createCategory({
-            name: newCategoryName,
-            description: description,
-          }) as any
-        ).unwrap();
+        const response = await categoryApi.createCategory({
+          name: newCategoryName,
+          description: description,
+        });
         setSelectedCategory(response.id);
 
         // Follow chủ đề vừa tạo
-        await dispatch(followCategory(response.id) as any);
-        message.success("chủ đề đã được tạo và theo dõi!");
+        await categoryApi.followCategory(response.id);
+        message.success("Chủ đề đã được tạo và theo dõi!");
       }
 
       setIsCategoryModalOpen(false);
@@ -76,7 +69,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.error("Lỗi khi tạo hoặc theo dõi chủ đề:", error);
       message.error("Có lỗi xảy ra khi tạo hoặc theo dõi chủ đề!");
     }
-  }, [selectedCategory, newCategoryName, dispatch]);
+  }, [selectedCategory, newCategoryName, description]);
 
   const handleCategoryModalCancel = useCallback(() => {
     setIsCategoryModalOpen(false);
@@ -172,11 +165,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   }, [content, mediaUrl, privacy, selectedCategory, onPostCreated]);
 
   const handleSearchCategory = useCallback(
-    (value: string) => {
+    _.debounce((value: string) => {
       setKeySearch(value);
-      dispatch(fetchCategoriesForPost(value) as any);
-    },
-    [dispatch]
+
+      categoryApi.fetchCategories(value).then((categories) => {
+        setCategoriesForPost(categories);
+      });
+    }, 300),
+    []
   );
 
   const renderPreview = () => {
@@ -314,10 +310,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <Avatar src="https://i.pravatar.cc/80" size={40} />
+            <Avatar
+              src={profile?.profilePictureUrl ?? "https://i.pravatar.cc/80"}
+              size={40}
+            />
             <div className="flex flex-col">
               <span className="font-medium text-base">
-                Huy Hoang Nguyen The
+                {profile?.lastName + " " + profile?.firstName}
               </span>
               <Select
                 value={privacy}
@@ -341,7 +340,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
           <TextArea
             className="border-none focus:ring-0 text-lg placeholder:text-gray-400"
-            placeholder="Huy Hoang ơi, bạn đang nghĩ gì thế?"
+            placeholder={`${profile?.firstName} ơi, bạn đang nghĩ gì thế?`}
             autoSize={{ minRows: 2, maxRows: 6 }}
             value={content}
             onChange={(e) => setContent(e.target.value)}

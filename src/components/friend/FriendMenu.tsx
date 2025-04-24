@@ -1,26 +1,25 @@
-import React from "react";
-import { Menu } from "antd";
 import {
+  TeamOutlined,
+  UnorderedListOutlined,
   UserAddOutlined,
   UsergroupAddOutlined,
-  TeamOutlined,
-  GiftOutlined,
-  UnorderedListOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { Menu } from "antd";
+import React from "react";
 
-const FriendMenu: React.FC = () => {
-  const navigate = useNavigate();
+interface FriendMenuProps {
+  onTabChange: (key: string) => void;
+  activeTab: string;
+}
+
+const FriendMenu: React.FC<FriendMenuProps> = ({ onTabChange, activeTab }) => {
+  const handleMenuClick = (e: { key: string }) => {
+    onTabChange(e.key);
+  };
+
   return (
     <div className="bg-white rounded-md shadow p-2">
-      <Menu mode="inline" defaultSelectedKeys={["friend-requests"]}>
-        <Menu.Item
-          key="home"
-          icon={<TeamOutlined />}
-          onClick={() => navigate("/personal")}
-        >
-          Trang chủ
-        </Menu.Item>
+      <Menu mode="inline" selectedKeys={[activeTab]} onClick={handleMenuClick}>
         <Menu.Item key="friend-requests" icon={<UserAddOutlined />}>
           Lời mời kết bạn
         </Menu.Item>
@@ -29,9 +28,6 @@ const FriendMenu: React.FC = () => {
         </Menu.Item>
         <Menu.Item key="all-friends" icon={<UnorderedListOutlined />}>
           Tất cả bạn bè
-        </Menu.Item>
-        <Menu.Item key="birthdays" icon={<GiftOutlined />}>
-          Sinh nhật
         </Menu.Item>
       </Menu>
     </div>

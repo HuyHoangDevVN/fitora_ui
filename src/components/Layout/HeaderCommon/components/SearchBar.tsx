@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Avatar, Input, Skeleton } from "antd";
+import React, { useEffect, useState } from "react";
+import { Avatar, Input, Skeleton, Select } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { userRepository } from "@/api/repository";
-import { User } from "@/types/User";
+import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
+import { groupApi } from "@/api/groupApi";
 
 const SkeletonItem: React.FC = () => (
   <div className="flex items-center gap-2 p-2">
@@ -35,18 +36,21 @@ const UserResult = React.memo(
   )
 );
 
-const SearchUser: React.FC = () => {
+const SearchBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [results, setResults] = useState<User[]>([]);
+  const [searchType, setSearchType] = useState<string>("user");
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const searchRef = useRef("");
 
-  const handleUserClick = (user: User) => {
-    const storedId = localStorage.getItem("x-client-id");
-    navigate(user.id === storedId ? "/personal" : "/personal", {
-      state: { isWatching: true, userId: user.id },
-    });
+  const handleResultClick = (result: any) => {
+    if (searchType === "user") {
+      navigate(`/profile/${result.id}`, {
+        state: { isWatching: true },
+      });
+    } else if (searchType === "group") {
+      navigate(`/group/${result.id}`);
+    }
   };
 
   useEffect(() => {
@@ -58,10 +62,15 @@ const SearchUser: React.FC = () => {
     const debouncedFetch = debounce(async () => {
       setLoading(true);
       try {
-        const response = await userRepository.get(
-          `/user/get-users?KeySearch=${searchTerm}&PageIndex=0&PageSize=5`
-        );
-        setResults(response?.isSuccess ? response.data.data || [] : []);
+        let response;
+        if (searchType === "user") {
+          response = await userRepository.get(
+            `/user/get-users?KeySearch=${searchTerm}&PageIndex=0&PageSize=5`
+          );
+        } else if (searchType === "group") {
+          response = await groupApi.getGroupList(searchTerm, 0, 5);
+        }
+        setResults(response?.data?.data || []);
       } catch (error) {
         console.error("Lỗi tìm kiếm:", error);
         setResults([]);
@@ -75,24 +84,37 @@ const SearchUser: React.FC = () => {
     return () => {
       debouncedFetch.cancel();
     };
-  }, [searchTerm]);
+  }, [searchTerm, searchType]);
 
   return (
     <div className="relative w-full sm:w-[150px] md:w-[250px] lg:w-[300px] xl:w-[450px] 2xl:w-[600px] mx-auto">
-      <Input
-        size="middle"
-        placeholder="Search Fitora..."
-        className="rounded-3xl px-4 py-2 text-sm shadow-sm focus:ring focus:ring-primary focus:outline-none"
-        suffix={<SearchOutlined />}
-        value={searchTerm}
-        onChange={(e) => {
-          searchRef.current = e.target.value;
-          setSearchTerm(e.target.value);
-        }}
-      />
+      <div className="flex items-center gap-2 mb-2">
+        <Input
+          size="middle"
+          placeholder={`Tìm kiếm ${
+            searchType === "user" ? "người dùng" : "nhóm"
+          }...`}
+          className="rounded-3xl px-4 py-2 text-sm shadow-sm focus:ring focus:ring-primary focus:outline-none"
+          suffix={<SearchOutlined />}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
       {searchTerm && (
         <div className="absolute top-full left-0 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg z-50">
+          <div className="p-2">
+            <Select
+              value={searchType}
+              onChange={(value) => setSearchType(value)}
+              className="w-full mb-2"
+            >
+              <Select.Option value="user">
+                Tìm kiếm theo người dùng
+              </Select.Option>
+              <Select.Option value="group">Tìm kiếm theo nhóm</Select.Option>
+            </Select>
+          </div>
           {loading ? (
             <div className="p-2">
               {Array(3)
@@ -102,17 +124,17 @@ const SearchUser: React.FC = () => {
                 ))}
             </div>
           ) : results.length === 0 ? (
-            <div className="p-4 text-gray-500">Không có kết quả</div>
+            <div className="p-4 text-gray-500">Không tìm thấy kết quả</div>
           ) : (
             <>
               <div className="px-4 py-2 border-b border-gray-200 text-sm text-gray-600">
-                Có {results.length} kết quả
+                {results.length} kết quả được tìm thấy
               </div>
-              {results.map((user) => (
+              {results.map((result) => (
                 <UserResult
-                  key={user.id}
-                  user={user}
-                  onClick={handleUserClick}
+                  key={result.id}
+                  user={result}
+                  onClick={handleResultClick}
                 />
               ))}
             </>
@@ -123,4 +145,4 @@ const SearchUser: React.FC = () => {
   );
 };
 
-export default SearchUser;
+export default SearchBar;

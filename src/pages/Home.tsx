@@ -1,66 +1,43 @@
+import { postApi } from "@/api/postApi";
+import { userApi } from "@/api/userApi";
 import PostBox from "@/components/posts/PostBox";
+import { useCategoriesForNewfeed } from "@/features/category/categorySlice";
 import colors from "@/styles/colors";
-import { Badge, Button, Divider, message, Skeleton, Spin } from "antd";
-import debounce from "lodash/debounce";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCategoriesForNewfeed } from "@/features/category/categorySlice";
-import { fetchPosts, resetPosts } from "@/features/posts/postsSlice";
-import { fetchUserProfile } from "@/features/users/userSlice";
-import { RootState } from "@/store/store";
 import { Post } from "@/types/post";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { Badge, Button, Divider, message, Skeleton, Spin } from "antd";
+import React, { useEffect, useRef, useState } from "react";
 import { FaFire, FaHeart, FaHome } from "react-icons/fa";
 
 const Home: React.FC = () => {
-  const dispatch = useDispatch();
-  const { posts, status, error, nextCursor, hasMore, errorCount } = useSelector(
-    (state: RootState) => state.posts
-  );
-  const { categoriesForNewfeed, followedCategories } = useSelector(
-    (state: RootState) => state.category
-  );
-
   const [activeTab, setActiveTab] = useState<string | null>("all");
-
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const isFetchingRef = useRef<boolean>(false);
+  const { data: categoryData } = useCategoriesForNewfeed();
 
-  const debouncedLoadPosts = debounce(() => {
-    if (
-      status === "loading" ||
-      !hasMore ||
-      isFetchingRef.current ||
-      errorCount >= 3
-    )
-      return;
-
-    isFetchingRef.current = true;
-    dispatch(
-      fetchPosts({
-        feedType: activeTab === "all" ? 1 : 2,
-        categoryId: activeTab && activeTab !== "all" ? activeTab : undefined,
-        cursor: nextCursor,
-      }) as any
-    )
-      .unwrap()
-      .catch((err) => {
-        message.error(err || "Có lỗi xảy ra khi tải bài viết!");
-      })
-      .finally(() => {
-        setTimeout(() => {
-          isFetchingRef.current = false;
-        }, 500);
-      });
-  }, 300);
-
-  const loadPosts = useCallback(() => {
-    debouncedLoadPosts();
-  }, [debouncedLoadPosts]);
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    error,
+  } = useInfiniteQuery({
+    queryKey: ["posts", activeTab],
+    queryFn: ({ pageParam }: { pageParam?: string }) =>
+      postApi
+        .fetchPosts({
+          feedType: activeTab === "all" ? 1 : 2,
+          categoryId: activeTab && activeTab !== "all" ? activeTab : undefined,
+          cursor: pageParam,
+        })
+        .then((res) => res.data),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined,
+  });
 
   useEffect(() => {
-    dispatch(resetPosts());
-    loadPosts();
-  }, [activeTab, dispatch]);
+    userApi.fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -68,13 +45,8 @@ const Home: React.FC = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          hasMore &&
-          status !== "loading" &&
-          !isFetchingRef.current
-        ) {
-          loadPosts();
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
       { threshold: 0.1 }
@@ -82,18 +54,7 @@ const Home: React.FC = () => {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loadPosts, hasMore, status]);
-
-  useEffect(() => {
-    if (error) {
-      message.error(error);
-    }
-  }, [error]);
-
-  useEffect(() => {
-    dispatch(fetchCategoriesForNewfeed() as any);
-    dispatch(fetchUserProfile() as any);
-  }, [dispatch]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const PostSkeleton = () => (
     <div style={{ padding: "15px 0" }}>
@@ -126,7 +87,7 @@ const Home: React.FC = () => {
           Home
         </Button>
 
-        {followedCategories?.map((category) => (
+        {categoryData?.followed?.map((category) => (
           <Button
             key={category.id}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 cursor-pointer h-10 ${
@@ -141,10 +102,10 @@ const Home: React.FC = () => {
           </Button>
         ))}
 
-        {categoriesForNewfeed
+        {categoryData?.trending
           ?.filter(
             (category) =>
-              !followedCategories.some(
+              !categoryData.followed.some(
                 (followed) => followed.id === category.id
               )
           )
@@ -175,7 +136,7 @@ const Home: React.FC = () => {
                     borderRadius: "12px",
                     padding: "0 8px",
                     boxShadow: "0 0 0 1px #d9d9d9",
-                    zIndex: 100,
+                    zIndex: 20,
                   }}
                 />
               )}
@@ -183,21 +144,25 @@ const Home: React.FC = () => {
           ))}
       </div>
 
-      {status === "loading" && posts.length === 0 ? (
-        <div className="w-full flex justify-center gap-2">
-          <Spin spinning={true}></Spin>
-          <div>Đang tải bài viết...</div>
-        </div>
+      {isLoading && !data ? (
+        <Spin
+          tip="Đang tải bài viết..."
+          className="w-full flex justify-center"
+        />
       ) : (
-        posts?.map((post: Post) => (
-          <div key={post.id} className="relative">
-            <PostBox post={post} />
-            <Divider style={{ borderColor: colors.border, margin: "15px 0" }} />
-          </div>
-        ))
+        data?.pages.map((page) =>
+          page.data.map((post: Post) => (
+            <div key={post.id} className="relative">
+              <PostBox post={post} />
+              <Divider
+                style={{ borderColor: colors.border, margin: "15px 0" }}
+              />
+            </div>
+          ))
+        )
       )}
 
-      {status === "loading" && posts.length > 0 && (
+      {isFetchingNextPage && (
         <div style={{ padding: "20px 0" }}>
           {Array(2)
             ?.fill(0)

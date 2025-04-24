@@ -188,6 +188,8 @@ const ProfileSettings = () => {
                 >
                   <Option value={1}>Nam</Option>
                   <Option value={2}>Nữ</Option>
+                  <Option value={3}>Khác</Option>
+                  <Option value={4}>Không rõ</Option>
                 </Select>
               </Form.Item>
             </div>

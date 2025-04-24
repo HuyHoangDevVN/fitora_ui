@@ -20,12 +20,12 @@ const Header: React.FC = () => {
       <header className="sticky top-0 left-0 right-0 z-50 bg-secondBackground text-white py-4 border-b border-gray-200 w-full">
         <div className="hidden sm:flex items-center justify-between w-full px-4 relative">
           <div className="flex-shrink-0 z-10">
-            <h1
+            <a
               className="text-2xl md:text-3xl text-primary font-bold cursor-pointer"
-              onClick={() => navigate("/")}
+              href="/"
             >
               Fitora
-            </h1>
+            </a>
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

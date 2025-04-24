@@ -1,6 +1,6 @@
+import { groupApi } from "@/api/groupApi";
 import { userApi } from "@/api/userApi";
 import { GroupPrivacy } from "@/enums/group";
-import { AppDispatch, RootState } from "@/store/store";
 import { uploadFile } from "@/utils/uploadFiles";
 import { UploadOutlined } from "@ant-design/icons";
 import {
@@ -8,14 +8,13 @@ import {
   Button,
   Checkbox,
   Input,
+  notification,
   Select,
   Spin,
   Typography,
   Upload,
 } from "antd";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { createGroup } from "./groupsSlice";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -23,15 +22,13 @@ const { Title, Text } = Typography;
 const UserProfile = ({ profile }) => (
   <div className="flex items-center mt-4 gap-4 pb-4 pr-4 rounded-lg shadow-sm">
     <Avatar
-      src={
-        profile?.userInfo?.profilePictureUrl || "https://via.placeholder.com/42"
-      }
+      src={profile?.profilePictureUrl || "https://via.placeholder.com/42"}
       size={48}
       className="border border-gray-300"
     />
     <div className="flex flex-col">
       <Text className="font-bold text-gray-800 text-lg">
-        {profile?.userName || "Tên người dùng"}
+        {profile?.lastName + " " + profile?.firstName || "Tên người dùng"}
       </Text>
       <Text className="text-gray-500 text-sm">Quản trị viên</Text>
     </div>
@@ -47,7 +44,6 @@ const GroupForm = ({
   handleSearchChange,
   searchResults,
   loadingSearch,
-  inviteFriends,
   setInviteFriends,
   coverImage,
   setCoverImage,
@@ -101,8 +97,8 @@ const GroupForm = ({
                   const checked = e.target.checked;
                   setInviteFriends((prev) =>
                     checked
-                      ? [...prev, friend?.name]
-                      : prev.filter((name) => name !== friend?.name)
+                      ? [...prev, friend?.id]
+                      : prev.filter((id) => id !== friend?.id)
                   );
                 }}
               ></Checkbox>
@@ -223,9 +219,7 @@ const GroupPreview = ({
 );
 
 const CreateGroup = () => {
-  const { profile } = useSelector((state: RootState) => state.user);
-  const { loading, error } = useSelector((state: RootState) => state.group);
-
+  const profile = JSON.parse(localStorage.getItem("userInfo") || "{}");
   const [groupName, setGroupName] = useState("Tên nhóm của bạn");
   const [privacy, setPrivacy] = useState<GroupPrivacy>(GroupPrivacy.Public);
   const [inviteFriends, setInviteFriends] = useState<string[]>([]);
@@ -235,11 +229,9 @@ const CreateGroup = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
-  const dispatch = useDispatch<AppDispatch>();
-
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      alert("Tên nhóm không được để trống!");
+      notification.warning({ message: "Tên nhóm không được để trống" });
       return;
     }
 
@@ -248,20 +240,38 @@ const CreateGroup = () => {
       Description: "Mô tả nhóm của bạn",
       Privacy: privacy,
       RequirePostApproval: false,
-      InviteFriends: inviteFriends,
-      CoverImage: coverImage,
-      AvatarImage: avatarImage,
+      CoverImageUrl: coverImage,
+      AvatarUrl: avatarImage,
     };
 
-    dispatch(createGroup(formBody))
-      .unwrap()
-      .then(() => {
-        alert("Nhóm đã được tạo thành công!");
+    try {
+      const response = await groupApi.createGroup(formBody);
+      if (response.isSuccess) {
+        notification.success({ message: "Nhóm đã được tạo thành công!" });
+
+        if (inviteFriends.length > 0) {
+          try {
+            await groupApi.inviteNewMembers({
+              GroupId: response.data.id,
+              ReceiverUserIds: inviteFriends,
+            });
+            notification.success({ message: "Đã gửi lời mời đến bạn bè!" });
+          } catch (inviteError) {
+            notification.error({
+              message: `Lỗi khi gửi lời mời: ${inviteError}`,
+            });
+          }
+        }
+
         resetForm();
-      })
-      .catch((err) => {
-        alert(`Lỗi khi tạo nhóm: ${err}`);
-      });
+      } else {
+        notification.error({
+          message: `Lỗi khi tạo nhóm: ${response.message}`,
+        });
+      }
+    } catch (err) {
+      notification.error({ message: `Lỗi khi tạo nhóm: ${err}` });
+    }
   };
 
   const resetForm = () => {
@@ -321,8 +331,6 @@ const CreateGroup = () => {
           Tạo nhóm mới
         </Title>
 
-        {error && <Text type="danger">{error}</Text>}
-
         <UserProfile profile={profile} />
 
         <GroupForm
@@ -334,7 +342,6 @@ const CreateGroup = () => {
           handleSearchChange={handleSearchChange}
           searchResults={searchResults}
           loadingSearch={loadingSearch}
-          inviteFriends={inviteFriends}
           setInviteFriends={setInviteFriends}
           coverImage={coverImage}
           setCoverImage={setCoverImage}
@@ -345,9 +352,8 @@ const CreateGroup = () => {
 
         <Button
           type="primary"
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md"
+          className="w-full bg-primary hover:bg-blue-600 text-white font-medium rounded-md"
           onClick={handleCreateGroup}
-          loading={loading}
         >
           Tạo nhóm
         </Button>

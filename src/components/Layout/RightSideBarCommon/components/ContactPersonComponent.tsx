@@ -15,14 +15,14 @@ const ContactPersonComponent = ({ user }: ContactPersonProp) => {
         type="text"
         style={{ width: "100%", height: "fit-content", padding: 0 }}
         onClick={() =>
-          navigate("/personal", {
-            state: { isWatching: true, userId: user?.id },
+          navigate(`/profile/${user?.id}`, {
+            state: { isWatching: true },
           })
         }
       >
         <Flex align="center" gap={8} style={{ width: "100%" }}>
           <Avatar size={40} src={user?.profilePictureUrl ?? fakeImage} />
-          <h2 className="text-[14] font-[500]">{user?.username}</h2>
+          <h2 className="text-[14px] font-[500]">{user?.username}</h2>
         </Flex>
       </Button>
     </div>
