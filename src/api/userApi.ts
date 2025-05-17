@@ -51,7 +51,13 @@ export const userApi = {
   async fetchUserProfile(userId?: string): Promise<ResponseBase<ProfileUser>> {
     const url = userId ? `/user/get-user?GetId=${userId}` : `/user/profile`;
     const response = await userRepository.get<ResponseBase<ProfileUser>>(url);
-    localStorage.setItem("userInfo", JSON.stringify(response?.data?.userInfo));
+    localStorage.setItem(
+      "userInfo",
+      JSON.stringify({
+        username: response?.data.userName,
+        ...response?.data?.userInfo,
+      })
+    );
     if (!response) throw new Error("Failed to fetch user profile");
     return response;
   },

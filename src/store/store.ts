@@ -1,7 +1,7 @@
 import authReducer from "@features/auth/authSlice";
 import postsReducer from "@features/posts/postsSlice";
 import commentReducer from "@features/comments/commentSlice";
-import groupReducer from "@features/groups/groupsSlice";
+// import groupReducer from "@features/groups/groupsSlice";
 import userReducer from "@features/users/userSlice";
 import { configureStore } from "@reduxjs/toolkit";
 
@@ -10,7 +10,7 @@ const store = configureStore({
     auth: authReducer,
     posts: postsReducer,
     comment: commentReducer,
-    group: groupReducer,
+    // group: groupReducer,
     user: userReducer,
   },
 });

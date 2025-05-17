@@ -1,10 +1,9 @@
 import React, { useEffect, useState, Suspense, lazy } from "react";
-import { Avatar, message, Spin } from "antd";
+import { message, Spin } from "antd";
 import { FriendInvite } from "@/types/friendInvite";
 import { userRepository } from "@/api/repository";
 import FriendMenu from "@/components/friend/FriendMenu";
 import { userApi } from "@/api/userApi";
-import { useNavigate } from "react-router-dom";
 
 const FriendInvitationsGrid = lazy(
   () => import("@/components/friend/FriendInvitationsGrid")
@@ -15,8 +14,6 @@ const FriendRequestPage: React.FC = () => {
   const [friends, setFriends] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState("friend-requests");
-
-  const navigate = useNavigate();
 
   const fetchInvites = async () => {
     try {
@@ -85,12 +82,9 @@ const FriendRequestPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === "friend-requests") {
-      fetchInvites();
-    } else if (activeTab === "all-friends") {
-      fetchFriends();
-    }
-  }, [activeTab]);
+    fetchInvites();
+    fetchFriends();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -116,28 +110,11 @@ const FriendRequestPage: React.FC = () => {
         return friends.length === 0 ? (
           <p className="text-center">Không có bạn bè nào</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <ul>
             {friends?.map((friend) => (
-              <div
-                key={friend.id}
-                className="p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
-                onClick={() =>
-                  navigate(`/profile/${friend.id}`, {
-                    state: { isWatching: true },
-                  })
-                }
-              >
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center">
-                    <Avatar size={64} src={friend?.profilePictureUrl}></Avatar>
-                  </div>
-                  <h3 className="mt-2 text-lg font-semibold">
-                    {friend.username}
-                  </h3>
-                </div>
-              </div>
+              <li key={friend.id}>{friend.userName}</li>
             ))}
-          </div>
+          </ul>
         );
       default:
         return null;

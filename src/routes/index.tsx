@@ -1,21 +1,22 @@
+import Login from "@/features/auth/Login";
+import Register from "@/features/auth/Register";
+import Chat from "@/features/chat/Chat";
+import CreateGroup from "@/features/groups/CreateGroup";
+import GroupDetailPage from "@/features/groups/GroupDetailPage";
 import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
+import Explore from "@/pages/Explore";
 import FriendRequestPage from "@/pages/FriendRequestPage";
+import Group from "@/pages/Group";
 import Home from "@/pages/Home";
-import Login from "@/features/auth/Login";
 import PageNotFound from "@/pages/PageNotFound";
+import Profile from "@/pages/Profile";
 import ProfileSettings from "@/pages/ProfileSetting";
-import Register from "@/features/auth/Register";
+import Saved from "@/pages/Saved";
+import Trending from "@/pages/Trending";
 import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
-import Group from "@/pages/Group";
-import CreateGroup from "@/features/groups/CreateGroup";
-import GroupDetailPage from "@/features/groups/GroupDetailPage";
-import Profile from "@/pages/Profile";
-import Trending from "@/pages/Trending";
-import Saved from "@/pages/Saved";
-import Explore from "@/pages/Explore";
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
           { path: "saved", element: <Saved /> },
           { path: "explore", element: <Explore /> },
         ],
+      },
+      {
+        path: "chat",
+        element: <Chat />,
       },
       {
         path: "/profile/:userId",
@@ -92,6 +97,7 @@ const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
+
   {
     path: "*",
     element: <PageNotFound />,

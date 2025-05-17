@@ -5,6 +5,7 @@ import {
   refreshAccessToken,
   registerUser,
 } from "@/api/authApi";
+import { userApi } from "@/api/userApi";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { notification } from "antd";
 
@@ -42,9 +43,12 @@ export const login = createAsyncThunk(
   ) => {
     try {
       const response = await loginUser(username, password);
-      return response?.isSuccess
-        ? response.user
-        : rejectWithValue(response?.message || "Login failed");
+      if (response?.isSuccess) {
+        const fetchProfile = await userApi.fetchUserProfile();
+        if (fetchProfile?.isSuccess) return response.user;
+        return rejectWithValue(fetchProfile?.message || "Fetch profile failed");
+      }
+      return rejectWithValue(response?.message || "Login failed");
     } catch {
       return rejectWithValue("Login error");
     }

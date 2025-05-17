@@ -1,11 +1,10 @@
 import { postApi } from "@/api/postApi";
-import { userApi } from "@/api/userApi";
 import PostBox from "@/components/posts/PostBox";
 import { useCategoriesForNewfeed } from "@/features/category/categorySlice";
 import colors from "@/styles/colors";
 import { Post } from "@/types/post";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Badge, Button, Divider, message, Skeleton, Spin } from "antd";
+import { Badge, Button, Divider, Skeleton, Spin } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 import { FaFire, FaHeart, FaHome } from "react-icons/fa";
 
@@ -34,10 +33,6 @@ const Home: React.FC = () => {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
   });
-
-  useEffect(() => {
-    userApi.fetchUserProfile();
-  }, []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

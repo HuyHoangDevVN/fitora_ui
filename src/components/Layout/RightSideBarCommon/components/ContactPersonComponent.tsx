@@ -8,17 +8,11 @@ type ContactPersonProp = {
 };
 
 const ContactPersonComponent = ({ user }: ContactPersonProp) => {
-  const navigate = useNavigate();
   return (
     <div style={{ marginTop: 15, width: "100%" }}>
       <Button
         type="text"
         style={{ width: "100%", height: "fit-content", padding: 0 }}
-        onClick={() =>
-          navigate(`/profile/${user?.id}`, {
-            state: { isWatching: true },
-          })
-        }
       >
         <Flex align="center" gap={8} style={{ width: "100%" }}>
           <Avatar size={40} src={user?.profilePictureUrl ?? fakeImage} />
