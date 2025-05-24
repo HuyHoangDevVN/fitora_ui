@@ -36,10 +36,6 @@ const router = createBrowserRouter([
         ],
       },
       {
-        path: "chat",
-        element: <Chat />,
-      },
-      {
         path: "/profile/:userId",
         element: (
           <LayoutWOSB>

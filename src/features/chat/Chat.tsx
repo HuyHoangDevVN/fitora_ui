@@ -1,59 +1,54 @@
-import { chatApi } from "@/api/chatApi";
 import { useSignalR } from "@/context/SignalRContext";
 import { User } from "@/types/user";
-import { Avatar, Button, Dropdown, Input } from "antd";
-import { useEffect, useRef, useState } from "react";
-import { IoMdArrowDropdown } from "react-icons/io";
+import { Avatar, Button, Input } from "antd";
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { AiOutlinePaperClip } from "react-icons/ai";
+import { chatApi } from "@/api/chatApi";
 
-interface ChatMessage {
-  senderId: string;
-  content: string;
-  type: string;
-}
+const Dropdown = lazy(() =>
+  import("antd").then((module) => ({ default: module.Dropdown }))
+);
+const IoMdArrowDropdown = lazy(() =>
+  import("react-icons/io").then((module) => ({
+    default: module.IoMdArrowDropdown,
+  }))
+);
+const AiOutlinePaperClip = lazy(() =>
+  import("react-icons/ai").then((module) => ({
+    default: module.AiOutlinePaperClip,
+  }))
+);
 
 const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
-  const { joinConversation, sendMessage, onMessageReceived } = useSignalR();
+  const { joinConversation, sendMessage, messages, addMessagesToConversation } =
+    useSignalR();
   const [messageContent, setMessageContent] = useState("");
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hasFetchedHistory, setHasFetchedHistory] = useState<
+    Record<string, boolean>
+  >({});
   const userId = localStorage.getItem("x-client-id");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const chatHistory = useMemo(
+    () => messages[conversationId] || [],
+    [messages, conversationId]
+  );
+
   useEffect(() => {
     joinConversation(conversationId);
-
-    const fetchChatHistory = async () => {
-      try {
-        const response = await chatApi.getChatHistory({ conversationId });
-        setChatHistory(response.data);
-      } catch (error) {
-        console.error("Lỗi khi tải lịch sử trò chuyện:", error);
-      }
-    };
-
-    fetchChatHistory();
-
-    const handleMessageReceived = (newMessage: ChatMessage) => {
-      setChatHistory((prev) => [...prev, newMessage]);
-      const bubble = document.createElement("div");
-      bubble.className =
-        "absolute left-1/2 top-1/2 z-50 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg animate-pop-bubble pointer-events-none";
-      bubble.innerText = "Tin nhắn mới!";
-      document.body.appendChild(bubble);
-      setTimeout(() => bubble.remove(), 1200);
-    };
-
-    if (onMessageReceived) onMessageReceived(handleMessageReceived);
-
-    return () => {
-      if (onMessageReceived) onMessageReceived(() => {});
-    };
-  }, [conversationId, joinConversation, onMessageReceived]);
+    if (!hasFetchedHistory[conversationId]) {
+      chatApi.getChatHistory({ conversationId }).then((res) => {
+        if (Array.isArray(res.data)) {
+          addMessagesToConversation(conversationId, res.data);
+        }
+        setHasFetchedHistory((prev) => ({ ...prev, [conversationId]: true }));
+      });
+    }
+  }, [conversationId, joinConversation, addMessagesToConversation]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -91,30 +86,14 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
   const handleSendMessage = async (content?: string, type: string = "text") => {
     const msgContent = content !== undefined ? content : messageContent;
     if (!msgContent.trim()) return;
-    const newMessage = {
-      senderId: userId || "unknown",
-      content: msgContent,
-      type,
-    };
-    const isDuplicate = chatHistory.some(
-      (msg) =>
-        msg.content === newMessage.content &&
-        msg.senderId === newMessage.senderId &&
-        msg.type === newMessage.type
-    );
-    if (!isDuplicate) {
-      setChatHistory((prev) => [...prev, newMessage]);
-      try {
-        await sendMessage(conversationId, msgContent, type);
-      } catch (error) {
-        console.error("Error sending message:", error);
-        setChatHistory((prev) => prev.filter((msg) => msg !== newMessage));
-      }
+    try {
+      await sendMessage(conversationId, msgContent, type);
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
     if (type === "text") setMessageContent("");
   };
 
-  // Helper to render file preview in chat messages (image, video, or file link)
   const renderFilePreview = (url: string) => {
     const isImage = /\.(jpeg|webp|jpg|png|gif)$/i.test(url);
     const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
@@ -126,6 +105,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
             alt="Preview"
             className="w-full object-contain rounded-lg"
             style={{ maxHeight: "220px" }}
+            loading="lazy"
           />
         </div>
       );
@@ -143,9 +123,9 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
     } else {
       return (
         <div className="p-2 border border-gray-200 rounded-lg bg-white flex items-center gap-2 max-w-xs">
-          <span className="inline-block text-blue-500">
+          <Suspense fallback={<div>Loading...</div>}>
             <AiOutlinePaperClip />
-          </span>
+          </Suspense>
           <a
             href={url}
             target="_blank"
@@ -167,35 +147,42 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
             src={receiver.profilePictureUrl || "/avatardefault.png"}
             alt={receiver.username || "avatar"}
             className="w-8 h-8 rounded-full border object-cover"
+            loading="lazy"
           />
           <span className="font-semibold text-gray-700 text-sm">
             {receiver.username || "Người dùng"}
           </span>
-          <Dropdown
-            open={showDropdown}
-            onOpenChange={setShowDropdown}
-            trigger={["click"]}
-            overlay={
-              <div className="bg-white border rounded shadow-lg">
-                <Button
-                  type="text"
-                  block
-                  className="text-left px-4 py-2"
-                  onClick={() => {
-                    navigate(`/profile/${receiver?.id}`, {
-                      state: { isWatching: true },
-                    });
-                    setShowDropdown(false);
-                  }}
-                >
-                  Xem trang cá nhân
-                </Button>
-              </div>
-            }
-            placement="bottom"
-          >
-            <Button type="text" shape="circle" icon={<IoMdArrowDropdown />} />
-          </Dropdown>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Dropdown
+              open={showDropdown}
+              onOpenChange={setShowDropdown}
+              trigger={["click"]}
+              overlay={
+                <div className="bg-white border rounded shadow-lg">
+                  <Button
+                    type="text"
+                    block
+                    className="text-left px-4 py-2"
+                    onClick={() => {
+                      navigate(`/profile/${receiver?.id}`, {
+                        state: { isWatching: true },
+                      });
+                      setShowDropdown(false);
+                    }}
+                  >
+                    Xem trang cá nhân
+                  </Button>
+                </div>
+              }
+              placement="bottom"
+            >
+              <Button type="text" shape="circle">
+                <Suspense fallback={<div>Loading...</div>}>
+                  <IoMdArrowDropdown />
+                </Suspense>
+              </Button>
+            </Dropdown>
+          </Suspense>
         </div>
         <button
           className="text-gray-400 hover:text-red-500 text-lg font-bold py-1 rounded transition-colors"
@@ -264,12 +251,14 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
           style={{ display: "none" }}
           onChange={handleFileChange}
         />
-        <Button
-          icon={<AiOutlinePaperClip />}
-          shape="circle"
-          onClick={() => document.getElementById("chat-file-upload")?.click()}
-          loading={uploading}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <Button
+            icon={<AiOutlinePaperClip />}
+            shape="circle"
+            onClick={() => document.getElementById("chat-file-upload")?.click()}
+            loading={uploading}
+          />
+        </Suspense>
         <Button
           type="primary"
           shape="round"
