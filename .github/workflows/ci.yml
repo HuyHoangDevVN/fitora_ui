@@ -27,7 +27,7 @@ jobs:
           Stop-Website -Name $siteName
 
           Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
-          Copy-Item "$(Resolve-Path dist\*)" -Destination $target -Recurse
+          Copy-Item "dist\*" -Destination $target -Recurse
 
           Start-Website -Name $siteName
         shell: powershell
