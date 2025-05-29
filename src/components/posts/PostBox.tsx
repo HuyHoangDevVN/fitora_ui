@@ -24,7 +24,7 @@ import { userApi } from "@/api/userApi";
 import { votePost } from "@/features/posts/postsSlice";
 import { AppDispatch } from "@/store/store";
 import { Post } from "@/types/post";
-import { timeToLast } from "@/utils/functionHelpper";
+import { timeToLast } from "@/utils/FunctionHelpper";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CommentList from "./CommentList";

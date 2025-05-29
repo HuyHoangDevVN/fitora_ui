@@ -1,7 +1,7 @@
 import { userRepository } from "@/api/repository";
 import { ProfileUser, UserInfo } from "@/types/profileUser";
 import { ResponseBase } from "@/types/responseBase";
-import { uploadFile } from "@/utils/uploadFiles";
+import { uploadFile } from "@/utils/UploadFiles";
 import { UploadOutlined, UserOutlined } from "@ant-design/icons";
 import {
   Avatar,
