@@ -61,7 +61,7 @@ class Repository {
     url: string,
     suppressErrorNotification = false
   ): Promise<T | undefined> {
-    await Delay(2500);
+    // await Delay(500);
     try {
       const response = await this.axiosInstance.get<T>(url);
       return response.data; // Trả về dữ liệu từ response
@@ -76,7 +76,7 @@ class Repository {
    * @param data - Dữ liệu gửi kèm.
    */
   public async post<T = any>(url: string, data?: any): Promise<T | undefined> {
-    await Delay(500);
+    // await Delay(500);
     try {
       const response = await this.axiosInstance.post<T>(url, data);
       return response.data;
@@ -91,7 +91,7 @@ class Repository {
    * @param data - Dữ liệu cập nhật.
    */
   public async put<T = any>(url: string, data?: any): Promise<T | undefined> {
-    await Delay(1000);
+    // await Delay(500);
     try {
       const response = await this.axiosInstance.put<T>(url, data);
       return response.data;
@@ -109,7 +109,7 @@ class Repository {
     url: string,
     data?: any
   ): Promise<T | undefined> {
-    await Delay(500);
+    // await Delay(500);
     try {
       const response = await this.axiosInstance.delete<T>(url, data);
       return response.data;
