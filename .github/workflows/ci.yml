@@ -21,7 +21,7 @@ jobs:
       - name: Deploy to IIS
         run: |
           $ErrorActionPreference = "Stop"
-          $siteName = "fitora-ui"
+          $siteName = "Fitora"
           $target = "C:\inetpub\wwwroot\$siteName"
 
           Stop-Website -Name $siteName
