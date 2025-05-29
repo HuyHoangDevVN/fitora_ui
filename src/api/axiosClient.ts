@@ -27,7 +27,7 @@ class Repository {
         if (error.response?.status === 401) {
           try {
             const response = await this.axiosInstance.post(
-              "https://localhost:5000/api/auth/refresh-token"
+              "https://fitora-api.aiotlab.edu.vn/api/auth/refresh-token"
             );
 
             if (response.data && response.data.token) {

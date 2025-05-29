@@ -13,7 +13,7 @@ export const uploadFile = async (file: File): Promise<string | null> => {
 
   try {
     const response = await axios.post(
-      "https://localhost:5005/api/Upload/file",
+      "https://fitora-api.aiotlab.edu.vn/interact/Upload/file",
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

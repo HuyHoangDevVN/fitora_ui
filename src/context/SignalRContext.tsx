@@ -143,7 +143,7 @@ export const SignalRProvider = ({
   const handleTokenRefresh = async (_connection: HubConnection) => {
     try {
       const response = await fetch(
-        "https://localhost:5000/api/auth/refresh-token",
+        "https://fitora-api.aiotlab.edu.vn/api/auth/refresh-token",
         { method: "POST", credentials: "include" }
       );
       if (response.ok) {

@@ -64,7 +64,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
       formData.append("file", file);
       try {
         const uploadResponse = await axios.post(
-          "https://localhost:5005/api/Upload/file",
+          "https://fitora-api.aiotlab.edu.vn/interact/Upload/file",
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
