@@ -12,7 +12,7 @@ export interface PostsState {
   errorCount: number;
 }
 
-const initialState: PostsState = {
+export const initialState: PostsState = {
   posts: [],
   status: "idle",
   error: null,

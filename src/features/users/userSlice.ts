@@ -5,7 +5,7 @@ import { notification } from "antd";
 import { FriendInvite } from "@/types/friendInvite";
 import { User } from "@/types/user";
 
-interface UserState {
+export interface UserState {
   profile: ProfileUser | null;
   loading: boolean;
   error: string | null;
@@ -13,7 +13,7 @@ interface UserState {
   contacts: User[]; // New state for contact list
 }
 
-const initialState: UserState = {
+export const initialState: UserState = {
   profile: null,
   loading: false,
   error: null,

@@ -16,7 +16,7 @@ export interface AuthState {
   error: string | null;
 }
 
-const initialState: AuthState = {
+export const initialState: AuthState = {
   isLoggedIn: !!localStorage.getItem("isLoggedIn"),
   loading: false,
   userInfo: null,
