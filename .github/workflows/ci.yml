@@ -1,4 +1,4 @@
-name: CI - Build Fitora UI
+name: CI pipeline for Fitora UI
 
 on:
   push:
