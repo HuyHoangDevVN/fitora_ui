@@ -1,0 +1,34 @@
+name: CI - Build Fitora UI
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  build:
+    runs-on: windows-2016
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build project
+        run: yarn build
+
+      - name: Deploy to IIS
+        run: |
+          $ErrorActionPreference = "Stop"
+          $siteName = "fitora-ui"
+          $target = "C:\inetpub\wwwroot\$siteName"
+
+          Stop-Website -Name $siteName
+
+          Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item "$(Resolve-Path dist\*)" -Destination $target -Recurse
+
+          Start-Website -Name $siteName
+        shell: powershell
