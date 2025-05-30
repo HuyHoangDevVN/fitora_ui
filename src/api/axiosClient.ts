@@ -2,8 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import { notification } from "antd";
 import Cookies from "js-cookie";
 import { Delay } from "@/utils/delay";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from "./repository";
 
 class Repository {
   private axiosInstance: AxiosInstance;
