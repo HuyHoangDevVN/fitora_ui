@@ -5,6 +5,7 @@ import {
   HubConnection,
 } from "@microsoft/signalr";
 import { API_URL } from "@/api/repository";
+import { authApi } from "@/api/authApi";
 
 const SignalRContext = createContext({
   messages: {} as Record<
@@ -143,25 +144,16 @@ export const SignalRProvider = ({
 
   const handleTokenRefresh = async (_connection: HubConnection) => {
     try {
-      const response = await fetch(`${API_URL}/auth/auth/refresh-token`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.token) {
-          const newConnection = new HubConnectionBuilder()
-            .withUrl(`${API_URL}/chat`, {
-              withCredentials: true,
-              accessTokenFactory: () => data.token,
-            })
-            .configureLogging(LogLevel.Information)
-            .build();
-          setConnection(newConnection);
-          await newConnection.start();
-        } else {
-          logout();
-        }
+      const response = await authApi.refreshAccessToken();
+      if (response) {
+        const newConnection = new HubConnectionBuilder()
+          .withUrl(`${API_URL}/chat`, {
+            withCredentials: true,
+          })
+          .configureLogging(LogLevel.Information)
+          .build();
+        setConnection(newConnection);
+        await newConnection.start();
       } else {
         logout();
       }
