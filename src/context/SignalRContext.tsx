@@ -143,7 +143,7 @@ export const SignalRProvider = ({
 
   const handleTokenRefresh = async (_connection: HubConnection) => {
     try {
-      const response = await fetch(`${API_URL}/auth/refresh-token`, {
+      const response = await fetch(`${API_URL}/auth/auth/auth/refresh-token`, {
         method: "POST",
         credentials: "include",
       });

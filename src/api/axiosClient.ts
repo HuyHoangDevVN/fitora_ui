@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from "axios";
 import { notification } from "antd";
 import Cookies from "js-cookie";
-import { Delay } from "@/utils/delay";
 import { API_URL } from "./repository";
+import { Delay } from "@/utils/delay";
 
 class Repository {
   private axiosInstance: AxiosInstance;
@@ -28,13 +28,13 @@ class Repository {
         if (error.response?.status === 401) {
           try {
             const response = await this.axiosInstance.post(
-              `${API_URL}/auth/auth/refresh-token`
+              `${API_URL}/auth/auth/auth/refresh-token`
             );
 
-            if (response.data && response.data.token) {
+            if (response.data && response.data.accessToken) {
               // Lưu token mới và gửi lại yêu cầu ban đầu
               error.config.headers["Authorization"] =
-                "Bearer " + response.data.token;
+                "Bearer " + response.data.accessToken;
               return this.axiosInstance(error.config);
             } else {
               // Nếu không có token mới, đăng xuất người dùng
