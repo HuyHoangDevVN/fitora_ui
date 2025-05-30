@@ -44,6 +44,7 @@ export const login = createAsyncThunk(
     try {
       const response = await loginUser(username, password);
       if (response?.isSuccess) {
+        localStorage.setItem("x-client-id", response.user.id);
         const fetchProfile = await userApi.fetchUserProfile();
         if (fetchProfile?.isSuccess) return response.user;
         return rejectWithValue(fetchProfile?.message || "Fetch profile failed");
@@ -131,7 +132,6 @@ const authSlice = createSlice({
         state.userInfo = action.payload;
         state.loading = false;
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("x-client-id", action.payload.id);
         notification.success({
           message: "Đăng nhập thành công",
           description: "Chào mừng bạn trở lại!",

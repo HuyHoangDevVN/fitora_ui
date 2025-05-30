@@ -4,6 +4,7 @@ import {
   LogLevel,
   HubConnection,
 } from "@microsoft/signalr";
+import { API_URL } from "@/api/repository";
 
 const SignalRContext = createContext({
   messages: {} as Record<
@@ -60,7 +61,7 @@ export const SignalRProvider = ({
   useEffect(() => {
     const createConnection = async () => {
       const newConnection = new HubConnectionBuilder()
-        .withUrl("https://localhost:5007/hubs/chat", { withCredentials: true })
+        .withUrl(`${API_URL}/chat`, { withCredentials: true })
         .configureLogging(LogLevel.Information)
         .build();
       setConnection(newConnection);
@@ -142,15 +143,15 @@ export const SignalRProvider = ({
 
   const handleTokenRefresh = async (_connection: HubConnection) => {
     try {
-      const response = await fetch(
-        "https://fitora-api.aiotlab.edu.vn/api/auth/refresh-token",
-        { method: "POST", credentials: "include" }
-      );
+      const response = await fetch(`${API_URL}/auth/auth/refresh-token`, {
+        method: "POST",
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         if (data.token) {
           const newConnection = new HubConnectionBuilder()
-            .withUrl("https://localhost:5007/hubs/chat", {
+            .withUrl(`${API_URL}/chat`, {
               withCredentials: true,
               accessTokenFactory: () => data.token,
             })

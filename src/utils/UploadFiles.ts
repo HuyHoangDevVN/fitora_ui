@@ -1,6 +1,7 @@
 // src/utils/uploadFile.ts
 import axios from "axios";
 import { message } from "antd";
+import { API_URL } from "@/api/repository";
 
 /**
  * Hàm upload file chung cho toàn dự án.
@@ -13,7 +14,7 @@ export const uploadFile = async (file: File): Promise<string | null> => {
 
   try {
     const response = await axios.post(
-      "https://fitora-api.aiotlab.edu.vn/interact/Upload/file",
+      `${API_URL}/interact/Upload/file`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

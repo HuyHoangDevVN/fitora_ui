@@ -1,5 +1,5 @@
 import { categoryApi } from "@/api/categoryApi";
-import { interactRepository } from "@/api/repository";
+import { API_URL, interactRepository } from "@/api/repository";
 import { PrivacyPost } from "@/enums/post";
 import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
 import axios from "axios";
@@ -99,7 +99,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         try {
           const uploadResponse = await axios.post(
-            "https://fitora-api.aiotlab.edu.vn/interact/api/Upload/file",
+            `${API_URL}/interact/api/Upload/file`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },

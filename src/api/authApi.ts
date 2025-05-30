@@ -26,7 +26,7 @@ export const logoutUser = async () => {
 };
 
 export const refreshAccessToken = async () => {
-  await authRepository.post("/auth/refresh-token");
+  await authRepository.post("/auth/refresh-token/");
 };
 
 export const getUserInfo = async () => {

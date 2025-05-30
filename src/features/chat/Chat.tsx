@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { chatApi } from "@/api/chatApi";
+import { API_URL } from "@/api/repository";
 
 const Dropdown = lazy(() =>
   import("antd").then((module) => ({ default: module.Dropdown }))
@@ -64,7 +65,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
       formData.append("file", file);
       try {
         const uploadResponse = await axios.post(
-          "https://fitora-api.aiotlab.edu.vn/interact/Upload/file",
+          `${API_URL}/interact/Upload/file`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },

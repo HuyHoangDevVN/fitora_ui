@@ -3,6 +3,8 @@ import { notification } from "antd";
 import Cookies from "js-cookie";
 import { Delay } from "@/utils/delay";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 class Repository {
   private axiosInstance: AxiosInstance;
 
@@ -27,7 +29,7 @@ class Repository {
         if (error.response?.status === 401) {
           try {
             const response = await this.axiosInstance.post(
-              "https://fitora-api.aiotlab.edu.vn/api/auth/refresh-token"
+              `${API_URL}/auth/auth/refresh-token`
             );
 
             if (response.data && response.data.token) {
