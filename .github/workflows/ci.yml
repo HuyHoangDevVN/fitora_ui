@@ -23,11 +23,8 @@ jobs:
           $ErrorActionPreference = "Stop"
           $siteName = "Fitora"
           $target = "C:\inetpub\wwwroot\$siteName"
-
           Stop-Website -Name $siteName
-
           Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
-          Copy-Item "dist\*" -Destination $target -Recurse
-
+          Copy-Item ".\dist\*" -Destination $target -Recurse -Force
           Start-Website -Name $siteName
         shell: powershell

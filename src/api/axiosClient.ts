@@ -28,7 +28,7 @@ class Repository {
         if (error.response?.status === 401) {
           try {
             const response = await this.axiosInstance.post(
-              `${API_URL}/auth/auth/auth/refresh-token`
+              `${API_URL}/auth/auth/refresh-token`
             );
 
             if (response.data && response.data.accessToken) {
