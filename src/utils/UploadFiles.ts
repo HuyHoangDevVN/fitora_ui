@@ -14,7 +14,7 @@ export const uploadFile = async (file: File): Promise<string | null> => {
 
   try {
     const response = await axios.post(
-      `${API_URL}/interact/Upload/file`,
+      `${API_URL}/interact/upload/file`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

@@ -99,7 +99,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
         try {
           const uploadResponse = await axios.post(
-            `${API_URL}/interact/api/Upload/file`,
+            `${API_URL}/interact/upload/file`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
