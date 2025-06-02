@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Divider } from "antd";
+import { Avatar, Divider } from "antd";
 import { FaBookmark, FaChartLine, FaUserFriends } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
 import { MdOutlineCategory } from "react-icons/md";
@@ -88,12 +88,13 @@ const LeftSidebar: React.FC = () => {
       <ListLinkButton
         listItems={groupData?.map((group) => ({
           icon: (
-            <img
-              width={20}
-              src={group?.avatarUrl ?? ""}
-              style={{ aspectRatio: "1 / 1" }}
-              alt={group?.name ?? ""}
-            />
+            <Avatar
+              size={20}
+              src={group?.avatarUrl || undefined}
+              style={{ backgroundColor: colors.primary, fontSize: 12 }}
+            >
+              {!group?.avatarUrl && (group?.name?.[0] || "N")}
+            </Avatar>
           ),
           title: group.name ?? "Unknown Group",
           link: `/groups/${group.id}`,
