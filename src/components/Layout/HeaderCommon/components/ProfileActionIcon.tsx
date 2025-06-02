@@ -1,3 +1,4 @@
+import { adminApi } from "@/api/adminApi";
 import { logout } from "@/features/auth/authSlice";
 import { AppDispatch } from "@/store/store";
 import colors from "@/styles/colors";
@@ -15,8 +16,22 @@ const ProfileActionIcon = () => {
   const profile = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
 
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  const handleOpenChange = (newOpen: boolean) => setOpen(newOpen);
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (newOpen) {
+      (async () => {
+        try {
+          const response = await adminApi.isAdmin(true);
+          setIsAdmin(response);
+        } catch (error) {
+          console.error("Failed to check admin status:", error);
+          setIsAdmin(false);
+        }
+      })();
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -46,6 +61,16 @@ const ProfileActionIcon = () => {
           </span>
         </div>
       </button>
+
+      {isAdmin && (
+        <button
+          className="flex items-center gap-2 text-base text-gray-700 hover:text-primary hover:bg-slate-50 p-2 rounded-md w-full"
+          onClick={() => navigate("/admin/dashboard")}
+        >
+          <UserOutlined className="text-xl text-primary" />
+          <Typography className="font-normal">Quản trị viên</Typography>
+        </button>
+      )}
 
       <Divider style={{ borderColor: colors.border, margin: 0, padding: 0 }} />
 

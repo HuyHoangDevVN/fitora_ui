@@ -408,7 +408,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
       placement="end"
       className="absolute top-[-5px]"
     >
-      <div className="post-box mb-3 border rounded-lg p-3 min-w-[500px]  bg-white shadow-sm">
+      <div className="post-box mb-3 border border-gray-200 rounded-lg p-3 min-w-[500px] bg-white shadow-sm">
         <div className="post-header flex justify-between items-center">
           <div className="post-info flex items-center gap-2">
             <Avatar src={avatarSrc} size={40} />
@@ -467,7 +467,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
           )}
         </div>
 
-        <div className="post-footer flex items-center gap-6 mt-4 border-t pt-2">
+        <div className="post-footer flex items-center gap-6 mt-4 border-t border-gray-200 pt-2">
           <div className="vote-controls flex items-center gap-2">
             <Button
               type="text"

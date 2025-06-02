@@ -6,6 +6,7 @@ import GroupDetailPage from "@/features/groups/GroupDetailPage";
 import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
+import AdminDashboard from "@/pages/AdminDashbroad";
 import Explore from "@/pages/Explore";
 import FriendRequestPage from "@/pages/FriendRequestPage";
 import Group from "@/pages/Group";
@@ -17,6 +18,8 @@ import Saved from "@/pages/Saved";
 import Trending from "@/pages/Trending";
 import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
+import AdminLayout from "@/layouts/AdminLayout";
+import AccountManagement from "@/features/admin/Account/AccountManagement";
 
 const router = createBrowserRouter([
   {
@@ -82,6 +85,20 @@ const router = createBrowserRouter([
             <GroupDetailPage />
           </LayoutWOSB>
         ),
+      },
+    ],
+  },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      {
+        path: "dashboard",
+        element: <AdminDashboard />,
+      },
+      {
+        path: "account-management",
+        element: <AccountManagement />,
       },
     ],
   },

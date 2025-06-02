@@ -30,7 +30,7 @@ export const authApi = {
   },
   refreshAccessToken: async () => {
     const response = await authRepository.post<ResponseBase<any>>(
-      "/auth/refresh-token/"
+      "/auth/refresh-token"
     );
     return response;
   },

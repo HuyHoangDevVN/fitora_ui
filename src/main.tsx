@@ -4,11 +4,14 @@ import App from "./App";
 import "./index.css";
 import { Provider } from "react-redux";
 import store from "./store/store";
+import { ThemeProvider } from "./context/ThemeContext";
 
 createRoot(document.getElementById("root")!).render(
   <Provider store={store}>
     <StrictMode>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </StrictMode>
   </Provider>
 );

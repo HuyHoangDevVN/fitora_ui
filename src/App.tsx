@@ -9,7 +9,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SignalRProvider>
-        <RouterProvider router={router} />;
+        <RouterProvider router={router} />
       </SignalRProvider>
     </QueryClientProvider>
   );
