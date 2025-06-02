@@ -1,23 +1,24 @@
-import {
-  Table,
-  Input,
-  Button,
-  Tag,
-  Switch,
-  notification,
-  Tooltip,
-  Flex,
-} from "antd";
-import { SearchOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useRef, useEffect, useState } from "react";
-import debounce from "lodash/debounce";
 import { adminApi } from "@/api/adminApi";
 import type { Account } from "@/types/account";
-import { FaEye, FaRegEdit } from "react-icons/fa";
-import AccountViewModal from "./AccountViewModal";
-import AccountEditModal from "./AccountEditModal";
-import AccountDeleteModal from "./AccountDeleteModal";
+import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Flex,
+  Input,
+  notification,
+  Switch,
+  Table,
+  Tag,
+  Tooltip,
+} from "antd";
+import debounce from "lodash/debounce";
+import { useEffect, useRef, useState } from "react";
 import { AiOutlineUserDelete } from "react-icons/ai";
+import { FaEye, FaRegEdit } from "react-icons/fa";
+import AccountDeleteModal from "./AccountDeleteModal";
+import AccountEditModal from "./AccountEditModal";
+import AccountViewModal from "./AccountViewModal";
+import AssignRoleModal from "./AssignRoleModal";
 
 const AccountManagement = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -50,6 +51,10 @@ const AccountManagement = () => {
     open: false,
     id: null,
     email: undefined,
+  });
+  const [assignModal, setAssignModal] = useState({
+    open: false,
+    account: null,
   });
   const searchInputRef = useRef<any>(null);
 
@@ -130,6 +135,10 @@ const AccountManagement = () => {
       })
       .finally(() => setLoading(false));
     searchInputRef.current?.blur();
+  };
+
+  const handleAssignRole = async (account) => {
+    setAssignModal({ open: true, account });
   };
 
   const columns = [
@@ -238,6 +247,20 @@ const AccountManagement = () => {
           />
         );
       },
+    },
+    {
+      title: "Phân quyền",
+      key: "assignRole",
+      width: 120,
+      render: (_text, record) => (
+        <Button
+          type="default"
+          className="bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-gray-900 font-semibold"
+          onClick={() => handleAssignRole(record)}
+        >
+          Phân quyền
+        </Button>
+      ),
     },
     {
       title: "Hành động",
@@ -352,6 +375,18 @@ const AccountManagement = () => {
           handleSearch();
         }}
       />
+      {/* Assign Role Modal */}
+      {assignModal.open && (
+        <AssignRoleModal
+          open={assignModal.open}
+          onClose={() => setAssignModal({ open: false, account: null })}
+          account={assignModal.account}
+          onSuccess={() => {
+            setAssignModal({ open: false, account: null });
+            handleSearch();
+          }}
+        />
+      )}
     </div>
   );
 };

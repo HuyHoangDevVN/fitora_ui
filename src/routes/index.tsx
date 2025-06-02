@@ -20,6 +20,12 @@ import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
 import AdminLayout from "@/layouts/AdminLayout";
 import AccountManagement from "@/features/admin/Account/AccountManagement";
+import RoleManagement from "@/features/admin/Role/RoleManagement";
+import CategoryManagement from "@/features/admin/Category/CategoryManagement";
+import GroupManagement from "@/features/admin/Group/GroupManagement";
+import PostManagement from "@/features/admin/Post/PostManagement";
+import CommentManagement from "@/features/admin/Comment/CommentManagement";
+import ReportManagement from "@/features/admin/Report/ReportManagement";
 
 const router = createBrowserRouter([
   {
@@ -99,6 +105,30 @@ const router = createBrowserRouter([
       {
         path: "account-management",
         element: <AccountManagement />,
+      },
+      {
+        path: "role-management",
+        element: <RoleManagement />,
+      },
+      {
+        path: "category-management",
+        element: <CategoryManagement />,
+      },
+      {
+        path: "group-management",
+        element: <GroupManagement />,
+      },
+      {
+        path: "post-management",
+        element: <PostManagement />,
+      },
+      {
+        path: "comment-management",
+        element: <CommentManagement />,
+      },
+      {
+        path: "report-processing",
+        element: <ReportManagement />,
       },
     ],
   },

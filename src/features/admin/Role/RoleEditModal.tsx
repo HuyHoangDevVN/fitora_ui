@@ -1,67 +1,67 @@
-import { Modal, Form, Input, Button, Spin, notification, Avatar } from "antd";
+import { Modal, Form, Input, Button, Spin, notification } from "antd";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/api/adminApi";
-import type { Account } from "@/types/account";
+import type { Role } from "@/types/role";
 
 interface RoleEditModalProps {
   open: boolean;
   onClose: () => void;
-  accountId: string | null;
+  roleId: string | null;
   onSuccess?: () => void;
 }
 
 const RoleEditModal = ({
   open,
   onClose,
-  accountId,
+  roleId,
   onSuccess,
 }: RoleEditModalProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [account, setAccount] = useState<Account | null>(null);
+  const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
-    if (open && accountId) {
+    if (open && roleId) {
       setLoading(true);
       adminApi
-        .getAccount(accountId)
+        .getRole(roleId)
         .then((res) => {
-          setAccount(res ?? null);
-          if (res) {
-            form.setFieldsValue(res);
+          setRole(res?.data ?? null);
+          if (res?.data) {
+            form.setFieldsValue({
+              roleName: res.data.roleName,
+              roleId: res.data.roleId,
+            });
           } else {
             form.resetFields();
           }
         })
         .finally(() => setLoading(false));
     } else {
-      setAccount(null);
+      setRole(null);
       form.resetFields();
     }
-  }, [open, accountId, form]);
+  }, [open, roleId, form]);
 
   const handleFinish = async (values: any) => {
-    if (!accountId || !account) return;
+    if (!roleId || !role) return;
     setSaving(true);
     try {
       const payload = {
-        userId: accountId,
-        email: account.email,
-        fullName: values.fullName,
-        phoneNumber: values.phoneNumber,
-        avatar: account.avatar,
+        roleId: roleId,
+        roleName: values.roleName,
       };
-      const res = await adminApi.updateAccount(payload);
+      const res = await adminApi.updateRole(payload);
       if (res?.isSuccess) {
-        notification.success({ message: "Cập nhật tài khoản thành công" });
+        notification.success({ message: "Cập nhật vai trò thành công" });
         onClose();
         onSuccess?.();
       } else {
         notification.error({ message: res?.message || "Cập nhật thất bại" });
       }
     } catch {
-      console.error({ message: "Có lỗi xảy ra khi cập nhật tài khoản" });
+      notification.error({ message: "Có lỗi xảy ra khi cập nhật vai trò" });
     } finally {
       setSaving(false);
     }
@@ -74,7 +74,7 @@ const RoleEditModal = ({
       footer={null}
       title={
         <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
-          Chỉnh sửa tài khoản
+          Chỉnh sửa vai trò
         </span>
       }
       className="[&_.ant-modal-content]:bg-white dark:[&_.ant-modal-content]:bg-gray-900 [&_.ant-modal-content]:text-gray-900 dark:[&_.ant-modal-content]:text-gray-100"
@@ -84,57 +84,39 @@ const RoleEditModal = ({
         <div className="flex justify-center items-center py-10">
           <Spin size="large" />
         </div>
-      ) : account ? (
+      ) : role ? (
         <div className="flex flex-col items-center gap-4">
-          <Avatar
-            src={account.avatar}
-            size={90}
-            className="border-2 border-blue-200 shadow dark:border-blue-700 mb-2 bg-white dark:bg-gray-800"
-          />
           <Form
             form={form}
             layout="vertical"
             onFinish={handleFinish}
             className="w-full max-w-md space-y-3"
-            initialValues={account}
+            initialValues={{ roleName: role.roleName, roleId: role.roleId }}
             autoComplete="off"
           >
             <Form.Item
               label={
                 <span className="font-medium text-gray-700 dark:text-gray-200">
-                  Email
+                  Mã vai trò
                 </span>
               }
-              name="email"
+              name="roleId"
             >
               <Input className="dark:bg-gray-800 dark:text-white" disabled />
             </Form.Item>
             <Form.Item
               label={
                 <span className="font-medium text-gray-700 dark:text-gray-200">
-                  Họ tên
+                  Tên vai trò
                 </span>
               }
-              name="fullName"
-              rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
+              name="roleName"
+              rules={[{ required: true, message: "Vui lòng nhập tên vai trò" }]}
             >
               <Input
                 className="dark:bg-gray-800 dark:text-white"
-                placeholder="Nhập họ tên"
+                placeholder="Nhập tên vai trò"
                 autoFocus
-              />
-            </Form.Item>
-            <Form.Item
-              label={
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  Số điện thoại
-                </span>
-              }
-              name="phoneNumber"
-            >
-              <Input
-                className="dark:bg-gray-800 dark:text-white"
-                placeholder="Nhập số điện thoại"
               />
             </Form.Item>
             <div className="flex justify-end gap-2 mt-4">
@@ -157,7 +139,7 @@ const RoleEditModal = ({
         </div>
       ) : (
         <div className="text-center text-gray-400 dark:text-gray-500 py-8">
-          Không tìm thấy tài khoản
+          Không tìm thấy vai trò
         </div>
       )}
     </Modal>

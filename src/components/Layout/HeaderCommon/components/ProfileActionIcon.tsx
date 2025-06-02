@@ -24,7 +24,7 @@ const ProfileActionIcon = () => {
       (async () => {
         try {
           const response = await adminApi.isAdmin(true);
-          setIsAdmin(response);
+          setIsAdmin(response.data);
         } catch (error) {
           console.error("Failed to check admin status:", error);
           setIsAdmin(false);

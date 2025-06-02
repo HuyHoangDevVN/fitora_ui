@@ -22,7 +22,7 @@ const AccountViewModal = ({
       setLoading(true);
       adminApi
         .getAccount(accountId)
-        .then((res) => setAccount(res ?? null))
+        .then((res) => setAccount(res.data ?? null))
         .finally(() => setLoading(false));
     } else {
       setAccount(null);

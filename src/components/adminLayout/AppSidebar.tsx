@@ -1,19 +1,19 @@
+import Logo from "@/assets/images/logo.png";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
 import { useSidebar } from "@/context/SidebarContext";
+import { ChevronDownIcon, HorizontaLDots } from "@/icons";
+import { BiSolidCategory } from "react-icons/bi";
+import { BsFilePost } from "react-icons/bs";
+import { FaCommentDots } from "react-icons/fa";
+import { FaUserGroup } from "react-icons/fa6";
+
 import {
-  BoxCubeIcon,
-  ChevronDownIcon,
-  GridIcon,
-  HorizontaLDots,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
-  UserCircleIcon,
-} from "@/icons";
+  MdAdminPanelSettings,
+  MdOutlineDashboardCustomize,
+  MdReport,
+} from "react-icons/md";
 import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -25,63 +25,51 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon: <GridIcon />,
+    icon: <MdOutlineDashboardCustomize />,
     name: "Dashboard",
     path: "/admin/dashboard",
   },
   {
-    icon: <UserCircleIcon />,
-    name: "Quản lý tài khoản",
-    path: "/admin/account-management",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
+    icon: <MdAdminPanelSettings />,
+    name: "Quản lý quyền ",
     subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
+      { name: "Quản lý tài khoản", path: "/admin/account-management" },
+      { name: "Quản lý quyền", path: "/admin/role-management" },
     ],
+  },
+  {
+    name: "Quản lý danh mục",
+    icon: <BiSolidCategory />,
+    subItems: [
+      {
+        name: "Quản lý chủ đề",
+        path: "/admin/category-management",
+        pro: false,
+      },
+    ],
+  },
+  {
+    name: "Quản lý nhóm",
+    icon: <FaUserGroup />,
+    path: "/admin/group-management",
+  },
+  {
+    name: "Quản lý bài viết",
+    icon: <BsFilePost />,
+    path: "/admin/post-management",
+  },
+  {
+    name: "Quản lý bình luận",
+    icon: <FaCommentDots />,
+    path: "/admin/comment-management",
   },
 ];
 
 const othersItems: NavItem[] = [
   {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
+    icon: <MdReport />,
+    name: "Xử lý báo cáo",
+    path: "/admin/report-processing",
   },
 ];
 
@@ -308,10 +296,10 @@ const AppSidebar: React.FC = () => {
             </div>
           ) : (
             <img
-              src="/images/logo/logo-icon.svg"
+              className="custom-dark:hidden"
+              src={Logo}
               alt="Logo"
-              width={32}
-              height={32}
+              style={{ width: 32, height: 32 }}
             />
           )}
         </Link>
@@ -328,7 +316,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
+                  "Menu quản lý"
                 ) : (
                   <HorizontaLDots className="size-6" />
                 )}
@@ -344,7 +332,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Báo cáo"
                 ) : (
                   <HorizontaLDots />
                 )}

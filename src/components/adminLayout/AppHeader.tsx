@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
 import Logo from "@/assets/images/logo.png";
+import { useEffect, useRef, useState } from "react";
 
+import { useSidebar } from "@/context/SidebarContext";
 import { Link } from "react-router";
 import { ThemeToggleButton } from "../common/ThemeToggleButton";
 import NotificationDropdown from "../header/NotificationDropdown";
 import UserDropdown from "../header/UserDropdown";
-import { useSidebar } from "@/context/SidebarContext";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -83,9 +83,14 @@ const AppHeader: React.FC = () => {
             )}
           </button>
 
-          <Link to="/" className="lg:hidden">
-            <img className="custom-dark:hidden" src={Logo} alt="Logo" />
-            <h1>Fitora Admin</h1>
+          <Link to="/" className="flex items-center gap-2 lg:hidden">
+            <img
+              className="custom-dark:hidden"
+              src={Logo}
+              alt="Logo"
+              style={{ width: 32, height: 32 }}
+            />
+            <h1 className="text-base font-semibold">Fitora Admin</h1>
           </Link>
 
           <button
@@ -131,7 +136,7 @@ const AppHeader: React.FC = () => {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search or type command..."
+                  placeholder="Tìm kiếm..."
                   className="custom-dark:bg-custom-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 custom-dark:border-gray-800 custom-dark:bg-gray-900 custom-dark:bg-white/[0.03] custom-dark:text-white/90 custom-dark:placeholder:text-white/30 custom-dark:focus:border-brand-800 xl:w-[430px]"
                 />
 

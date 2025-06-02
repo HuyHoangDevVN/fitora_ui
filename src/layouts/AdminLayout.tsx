@@ -16,7 +16,7 @@ const LayoutContent: React.FC = () => {
     const checkAdmin = async () => {
       try {
         const response = await adminApi.isAdmin();
-        setIsAdmin(response);
+        setIsAdmin(response.data);
       } catch (_err) {
         setIsAdmin(false);
       }

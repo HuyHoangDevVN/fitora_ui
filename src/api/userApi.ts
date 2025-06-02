@@ -54,6 +54,7 @@ export const userApi = {
     localStorage.setItem(
       "userInfo",
       JSON.stringify({
+        email: response?.data.email,
         username: response?.data.userName,
         ...response?.data?.userInfo,
       })

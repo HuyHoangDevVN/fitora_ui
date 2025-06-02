@@ -27,7 +27,7 @@ const AccountEditModal = ({
       adminApi
         .getAccount(accountId)
         .then((res) => {
-          setAccount(res ?? null);
+          setAccount(res.data ?? null);
           if (res) {
             form.setFieldsValue(res);
           } else {

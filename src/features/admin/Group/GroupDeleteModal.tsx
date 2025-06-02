@@ -2,39 +2,41 @@ import { Modal, Button, Spin } from "antd";
 import { useState } from "react";
 import { adminApi } from "@/api/adminApi";
 
-interface RoleDeleteModalProps {
+interface GroupDeleteModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  roleName?: string;
+  groupId?: string;
+  groupName?: string;
 }
 
-const RoleDeleteModal = ({
+const GroupDeleteModal = ({
   open,
   onClose,
   onSuccess,
-  roleName,
-}: RoleDeleteModalProps) => {
+  groupId,
+  groupName,
+}: GroupDeleteModalProps) => {
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
-    if (!roleName) return;
+    if (!groupId) return;
     setLoading(true);
     try {
-      const res = await adminApi.deleteRole(roleName);
+      const res = await adminApi.deleteGroup(groupId);
       if (res?.isSuccess) {
         onSuccess?.();
         onClose();
       } else {
         Modal.error({
-          title: "Xóa vai trò thất bại",
-          content: res?.message || "Không thể xóa vai trò. Vui lòng thử lại!",
+          title: "Xóa nhóm thất bại",
+          content: res?.message || "Không thể xóa nhóm. Vui lòng thử lại!",
         });
       }
     } catch {
       Modal.error({
         title: "Lỗi hệ thống",
-        content: "Không thể xóa vai trò. Vui lòng thử lại!",
+        content: "Không thể xóa nhóm. Vui lòng thử lại!",
       });
     } finally {
       setLoading(false);
@@ -50,16 +52,15 @@ const RoleDeleteModal = ({
       className="[&_.ant-modal-content]:bg-white dark:[&_.ant-modal-content]:bg-gray-900 [&_.ant-modal-content]:text-gray-900 dark:[&_.ant-modal-content]:text-gray-100"
       title={
         <span className="text-lg font-bold text-red-600 dark:text-red-400">
-          Xác nhận xóa vai trò
+          Xác nhận xóa nhóm
         </span>
       }
     >
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="text-center text-base text-gray-700 dark:text-gray-200">
-          Bạn có chắc chắn muốn xóa vai trò
+          Bạn có chắc chắn muốn xóa nhóm
           <span className="font-semibold text-red-600 dark:text-red-400">
-            {" "}
-            {roleName || "này"}{" "}
+            {groupName ? ` ${groupName} ` : " này "}
           </span>
           ?<br />
           Hành động này không thể hoàn tác.
@@ -88,4 +89,4 @@ const RoleDeleteModal = ({
   );
 };
 
-export default RoleDeleteModal;
+export default GroupDeleteModal;
