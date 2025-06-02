@@ -89,7 +89,7 @@ const LeftSidebar: React.FC = () => {
         listItems={groupData?.map((group) => ({
           icon: (
             <Avatar
-              size={20}
+              size={30}
               src={group?.avatarUrl || undefined}
               style={{ backgroundColor: colors.primary, fontSize: 12 }}
             >
