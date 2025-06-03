@@ -22,8 +22,13 @@ const AiOutlinePaperClip = lazy(() =>
 );
 
 const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
-  const { joinConversation, sendMessage, messages, addMessagesToConversation } =
-    useSignalR();
+  const {
+    joinConversation,
+    sendMessage,
+    messages,
+    addMessagesToConversation,
+    connectionState,
+  } = useSignalR();
   const [messageContent, setMessageContent] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -87,9 +92,18 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
   const handleSendMessage = async (content?: string, type: string = "text") => {
     const msgContent = content !== undefined ? content : messageContent;
     if (!msgContent.trim()) return;
+    if (connectionState !== "Connected") {
+      window.alert(
+        "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng. Vui lòng thử lại sau."
+      );
+      return;
+    }
     try {
       await sendMessage(conversationId, msgContent, type);
     } catch (error) {
+      window.alert(
+        "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng hoặc có lỗi mạng."
+      );
       console.error("Error sending message:", error);
     }
     if (type === "text") setMessageContent("");
@@ -194,7 +208,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
         </button>
       </div>
       <div className="border border-gray-300 rounded-lg p-3 h-96 overflow-y-scroll bg-white relative flex flex-col">
-        {chatHistory.map((msg, index) => {
+        {chatHistory?.map((msg, index) => {
           const isMe = msg.senderId === userId;
           const isFile = msg.type === "file";
           return (
@@ -266,6 +280,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
           onClick={() => handleSendMessage()}
           className="px-6 py-2 font-semibold shadow"
           loading={uploading}
+          disabled={connectionState !== "Connected"}
         >
           Gửi
         </Button>

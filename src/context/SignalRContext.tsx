@@ -37,6 +37,7 @@ const SignalRContext = createContext({
     }) => void
   ) => {},
   addMessagesToConversation: (_conversationId: string, _msgs: any[]) => {},
+  connectionState: "Connecting" as string,
 });
 
 export const SignalRProvider = ({
@@ -58,6 +59,7 @@ export const SignalRProvider = ({
       }[]
     >
   >({});
+  const [connectionState, setConnectionState] = useState<string>("Connecting");
 
   useEffect(() => {
     const createConnection = async () => {
@@ -66,6 +68,15 @@ export const SignalRProvider = ({
         .configureLogging(LogLevel.Information)
         .build();
       setConnection(newConnection);
+      setConnectionState("Connecting");
+      newConnection.onclose(async (error) => {
+        setConnectionState("Disconnected");
+        if ((error as any)?.statusCode === 401) {
+          await handleTokenRefresh(newConnection);
+        }
+      });
+      newConnection.onreconnecting(() => setConnectionState("Reconnecting"));
+      newConnection.onreconnected(() => setConnectionState("Connected"));
       newConnection.on(
         "ReceiveMessage",
         (
@@ -95,15 +106,12 @@ export const SignalRProvider = ({
           });
         }
       );
-      newConnection.onclose(async (error) => {
-        if ((error as any)?.statusCode === 401) {
-          await handleTokenRefresh(newConnection);
-        }
-      });
       try {
         await newConnection.start();
+        setConnectionState("Connected");
         console.log("Connected to SignalR Hub");
       } catch (err) {
+        setConnectionState("Disconnected");
         console.error("SignalR Connection Error: ", err);
       }
       return () => {
@@ -180,9 +188,10 @@ export const SignalRProvider = ({
     content: string,
     type: string
   ) => {
-    if (connection) {
-      await connection.invoke("SendMessage", conversationId, content, type);
+    if (!connection || connectionState !== "Connected") {
+      throw new Error("Không thể gửi tin nhắn: Kết nối chưa sẵn sàng.");
     }
+    await connection.invoke("SendMessage", conversationId, content, type);
   };
 
   // Merge lịch sử, tránh lặp theo id
@@ -223,6 +232,7 @@ export const SignalRProvider = ({
         sendMessage,
         onMessageReceived,
         addMessagesToConversation,
+        connectionState,
       }}
     >
       {children}
@@ -235,4 +245,5 @@ function logout() {
   window.location.href = "/login";
 }
 
+// eslint-disable-next-line
 export const useSignalR = () => useContext(SignalRContext);
