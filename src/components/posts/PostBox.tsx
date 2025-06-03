@@ -453,15 +453,6 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
               >
                 <span className="flex items-center gap-1 cursor-pointer">
                   <IoIosMore className="icon-more text-lg" />
-                  <Button
-                    type="text"
-                    className="report-btn text-gray-400 hover:text-red-500 p-0"
-                    icon={<span className="material-icons">flag</span>}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsReportModalOpen(true);
-                    }}
-                  />
                 </span>
               </Dropdown>
             }
