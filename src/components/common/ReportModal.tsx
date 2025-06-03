@@ -3,13 +3,36 @@ import { Modal, Checkbox, Input, Button, notification } from "antd";
 import { interactApi } from "@/api/interactApi";
 import { TargetType } from "@/enums/targetType";
 
-const REASONS = [
-  "Nội dung không phù hợp",
-  "Spam/quảng cáo",
-  "Quấy rối/lạm dụng",
-  "Thông tin sai sự thật",
-  "Khác",
-];
+const REASONS_MAP: Record<TargetType, string[]> = {
+  [TargetType.Post]: [
+    "Nội dung không phù hợp",
+    "Spam/quảng cáo",
+    "Quấy rối/lạm dụng",
+    "Thông tin sai sự thật",
+    "Vi phạm bản quyền",
+    "Khác",
+  ],
+  [TargetType.Comment]: [
+    "Bình luận không phù hợp",
+    "Spam/quảng cáo",
+    "Ngôn từ kích động/thù địch",
+    "Thông tin sai sự thật",
+    "Khác",
+  ],
+  [TargetType.User]: [
+    "Tài khoản giả mạo",
+    "Quấy rối/lạm dụng",
+    "Spam/tin nhắn rác",
+    "Chia sẻ nội dung không phù hợp",
+    "Khác",
+  ],
+  [TargetType.Group]: [
+    "Nội dung nhóm không phù hợp",
+    "Spam/quảng cáo",
+    "Nhóm giả mạo",
+    "Khác",
+  ],
+};
 
 interface ReportModalProps {
   open: boolean;
@@ -29,6 +52,8 @@ const ReportModal: React.FC<ReportModalProps> = ({
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const reasons = REASONS_MAP[targetType] || ["Khác"];
 
   const handleReasonChange = (checkedValues: any) => {
     setSelectedReasons(checkedValues);
@@ -72,7 +97,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
     >
       <div className="mb-4">
         <Checkbox.Group
-          options={REASONS}
+          options={reasons}
           value={selectedReasons}
           onChange={handleReasonChange}
           className="flex flex-col gap-2"
