@@ -12,7 +12,7 @@ export const interactApi = {
   createReport: async (
     request: CreateReportRequest
   ): Promise<ResponseBase<null>> => {
-    const url = `/interact/report/create`;
+    const url = `/report/createt`;
     const response = await interactRepository.post(url, request);
     if (!response) {
       throw new Error("Failed to create report");
