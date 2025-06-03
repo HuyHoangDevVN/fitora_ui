@@ -515,15 +515,6 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
           >
             <span className="text-sm font-medium">Share</span>
           </Button>
-          <Button
-            className="report-btn flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors duration-300"
-            icon={<span className="material-icons">flag</span>}
-            type="text"
-            size="small"
-            onClick={() => setIsReportModalOpen(true)}
-          >
-            <span className="text-sm font-medium">Báo cáo</span>
-          </Button>
         </div>
 
         <Modal
