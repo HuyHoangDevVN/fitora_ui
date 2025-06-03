@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import {
+import signalR, {
   HubConnectionBuilder,
   LogLevel,
   HubConnection,
@@ -64,7 +64,12 @@ export const SignalRProvider = ({
   useEffect(() => {
     const createConnection = async () => {
       const newConnection = new HubConnectionBuilder()
-        .withUrl(`${API_URL}/chat`, { withCredentials: true })
+        .withUrl(`${API_URL}/chat`, {
+          transport:
+            signalR.HttpTransportType.WebSockets |
+            signalR.HttpTransportType.ServerSentEvents,
+          withCredentials: true,
+        })
         .configureLogging(LogLevel.Information)
         .build();
       setConnection(newConnection);
