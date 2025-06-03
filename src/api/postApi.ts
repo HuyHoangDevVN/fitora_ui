@@ -16,6 +16,7 @@ interface FetchPostsRequest {
 
 interface FetchPersonalPostsRequest {
   userId: number;
+  isFriend?: boolean;
   cursor?: string | null;
   limit?: number;
 }
@@ -90,10 +91,11 @@ export const postApi = {
   fetchPersonalPosts: async (
     request: FetchPersonalPostsRequest
   ): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
-    const { userId, cursor, limit = LIMIT } = request;
+    const { userId, isFriend, cursor, limit = LIMIT } = request;
 
     const queryParams: Record<string, any> = {
       Id: userId,
+      IsFriend: isFriend,
       Limit: limit,
     };
 

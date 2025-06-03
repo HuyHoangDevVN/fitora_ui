@@ -1,5 +1,4 @@
 import { interactRepository, userRepository } from "@/api/repository";
-import { userApi } from "@/api/userApi";
 import PostBox from "@/components/posts/PostBox";
 import { PaginatedCursorResult } from "@/types/paginatedCrusorResult";
 import { Post } from "@/types/post";
@@ -33,6 +32,25 @@ const Profile = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const initialLoadRef = useRef(false);
 
+  // Helper: Build query string for fetching posts (robust, reusable)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const buildPostsQuery = (
+    isWatching: boolean,
+    userId: string | undefined,
+    relationship: { isFriend: boolean } | null,
+    limit: number,
+    nextCursor: number | null
+  ): string => {
+    const params: string[] = [];
+    if (isWatching && userId) params.push(`Id=${userId}`);
+    if (relationship?.isFriend) params.push("IsFriend=true");
+    params.push(`Limit=${limit}`);
+    if (nextCursor !== null && nextCursor !== undefined)
+      params.push(`Cursor=${nextCursor}`);
+    return params.join("&");
+  };
+
+  // Fetch profile info (clean, error handled)
   const fetchProfile = useCallback(async () => {
     setIsProfileLoading(true);
     try {
@@ -63,13 +81,19 @@ const Profile = () => {
     }
   }, [isWatching, userId]);
 
+  // Fetch posts with pagination (robust, deduplication, error handled)
   const fetchPosts = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const url = `/post/personal?${
-        isWatching && userId ? `Id=${userId}&` : ""
-      }Limit=4${nextCursor ? `&Cursor=${nextCursor}` : ""}`;
+      const query = buildPostsQuery(
+        isWatching,
+        userId,
+        relationship,
+        4,
+        nextCursor
+      );
+      const url = `/post/personal?${query}`;
       const response = await interactRepository.get<
         ResponseBase<PaginatedCursorResult<Post>>
       >(url);
@@ -91,24 +115,38 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  }, [isWatching, userId, nextCursor, loading, hasMore]);
+  }, [
+    isWatching,
+    userId,
+    relationship,
+    nextCursor,
+    loading,
+    hasMore,
+    buildPostsQuery,
+  ]);
 
+  // Fetch friends list (clean, error handled)
   const fetchFriends = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
     try {
-      const response = await userApi.getListFriends({
-        pageIndex: 0,
-        pageSize: 10,
-      });
+      const response = await userRepository.get<ResponseBase<User[]>>(
+        `/user/friends-list`
+      );
+
       if (response?.isSuccess && response.data) {
-        setFriends(response.data.data);
+        setFriends(response.data);
       } else {
-        message.error(response?.message || "Không thể tải danh sách bạn bè");
+        message.error("Không thể tải danh sách bạn bè");
       }
     } catch {
       message.error("Lỗi khi tải danh sách bạn bè, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [loading]);
 
+  // Initial data load
   useEffect(() => {
     if (!userId || initialLoadRef.current) return;
 
@@ -125,6 +163,7 @@ const Profile = () => {
     loadInitialData();
   }, [fetchProfile, fetchPosts, userId]);
 
+  // Infinite scroll for posts
   useEffect(() => {
     if (!loadMoreRef.current) return;
     const observer = new IntersectionObserver(
@@ -139,8 +178,19 @@ const Profile = () => {
     return () => observer.disconnect();
   }, [fetchPosts, hasMore, loading]);
 
+  // Generalized action handler for follow/friend actions
   const handleAction = useCallback(
-    async (apiEndpoint, method, successMessage, updateState) => {
+    async (
+      apiEndpoint: string,
+      method: "POST" | "DELETE",
+      successMessage: string,
+      updateState: Partial<
+        typeof relationship & {
+          followerCount?: number;
+          followingCount?: number;
+        }
+      >
+    ) => {
       if (!userId) {
         message.error("Không tìm thấy ID người dùng.");
         return;
