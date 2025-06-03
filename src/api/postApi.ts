@@ -7,6 +7,7 @@ const LIMIT = 5; // Số lượng bài viết mặc định mỗi lần lấy
 //#region Interface
 
 interface FetchPostsRequest {
+  keySearch?: string; // Từ khóa tìm kiếm
   groupId?: string;
   feedType: 1 | 2; // 1: All, 2: Category
   categoryId?: string; // Chỉ cần khi feedType là Category
@@ -53,7 +54,7 @@ export const postApi = {
   fetchPosts: async (
     request: FetchPostsRequest
   ): Promise<ResponseBase<{ data: Post[]; nextCursor: string | null }>> => {
-    const { categoryId } = request;
+    const { categoryId, keySearch } = request;
     const {
       groupId,
       feedType: originalFeedType,
@@ -78,6 +79,10 @@ export const postApi = {
 
     if (feedType === 2 && categoryId) {
       queryParams.CategoryId = categoryId;
+    }
+
+    if (keySearch) {
+      queryParams.KeySearch = keySearch;
     }
 
     const queryString = new URLSearchParams(queryParams).toString();

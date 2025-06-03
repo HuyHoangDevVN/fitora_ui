@@ -25,6 +25,7 @@ import Saved from "@/pages/Saved";
 import Trending from "@/pages/Trending";
 import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
+import PostSearch from "@/pages/PostSearch";
 
 const router = createBrowserRouter([
   {
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
           { path: "trending", element: <Trending /> },
           { path: "saved", element: <Saved /> },
           { path: "explore", element: <Explore /> },
+          { path: "search/:query", element: <PostSearch /> },
         ],
       },
       {

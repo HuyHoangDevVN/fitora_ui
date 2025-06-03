@@ -6,6 +6,7 @@ import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 import { groupApi } from "@/api/groupApi";
+import { postApi } from "@/api/postApi";
 
 const SkeletonItem: React.FC = () => (
   <div className="flex items-center gap-2 p-2">
@@ -50,6 +51,12 @@ const SearchBar: React.FC = () => {
       });
     } else if (searchType === "group") {
       navigate(`/group/${result.id}`);
+    } else if (searchType === "post") {
+      navigate(
+        `/search?keySearch=${encodeURIComponent(
+          result.title || result.content || ""
+        )}`
+      );
     }
   };
 
@@ -69,6 +76,12 @@ const SearchBar: React.FC = () => {
           );
         } else if (searchType === "group") {
           response = await groupApi.getGroupList(searchTerm, 0, 5);
+        } else if (searchType === "post") {
+          response = await postApi.fetchPosts({
+            feedType: 1,
+            keySearch: searchTerm,
+            limit: 5,
+          });
         }
         setResults(response?.data?.data || []);
       } catch (error) {
@@ -113,6 +126,7 @@ const SearchBar: React.FC = () => {
                 Tìm kiếm theo người dùng
               </Select.Option>
               <Select.Option value="group">Tìm kiếm theo nhóm</Select.Option>
+              <Select.Option value="post">Tìm kiếm theo bài viết</Select.Option>
             </Select>
           </div>
           {loading ? (
@@ -127,16 +141,62 @@ const SearchBar: React.FC = () => {
             <div className="p-4 text-gray-500">Không tìm thấy kết quả</div>
           ) : (
             <>
-              <div className="px-4 py-2 border-b border-gray-200 text-sm text-gray-600">
-                {results.length} kết quả được tìm thấy
-              </div>
-              {results.map((result) => (
-                <UserResult
-                  key={result.id}
-                  user={result}
-                  onClick={handleResultClick}
-                />
-              ))}
+              {searchType === "user" && (
+                <>
+                  <div className="px-4 py-2 border-b border-gray-200 text-sm text-gray-600">
+                    {results.length} người dùng được tìm thấy
+                  </div>
+                  {results.map((result) => (
+                    <UserResult
+                      key={result.id}
+                      user={result}
+                      onClick={handleResultClick}
+                    />
+                  ))}
+                </>
+              )}
+              {searchType === "group" && (
+                <>
+                  <div className="px-4 py-2 border-b border-gray-200 text-sm text-gray-600">
+                    {results.length} nhóm được tìm thấy
+                  </div>
+                  {results.map((result) => (
+                    <div
+                      key={result.id}
+                      className="flex flex-col gap-1 p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleResultClick(result)}
+                    >
+                      <div className="font-medium text-gray-800 line-clamp-1">
+                        {result.name}
+                      </div>
+                      <div className="text-xs text-gray-500 line-clamp-2">
+                        {result.description}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {searchType === "post" && results.length > 0 && (
+                <>
+                  <div className="px-4 py-2 border-b border-gray-200 text-sm text-gray-600">
+                    {results.length} bài viết được tìm thấy
+                  </div>
+                  {results.map((result) => (
+                    <div
+                      key={result.id}
+                      className="flex flex-col gap-1 p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleResultClick(result)}
+                    >
+                      <div className="font-medium text-gray-800 line-clamp-1">
+                        {result.title || result.content}
+                      </div>
+                      <div className="text-xs text-gray-500 line-clamp-2">
+                        {result.content}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           )}
         </div>

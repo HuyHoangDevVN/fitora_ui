@@ -501,7 +501,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
             icon={<FaRegComment className="text-lg" />}
             type="text"
             size="small"
-            onClick={() => setIsCommentModalVisible(true)}
+            onClick={() => setIsCommentModalVisible((prev) => !prev)}
           >
             <span className="text-sm font-medium">
               {post?.commentsCount} Comments

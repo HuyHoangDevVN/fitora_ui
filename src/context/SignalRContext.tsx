@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import signalR, {
+import {
   HubConnectionBuilder,
   LogLevel,
   HubConnection,
+  HttpTransportType,
 } from "@microsoft/signalr";
 import { API_URL } from "@/api/repository";
 import { authApi } from "@/api/authApi";
@@ -66,8 +67,7 @@ export const SignalRProvider = ({
       const newConnection = new HubConnectionBuilder()
         .withUrl(`${API_URL}/chat`, {
           transport:
-            signalR.HttpTransportType.WebSockets |
-            signalR.HttpTransportType.ServerSentEvents,
+            HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents,
           withCredentials: true,
         })
         .configureLogging(LogLevel.Information)
