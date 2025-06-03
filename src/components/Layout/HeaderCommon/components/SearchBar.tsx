@@ -54,7 +54,7 @@ const SearchBar: React.FC = () => {
     } else if (searchType === "post") {
       // Khi click vào kết quả bài viết, truyền content vào keySearch
       navigate(
-        `/search?query=${encodeURIComponent(
+        `/search/query=${encodeURIComponent(
           result.title || result.content || ""
         )}`
       );
@@ -64,7 +64,7 @@ const SearchBar: React.FC = () => {
   const handleSearch = () => {
     // Khi ấn enter hoặc icon search, truyền text search vào keySearch
     if (searchType === "post") {
-      navigate(`/search?query=${encodeURIComponent(searchTerm)}`);
+      navigate(`/search/query=${encodeURIComponent(searchTerm)}`);
     }
   };
 

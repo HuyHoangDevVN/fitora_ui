@@ -3,15 +3,15 @@ import PostBox from "@/components/posts/PostBox";
 import colors from "@/styles/colors";
 import { Post } from "@/types/post";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Divider, Skeleton, Spin, Input, Empty } from "antd";
-import React, { useRef, useState, useEffect } from "react";
+import { Divider, Empty, Input, Skeleton, Spin } from "antd";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 const PostSearch: React.FC = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const keySearchParam = params.get("query") || "";
-  const [searchValue, setSearchValue] = useState(keySearchParam);
+  const [searchValue, setSearchValue] = useState<string>(keySearchParam);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -37,8 +37,8 @@ const PostSearch: React.FC = () => {
   });
 
   useEffect(() => {
-    setSearchValue(keySearchParam);
-  }, [keySearchParam]);
+    setSearchValue(params.get("keySearch") || "");
+  }, [location.search]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
