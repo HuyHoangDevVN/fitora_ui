@@ -10,7 +10,7 @@ import { useLocation } from "react-router-dom";
 const PostSearch: React.FC = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const keySearchParam = params.get("keySearch") || "";
+  const keySearchParam = params.get("query") || "";
   const [searchValue, setSearchValue] = useState(keySearchParam);
   const sentinelRef = useRef<HTMLDivElement>(null);
 

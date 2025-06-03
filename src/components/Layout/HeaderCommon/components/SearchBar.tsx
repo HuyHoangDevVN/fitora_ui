@@ -39,7 +39,7 @@ const UserResult = React.memo(
 
 const SearchBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [searchType, setSearchType] = useState<string>("user");
+  const [searchType, setSearchType] = useState<string>("post");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -52,11 +52,19 @@ const SearchBar: React.FC = () => {
     } else if (searchType === "group") {
       navigate(`/group/${result.id}`);
     } else if (searchType === "post") {
+      // Khi click vào kết quả bài viết, truyền content vào keySearch
       navigate(
-        `/search?keySearch=${encodeURIComponent(
+        `/search?query=${encodeURIComponent(
           result.title || result.content || ""
         )}`
       );
+    }
+  };
+
+  const handleSearch = () => {
+    // Khi ấn enter hoặc icon search, truyền text search vào keySearch
+    if (searchType === "post") {
+      navigate(`/search?query=${encodeURIComponent(searchTerm)}`);
     }
   };
 
@@ -105,12 +113,22 @@ const SearchBar: React.FC = () => {
         <Input
           size="middle"
           placeholder={`Tìm kiếm ${
-            searchType === "user" ? "người dùng" : "nhóm"
+            searchType === "user"
+              ? "người dùng"
+              : searchType === "group"
+              ? "nhóm"
+              : "bài viết"
           }...`}
           className="rounded-3xl px-4 py-2 text-sm shadow-sm focus:ring focus:ring-primary focus:outline-none"
-          suffix={<SearchOutlined />}
+          suffix={
+            <SearchOutlined
+              onClick={handleSearch}
+              style={{ cursor: "pointer" }}
+            />
+          }
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onPressEnter={handleSearch}
         />
       </div>
 
@@ -122,11 +140,11 @@ const SearchBar: React.FC = () => {
               onChange={(value) => setSearchType(value)}
               className="w-full mb-2"
             >
+              <Select.Option value="post">Tìm kiếm theo bài viết</Select.Option>
               <Select.Option value="user">
                 Tìm kiếm theo người dùng
               </Select.Option>
               <Select.Option value="group">Tìm kiếm theo nhóm</Select.Option>
-              <Select.Option value="post">Tìm kiếm theo bài viết</Select.Option>
             </Select>
           </div>
           {loading ? (
