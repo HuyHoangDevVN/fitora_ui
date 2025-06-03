@@ -25,7 +25,7 @@ const RightSideBar = () => {
   useEffect(() => {
     dispatch(fetchFriendInvitations());
     dispatch(fetchFriends({ pageIndex: 0, pageSize: 15 }));
-  }, [dispatch]);
+  }, []);
 
   const handleUpdate = () => {
     setTimeout(() => {

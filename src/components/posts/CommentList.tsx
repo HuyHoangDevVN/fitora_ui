@@ -1,10 +1,14 @@
 import { commentApi } from "@/api/commentApi";
+import ReportModal from "@/components/common/ReportModal";
+import { TargetType } from "@/enums/targetType";
 import { CommentResponse } from "@/types/post";
 import {
   Avatar,
   Button,
+  Dropdown,
   Input,
   List,
+  Menu,
   message,
   Modal,
   Spin,
@@ -29,6 +33,11 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
     {}
   );
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+    type: TargetType;
+    id: string;
+  } | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const userId = localStorage.getItem("x-client-id") || "current-user-id";
   const profile = JSON.parse(localStorage.getItem("userInfo") || "{}");
@@ -347,6 +356,44 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                     <MdClear />
                   </Button>
                 )}
+                <Dropdown
+                  overlay={
+                    <Menu>
+                      <Menu.Item
+                        key="reportComment"
+                        onClick={() => {
+                          setReportTarget({
+                            type: TargetType.Comment,
+                            id: comment.id,
+                          });
+                          setIsReportModalOpen(true);
+                        }}
+                      >
+                        Báo cáo bình luận
+                      </Menu.Item>
+                      <Menu.Item
+                        key="reportUser"
+                        onClick={() => {
+                          setReportTarget({
+                            type: TargetType.User,
+                            id: comment.user.id,
+                          });
+                          setIsReportModalOpen(true);
+                        }}
+                      >
+                        Báo cáo người dùng
+                      </Menu.Item>
+                    </Menu>
+                  }
+                  trigger={["click"]}
+                >
+                  <Button
+                    type="text"
+                    className="absolute right-8 top-1 p-1 text-gray-400 hover:text-red-500"
+                  >
+                    <span className="material-icons">flag</span>
+                  </Button>
+                </Dropdown>
 
                 <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
                   <span className="font-semibold text-gray-800">
@@ -452,23 +499,50 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                           size={32}
                         />
                         <div className="flex-1 relative">
-                          {reply?.userId === userId && (
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  key="reportReply"
+                                  onClick={() => {
+                                    setReportTarget({
+                                      type: TargetType.Comment,
+                                      id: reply.id,
+                                    });
+                                    setIsReportModalOpen(true);
+                                  }}
+                                >
+                                  Báo cáo trả lời
+                                </Menu.Item>
+                                <Menu.Item
+                                  key="reportUser"
+                                  onClick={() => {
+                                    setReportTarget({
+                                      type: TargetType.User,
+                                      id: reply.user.id,
+                                    });
+                                    setIsReportModalOpen(true);
+                                  }}
+                                >
+                                  Báo cáo người dùng
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
                             <Button
                               type="text"
-                              className="absolute right-0 top-1 p-1"
-                              onClick={() =>
-                                handleDeleteComment(reply?.id, reply?.user?.id)
-                              }
+                              className="absolute right-8 top-1 p-1 text-gray-400 hover:text-red-500"
                             >
-                              <MdClear />
+                              <span className="material-icons">flag</span>
                             </Button>
-                          )}
+                          </Dropdown>
                           <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
                             <span className="font-semibold text-gray-800">
-                              {reply?.user?.username}
+                              {reply.user?.username}
                             </span>
                             <p className="mt-1 text-gray-700">
-                              {reply?.content}
+                              {reply.content}
                             </p>
                           </div>
                           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
@@ -530,6 +604,15 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
         </div>
       )}
       <div ref={sentinelRef} style={{ height: "1px" }} />
+      <ReportModal
+        open={isReportModalOpen}
+        onCancel={() => {
+          setIsReportModalOpen(false);
+          setReportTarget(null);
+        }}
+        targetType={reportTarget?.type as TargetType}
+        targetId={reportTarget?.id || ""}
+      />
     </div>
   );
 };

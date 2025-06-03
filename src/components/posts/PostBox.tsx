@@ -20,16 +20,17 @@ import { RiShareForwardLine } from "react-icons/ri";
 import { categoryApi } from "@/api/categoryApi";
 import { postApi } from "@/api/postApi";
 import { interactRepository } from "@/api/repository";
-import { userApi } from "@/api/userApi";
+import ReportModal from "@/components/common/ReportModal";
+import { PrivacyPost } from "@/enums/post";
+import { TargetType } from "@/enums/targetType";
 import { votePost } from "@/features/posts/postsSlice";
 import { AppDispatch } from "@/store/store";
 import { Post } from "@/types/post";
 import { timeToLast } from "@/utils/FunctionHelpper";
+import { IoEarthSharp } from "react-icons/io5";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import CommentList from "./CommentList";
-import { PrivacyPost } from "@/enums/post";
-import { IoEarthSharp } from "react-icons/io5";
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/40";
 const MEDIA_TYPES = {
@@ -64,10 +65,12 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
   const [editMediaUrl, setEditMediaUrl] = useState(post?.mediaUrl);
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(post?.user?.isFollowing);
+  const [_isFollowing] = useState(post?.user?.isFollowing);
   const [numberOfVotes, setNumberOfVotes] = useState(post?.votesCount);
   const [voteType, setVoteType] = useState<1 | 2 | null>(post?.userVoteType);
   const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<TargetType | null>(null);
 
   const avatarSrc = useMemo(
     () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
@@ -121,6 +124,74 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
       },
     });
   }, [post?.id]);
+  const menuItems = useMemo(
+    () =>
+      [
+        isMe && { key: "edit", label: "Chỉnh sửa" },
+        isMe && { key: "delete", label: "Xoá bài viết" },
+        !post?.isCategoryFollowed && {
+          key: "followCategory",
+          label: "Theo dõi danh mục",
+        },
+        !isSaved && { key: "save", label: "Lưu bài viết" },
+        isSaved && { key: "unsave", label: "Bỏ lưu bài viết" },
+        { key: "reportPost", label: "Báo cáo bài viết" },
+        { key: "reportUser", label: "Báo cáo người dùng" },
+      ].filter(Boolean) as { key: string; label: string }[],
+    [isMe, isSaved, post?.isCategoryFollowed]
+  );
+
+  const handleFollowCategory = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await categoryApi.followCategory(post?.categoryId ?? "");
+      if (response?.isSuccess) {
+        message.success("Đã theo dõi danh mục!");
+      } else {
+        message.error(response?.message || "Không thể theo dõi danh mục.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post?.categoryId]);
+
+  const handleSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.savePost({
+        userId: localStorage.getItem("x-client-id") || "",
+        postId: post?.id,
+      });
+      if (response?.isSuccess) {
+        message.success("Đã lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post]);
+
+  const handleUnSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.unSavePost(post?.id);
+      if (response?.isSuccess) {
+        message.success("Đã bỏ lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể bỏ lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post]);
+
   const handleMenuClick = useCallback(
     ({ key }: { key: string }) => {
       switch (key) {
@@ -139,11 +210,25 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
         case "unsave":
           handleUnSave();
           break;
+        case "reportPost":
+          setReportTarget(TargetType.Post);
+          setIsReportModalOpen(true);
+          break;
+        case "reportUser":
+          setReportTarget(TargetType.User);
+          setIsReportModalOpen(true);
+          break;
         default:
           break;
       }
     },
-    [handleDelete, toggleEditModal]
+    [
+      handleDelete,
+      toggleEditModal,
+      handleFollowCategory,
+      handleSave,
+      handleUnSave,
+    ]
   );
 
   const renderMedia = useCallback(
@@ -251,21 +336,6 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
     }
   }, [post?.privacy]);
 
-  const menuItems = useMemo(
-    () =>
-      [
-        isMe && { key: "edit", label: "Chỉnh sửa" },
-        isMe && { key: "delete", label: "Xoá bài viết" },
-        !post?.isCategoryFollowed && {
-          key: "followCategory",
-          label: "Theo dõi danh mục",
-        },
-        !isSaved && { key: "save", label: "Lưu bài viết" },
-        isSaved && { key: "unsave", label: "Bỏ lưu bài viết" },
-      ].filter(Boolean) as { key: string; label: string }[],
-    [post?.isCategoryFollowed]
-  );
-
   const handleVote = useCallback(
     async (newVoteType: 1 | 2 | 3) => {
       setLoading(true);
@@ -287,6 +357,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
           message.success(messages[newVoteType]);
 
           const votesCont = post?.votesCount;
+          const prevVoteType = post?.userVoteType;
 
           setNumberOfVotes(() => {
             const voteChanges = {
@@ -298,7 +369,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
               "null->2": -1, // Downvote
             };
 
-            const key = `${post?.userVoteType ?? "null"}->${newVoteType}`;
+            const key = `${prevVoteType ?? "null"}->${newVoteType}`;
             return votesCont + (voteChanges[key] || 0);
           });
 
@@ -322,80 +393,8 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
         setLoading(false);
       }
     },
-    [dispatch, post?.id, voteType]
+    [dispatch, post?.id, post?.userVoteType, post?.votesCount]
   );
-
-  const handleSave = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await postApi.savePost({
-        userId: localStorage.getItem("x-client-id") || "",
-        postId: post?.id,
-      });
-      if (response?.isSuccess) {
-        message.success("Đã lưu bài viết!");
-      } else {
-        message.error(response?.message || "Không thể lưu bài viết.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post]);
-
-  const handleUnSave = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await postApi.unSavePost(post?.id);
-      if (response?.isSuccess) {
-        message.success("Đã bỏ lưu bài viết!");
-      } else {
-        message.error(response?.message || "Không thể bỏ lưu bài viết.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post]);
-
-  const handleFollow = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await userApi.handleUserAction(
-        "/follow/follow",
-        "POST",
-        post?.user?.id
-      );
-      if (response?.isSuccess) {
-        message.success("Đã theo dõi người dùng!");
-        setIsFollowing(true);
-      } else {
-        message.error(response?.message || "Không thể theo dõi người dùng.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post?.user?.id]);
-
-  const handleFollowCategory = async () => {
-    try {
-      setLoading(true);
-      const response = await categoryApi.followCategory(post?.categoryId ?? "");
-      if (response?.isSuccess) {
-        message.success("Đã theo dõi danh mục!");
-      } else {
-        message.error(response?.message || "Không thể theo dõi danh mục.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Badge.Ribbon
@@ -452,7 +451,18 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
                 menu={{ items: menuItems, onClick: handleMenuClick }}
                 trigger={["click"]}
               >
-                <IoIosMore className="icon-more cursor-pointer text-lg" />
+                <span className="flex items-center gap-1 cursor-pointer">
+                  <IoIosMore className="icon-more text-lg" />
+                  <Button
+                    type="text"
+                    className="report-btn text-gray-400 hover:text-red-500 p-0"
+                    icon={<span className="material-icons">flag</span>}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsReportModalOpen(true);
+                    }}
+                  />
+                </span>
               </Dropdown>
             }
           </Space>
@@ -514,6 +524,15 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
           >
             <span className="text-sm font-medium">Share</span>
           </Button>
+          <Button
+            className="report-btn flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors duration-300"
+            icon={<span className="material-icons">flag</span>}
+            type="text"
+            size="small"
+            onClick={() => setIsReportModalOpen(true)}
+          >
+            <span className="text-sm font-medium">Báo cáo</span>
+          </Button>
         </div>
 
         <Modal
@@ -555,6 +574,15 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
             <CommentList postId={post?.id} />{" "}
           </div>
         </Modal>
+        <ReportModal
+          open={isReportModalOpen}
+          onCancel={() => {
+            setIsReportModalOpen(false);
+            setReportTarget(null);
+          }}
+          targetType={reportTarget as TargetType}
+          targetId={reportTarget === TargetType.User ? post.user.id : post.id}
+        />
       </div>
     </Badge.Ribbon>
   );

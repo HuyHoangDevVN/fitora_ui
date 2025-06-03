@@ -39,8 +39,14 @@ const Header: React.FC = () => {
             <div className="hidden min-[1100px]:flex items-center space-x-4">
               <FriendActionIcon />
               <MessageActionIcon />
-              <NotificationActionIcon />
+              <NotificationActionIcon className="hidden min-[1100px]:inline-flex" />
             </div>
+            {/* NotificationActionIcon for mobile, only visible when mobile menu is open */}
+            {isMobileMenuOpen && (
+              <div className="sm:hidden inline-flex items-center ml-2">
+                <NotificationActionIcon className="sm:hidden" />
+              </div>
+            )}
             <ProfileActionIcon />
           </div>
         </div>
@@ -86,9 +92,7 @@ const Header: React.FC = () => {
               <li className="flex-1 text-center">
                 <MessageActionIcon />
               </li>
-              <li className="flex-1 text-center">
-                <NotificationActionIcon />
-              </li>
+              {/* Removed NotificationActionIcon from here to prevent double mount */}
               <li className="flex-1 text-center">
                 <ProfileActionIcon />
               </li>

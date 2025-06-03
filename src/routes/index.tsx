@@ -1,8 +1,15 @@
+import AccountManagement from "@/features/admin/Account/AccountManagement";
+import CategoryManagement from "@/features/admin/Category/CategoryManagement";
+import CommentManagement from "@/features/admin/Comment/CommentManagement";
+import GroupManagement from "@/features/admin/Group/GroupManagement";
+import PostManagement from "@/features/admin/Post/PostManagement";
+import ReportManagement from "@/features/admin/Report/ReportManagement";
+import RoleManagement from "@/features/admin/Role/RoleManagement";
 import Login from "@/features/auth/Login";
 import Register from "@/features/auth/Register";
-import Chat from "@/features/chat/Chat";
 import CreateGroup from "@/features/groups/CreateGroup";
 import GroupDetailPage from "@/features/groups/GroupDetailPage";
+import AdminLayout from "@/layouts/AdminLayout";
 import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
 import Layout from "@/layouts/MainLayout";
 import About from "@/pages/About";
@@ -18,14 +25,6 @@ import Saved from "@/pages/Saved";
 import Trending from "@/pages/Trending";
 import { createBrowserRouter } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
-import AdminLayout from "@/layouts/AdminLayout";
-import AccountManagement from "@/features/admin/Account/AccountManagement";
-import RoleManagement from "@/features/admin/Role/RoleManagement";
-import CategoryManagement from "@/features/admin/Category/CategoryManagement";
-import GroupManagement from "@/features/admin/Group/GroupManagement";
-import PostManagement from "@/features/admin/Post/PostManagement";
-import CommentManagement from "@/features/admin/Comment/CommentManagement";
-import ReportManagement from "@/features/admin/Report/ReportManagement";
 
 const router = createBrowserRouter([
   {
