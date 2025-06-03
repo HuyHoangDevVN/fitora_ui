@@ -43,19 +43,19 @@ export const chatApi = {
   createConversation: async (
     request: CreateConversationRequest
   ): Promise<any> => {
-    const url = "/chat/conversations";
+    const url = "/conversations";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   sendMessage: async (request: SendMessageRequest): Promise<any> => {
-    const url = "/chat/send-message";
+    const url = "/send-message";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   getChatHistory: async (request: GetHistoryChatRequest): Promise<any> => {
-    const url = "/chat/history";
+    const url = "/history";
     const queryParams = new URLSearchParams({
       ConversationId: request.conversationId,
       PageIndex: (request.pageIndex ?? 0).toString(),
@@ -66,55 +66,55 @@ export const chatApi = {
   },
 
   deleteMessage: async (messageId: string): Promise<any> => {
-    const url = "/chat/delete-message";
+    const url = "/delete-message";
     const response = await chatRepository.post(url, messageId);
     return response;
   },
 
   recallMessage: async (request: GetHistoryChatRequest): Promise<any> => {
-    const url = "/chat/recall-message";
+    const url = "/recall-message";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   addReaction: async (request: AddReactionRequest): Promise<any> => {
-    const url = "/chat/add-reaction";
+    const url = "/add-reaction";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   markAsRead: async (request: MarkAsReadRequest): Promise<any> => {
-    const url = "/chat/mark-as-read";
+    const url = "/mark-as-read";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   updateGroupInfo: async (request: UpdateGroupInfoRequest): Promise<any> => {
-    const url = "/chat/update-group-info";
+    const url = "/update-group-info";
     const response = await chatRepository.put(url, request);
     return response;
   },
 
   addGroupMember: async (request: GroupMemberRequest): Promise<any> => {
-    const url = "/chat/add-group-member";
+    const url = "/add-group-member";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   removeGroupMember: async (request: GroupMemberRequest): Promise<any> => {
-    const url = "/chat/remove-group-member";
+    const url = "/remove-group-member";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   assignGroupAdmin: async (request: GroupMemberRequest): Promise<any> => {
-    const url = "/chat/assign-group-admin";
+    const url = "/assign-group-admin";
     const response = await chatRepository.post(url, request);
     return response;
   },
 
   getGroupConversationsByUserId: async (userId: string): Promise<any> => {
-    const url = "/chat/group-conversations";
+    const url = "/group-conversations";
     const queryParams = new URLSearchParams({ userId }).toString();
     const response = await chatRepository.get<any>(`${url}?${queryParams}`);
     return response;
@@ -124,7 +124,7 @@ export const chatApi = {
     userId: string,
     otherUserId: string
   ): Promise<any> => {
-    const url = "/chat/private-conversation";
+    const url = "/private-conversation";
     const queryParams = new URLSearchParams({ userId, otherUserId }).toString();
     const response = await chatRepository.get<any>(`${url}?${queryParams}`);
     return response;
