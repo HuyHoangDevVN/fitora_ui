@@ -5,13 +5,10 @@ import { Post } from "@/types/post";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Divider, Empty, Skeleton, Spin } from "antd";
 import React, { useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const PostSearch: React.FC = () => {
-  const location = useLocation();
-  // Lấy keySearch từ URL, không render input
-  const params = new URLSearchParams(location.search);
-  const keySearch = params.get("query") || "";
+  const { keySearch } = useParams();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
@@ -62,7 +59,6 @@ const PostSearch: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-2 md:px-0">
-      {/* KHÔNG render input tìm kiếm ở đây, chỉ hiển thị kết quả */}
       {isLoading && !data ? (
         <Spin
           tip="Đang tìm kiếm bài viết..."
