@@ -60,7 +60,7 @@ const SearchBar: React.FC = () => {
   const handleSearch = () => {
     // Khi ấn enter hoặc icon search, truyền text search vào keySearch
     if (searchType === "post") {
-      navigate(`/search/query=${encodeURIComponent(searchTerm)}`);
+      navigate(`/search/query/${encodeURIComponent(searchTerm)}`);
     }
   };
 
