@@ -53,14 +53,14 @@ const SearchBar: React.FC = () => {
       navigate(`/group/${result.id}`);
     } else if (searchType === "post") {
       // Khi click vào kết quả bài viết, truyền content vào keySearch
-      navigate(`/search/query/${encodeURIComponent(result.content || "")}`);
+      navigate(`/search/${encodeURIComponent(result.content || "")}`);
     }
   };
 
   const handleSearch = () => {
     // Khi ấn enter hoặc icon search, truyền text search vào keySearch
     if (searchType === "post") {
-      navigate(`/search/query/${encodeURIComponent(searchTerm)}`);
+      navigate(`/search/${encodeURIComponent(searchTerm)}`);
     }
   };
 
