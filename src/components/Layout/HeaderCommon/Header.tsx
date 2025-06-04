@@ -9,6 +9,7 @@ import ProfileActionIcon from "./components/ProfileActionIcon";
 import CreatePostActionIcon from "./components/CreatePostActionIcon";
 import FriendActionIcon from "./components/FriendActionIcon";
 import CreatePostModal from "@/components/posts/CreatePost";
+import NotificationDropdown from "@/components/header/NotificationDropdown";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ const Header: React.FC = () => {
             {/* NotificationActionIcon for mobile, only visible when mobile menu is open */}
             {isMobileMenuOpen && (
               <div className="sm:hidden inline-flex items-center ml-2">
-                <NotificationActionIcon className="sm:hidden" />
+                <NotificationDropdown />
               </div>
             )}
             <ProfileActionIcon />

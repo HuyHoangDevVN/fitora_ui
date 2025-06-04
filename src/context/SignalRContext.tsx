@@ -7,6 +7,7 @@ import {
 } from "@microsoft/signalr";
 import { API_URL } from "@/api/repository";
 import { authApi } from "@/api/authApi";
+import { notification as antdNotification } from "antd";
 
 const SignalRContext = createContext({
   messages: {} as Record<
@@ -39,6 +40,8 @@ const SignalRContext = createContext({
   ) => {},
   addMessagesToConversation: (_conversationId: string, _msgs: any[]) => {},
   connectionState: "Connecting" as string,
+  notifications: [] as any[],
+  unreadCount: 0,
 });
 
 export const SignalRProvider = ({
@@ -61,9 +64,13 @@ export const SignalRProvider = ({
     >
   >({});
   const [connectionState, setConnectionState] = useState<string>("Connecting");
+  // Notification state
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const createConnection = async () => {
+      // Kết nối chat
       const newConnection = new HubConnectionBuilder()
         .withUrl(`${API_URL}/chat`, {
           transport:
@@ -73,15 +80,17 @@ export const SignalRProvider = ({
         .configureLogging(LogLevel.Information)
         .build();
       setConnection(newConnection);
-      setConnectionState("Connecting");
+      setConnectionState("Đang kết nối");
       newConnection.onclose(async (error) => {
-        setConnectionState("Disconnected");
+        setConnectionState("Mất kết nối");
         if ((error as any)?.statusCode === 401) {
           await handleTokenRefresh(newConnection);
         }
       });
-      newConnection.onreconnecting(() => setConnectionState("Reconnecting"));
-      newConnection.onreconnected(() => setConnectionState("Connected"));
+      newConnection.onreconnecting(() =>
+        setConnectionState("Đang kết nối lại")
+      );
+      newConnection.onreconnected(() => setConnectionState("Đã kết nối"));
       newConnection.on(
         "ReceiveMessage",
         (
@@ -113,15 +122,65 @@ export const SignalRProvider = ({
       );
       try {
         await newConnection.start();
-        setConnectionState("Connected");
-        console.log("Connected to SignalR Hub");
+        setConnectionState("Đã kết nối");
+        console.log("Đã kết nối SignalR Chat");
       } catch (err) {
-        setConnectionState("Disconnected");
-        console.error("SignalR Connection Error: ", err);
+        setConnectionState("Mất kết nối");
+        console.error("Lỗi kết nối SignalR Chat: ", err);
       }
-      return () => {
-        newConnection.stop();
-      };
+      // Kết nối notification
+      const notiConnection = new HubConnectionBuilder()
+        .withUrl(`${API_URL}/hubs/noti`, {
+          transport:
+            HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents,
+          withCredentials: true,
+        })
+        .configureLogging(LogLevel.Information)
+        .build();
+      notiConnection.on(
+        "ReceiveNotification",
+        (
+          id,
+          senderId,
+          userId,
+          notificationTypeId,
+          content,
+          isRead,
+          channel,
+          title
+        ) => {
+          setNotifications((prev) => [
+            {
+              id,
+              senderId,
+              userId,
+              notificationTypeId,
+              content,
+              isRead,
+              channel,
+              title,
+            },
+            ...prev,
+          ]);
+          setUnreadCount((prev) => prev + 1);
+          // Bắn notification antdesign
+          antdNotification.open({
+            message: title || "Thông báo mới",
+            description: content,
+            placement: "topRight",
+          });
+        }
+      );
+      notiConnection.on("AllNotificationsRead", () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+      });
+      try {
+        await notiConnection.start();
+        console.log("Đã kết nối SignalR Notification");
+      } catch (err) {
+        console.error("Lỗi kết nối SignalR Notification: ", err);
+      }
     };
     createConnection();
   }, []);
@@ -238,6 +297,8 @@ export const SignalRProvider = ({
         onMessageReceived,
         addMessagesToConversation,
         connectionState,
+        notifications,
+        unreadCount,
       }}
     >
       {children}

@@ -53,6 +53,7 @@ export interface CreateCategoryRequest {
   name: string;
   slug: string;
   description?: string;
+  color?: string;
   parentId?: string | null;
 }
 
@@ -61,6 +62,7 @@ export interface UpdateCategoryRequest {
   name: string;
   slug: string;
   description?: string;
+  color?: string;
   parentId?: string | null;
 }
 
