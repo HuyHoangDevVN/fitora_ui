@@ -3,42 +3,32 @@ import PostBox from "@/components/posts/PostBox";
 import colors from "@/styles/colors";
 import { Post } from "@/types/post";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Divider, Empty, Input, Skeleton, Spin } from "antd";
-import React, { useEffect, useRef, useState } from "react";
+import { Divider, Empty, Skeleton, Spin } from "antd";
+import React, { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 const PostSearch: React.FC = () => {
   const location = useLocation();
+  // Lấy keySearch từ URL, không render input
   const params = new URLSearchParams(location.search);
-  const keySearchParam = params.get("query") || "";
-  const [searchValue, setSearchValue] = useState<string>(keySearchParam);
+  const keySearch = params.get("query") || "";
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    hasNextPage,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ["search-posts", searchValue],
-    queryFn: ({ pageParam }: { pageParam?: string }) =>
-      postApi
-        .fetchPosts({
-          feedType: 1,
-          keySearch: searchValue,
-          cursor: pageParam,
-        })
-        .then((res) => res.data),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined,
-    enabled: !!searchValue,
-  });
-
-  useEffect(() => {
-    setSearchValue(params.get("keySearch") || "");
-  }, [location.search]);
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["search-posts", keySearch],
+      queryFn: ({ pageParam }: { pageParam?: string }) =>
+        postApi
+          .fetchPosts({
+            feedType: 1,
+            keySearch,
+            cursor: pageParam,
+          })
+          .then((res) => res.data),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: undefined,
+      enabled: !!keySearch,
+    });
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -70,28 +60,9 @@ const PostSearch: React.FC = () => {
     </div>
   );
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  };
-
-  const handleSearch = () => {
-    refetch();
-  };
-
   return (
     <div className="max-w-2xl mx-auto px-2 md:px-0">
-      <div className="flex items-center gap-2 mb-6 mt-4">
-        <Input.Search
-          placeholder="Tìm kiếm bài viết..."
-          value={searchValue}
-          onChange={handleInputChange}
-          onSearch={handleSearch}
-          allowClear
-          enterButton
-          size="large"
-          className="flex-1"
-        />
-      </div>
+      {/* KHÔNG render input tìm kiếm ở đây, chỉ hiển thị kết quả */}
       {isLoading && !data ? (
         <Spin
           tip="Đang tìm kiếm bài viết..."

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Avatar, Input, Skeleton, Select } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { Avatar, Skeleton, Select } from "antd";
 import { userRepository } from "@/api/repository";
 import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 import { groupApi } from "@/api/groupApi";
 import { postApi } from "@/api/postApi";
+import SearchInput from "@/components/common/SearchInput";
 
 const SkeletonItem: React.FC = () => (
   <div className="flex items-center gap-2 p-2">
@@ -53,11 +53,7 @@ const SearchBar: React.FC = () => {
       navigate(`/group/${result.id}`);
     } else if (searchType === "post") {
       // Khi click vào kết quả bài viết, truyền content vào keySearch
-      navigate(
-        `/search/query=${encodeURIComponent(
-          result.title || result.content || ""
-        )}`
-      );
+      navigate(`/search/query=${encodeURIComponent(result.content || "")}`);
     }
   };
 
@@ -110,8 +106,10 @@ const SearchBar: React.FC = () => {
   return (
     <div className="relative w-full sm:w-[150px] md:w-[250px] lg:w-[300px] xl:w-[450px] 2xl:w-[600px] mx-auto">
       <div className="flex items-center gap-2 mb-2">
-        <Input
-          size="middle"
+        <SearchInput
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={handleSearch}
           placeholder={`Tìm kiếm ${
             searchType === "user"
               ? "người dùng"
@@ -119,16 +117,6 @@ const SearchBar: React.FC = () => {
               ? "nhóm"
               : "bài viết"
           }...`}
-          className="rounded-3xl px-4 py-2 text-sm shadow-sm focus:ring focus:ring-primary focus:outline-none"
-          suffix={
-            <SearchOutlined
-              onClick={handleSearch}
-              style={{ cursor: "pointer" }}
-            />
-          }
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onPressEnter={handleSearch}
         />
       </div>
 

@@ -1,17 +1,20 @@
 import { commentApi } from "@/api/commentApi";
-import ReportModal from "@/components/common/ReportModal";
-import { TargetType } from "@/enums/targetType";
 import { CommentResponse } from "@/types/post";
-import { Avatar, Button, Input, message, Modal, Spin, Tooltip } from "antd";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
+import {
+  Avatar,
+  Button,
+  Input,
+  List,
+  message,
+  Modal,
+  Spin,
+  Tooltip,
+} from "antd";
 import { debounce } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 import { IoSendSharp } from "react-icons/io5";
 import { MdClear } from "react-icons/md";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
-
-dayjs.extend(relativeTime);
 
 const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -26,11 +29,6 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
     {}
   );
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{
-    type: TargetType;
-    id: string;
-  } | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const userId = localStorage.getItem("x-client-id") || "current-user-id";
   const profile = JSON.parse(localStorage.getItem("userInfo") || "{}");
@@ -103,7 +101,12 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
         content: commentContent,
         mediaUrl: "",
       });
-      setComments((prev) => [response.data, ...prev]);
+      // Gán user từ profile vào comment mới
+      const newComment = {
+        ...response.data,
+        user: profile,
+      };
+      setComments((prev) => [newComment, ...prev]);
       setCommentContent("");
       message.success("Đã thêm bình luận!");
     } catch {
@@ -142,7 +145,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
 
   const handleVote = async (commentId: string, newVoteType: 1 | 2 | 3) => {
     try {
-      const response = await commentApi.voteComment({
+      await commentApi.voteComment({
         userId,
         commentId,
         voteType: newVoteType,
@@ -303,149 +306,13 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
     });
   };
 
-  // Helper: Build a tree from flat comments array
-  function buildCommentTree(
-    comments: CommentResponse[]
-  ): (CommentResponse & { children: CommentResponse[] })[] {
-    const map: Record<
-      string,
-      CommentResponse & { children: CommentResponse[] }
-    > = {};
-    const roots: (CommentResponse & { children: CommentResponse[] })[] = [];
-    comments.forEach((c) => {
-      map[c.id] = { ...c, children: [] };
-    });
-    comments.forEach((c) => {
-      if (c.parentCommentId && map[c.parentCommentId]) {
-        map[c.parentCommentId].children.push(map[c.id]);
-      } else {
-        roots.push(map[c.id]);
-      }
-    });
-    return roots;
-  }
-
-  const renderCommentTree = (comment, depth = 0) => (
-    <div
-      key={comment.id}
-      className={depth > 0 ? `pl-${Math.min(depth * 4, 24)}` : ""}
-    >
-      <div className="flex items-start gap-3 mb-2">
-        <Avatar
-          src={comment.user?.profilePictureUrl || "https://i.pravatar.cc/40"}
-          alt={comment.user?.username}
-          size={40}
-        />
-        <div className="flex-1">
-          <div className="bg-gray-50 rounded-lg p-3 shadow-sm relative">
-            <span className="font-semibold text-gray-800">
-              {comment.user?.username || comment.author}
-            </span>
-            <span className="ml-2 text-xs text-gray-400">
-              {dayjs(comment.createdAt).fromNow()}
-            </span>
-            <p className="mt-1 text-gray-700">{comment.content}</p>
-            {/* Xóa bình luận nếu là của mình */}
-            {comment.user?.id === userId && (
-              <Button
-                type="text"
-                className="absolute right-0 top-1 p-1"
-                onClick={() => handleDeleteComment(comment.id, comment.user.id)}
-              >
-                <MdClear />
-              </Button>
-            )}
-          </div>
-          {/* Vote actions */}
-          <div className="flex items-center gap-2 mt-1">
-            <Button
-              type="text"
-              className={`$ {
-                comment?.userVoteType === 1
-                  ? "text-primary"
-                  : "text-gray-400 hover:text-primary"
-              } hover:text-primary`}
-              icon={<PiArrowFatUpLight className="text-xl" />}
-              onClick={() =>
-                handleVote(comment.id, comment.userVoteType === 1 ? 3 : 1)
-              }
-            />
-            <span className="text-sm font-semibold text-gray-600">
-              {comment?.votes ?? 0}
-            </span>
-            <Button
-              type="text"
-              className={`$ {
-                comment?.userVoteType === 2
-                  ? "text-primary"
-                  : "text-gray-400 hover:text-primary"
-              } hover:text-primary`}
-              icon={<PiArrowFatDownLight className="text-xl" />}
-              onClick={() =>
-                handleVote(comment.id, comment.userVoteType === 2 ? 3 : 2)
-              }
-            />
-            <Button
-              type="link"
-              className="p-0 text-gray-500 hover:text-blue-500"
-              onClick={() => setReplyingTo(comment.id)}
-            >
-              Phản hồi
-            </Button>
-            {comment.replyCount > 0 && (
-              <Button
-                type="link"
-                className="p-0 text-gray-500 hover:text-blue-500"
-                onClick={() => handleShowReplies(comment.id)}
-              >
-                Xem {comment.replyCount} phản hồi
-              </Button>
-            )}
-          </div>
-          {/* Reply input */}
-          {replyingTo === comment.id && (
-            <div className="flex items-center gap-2 mt-2">
-              <Input.TextArea
-                rows={1}
-                value={replyContent[comment.id] || ""}
-                onChange={(e) =>
-                  setReplyContent((prev) => ({
-                    ...prev,
-                    [comment.id]: e.target.value,
-                  }))
-                }
-                placeholder="Viết trả lời..."
-                className="rounded-md border-gray-300 focus:border-primary focus:ring-primary"
-              />
-              <Tooltip title="Gửi trả lời" placement="top">
-                <Button
-                  type="primary"
-                  className="rounded-md bg-primary"
-                  onClick={() => handleAddReply(comment.id)}
-                >
-                  <IoSendSharp />
-                </Button>
-              </Tooltip>
-            </div>
-          )}
-          {/* Hiển thị replies nếu có children */}
-          {comment.children && comment.children.length > 0 && (
-            <div className="mt-2">
-              {comment.children.map((child) => (
-                <div key={child.id}>
-                  {/* Vote actions for reply */}
-                  {renderCommentTree(child, depth + 1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  // Helper: Lấy tên đầy đủ user
+  const getFullName = (user?: any) =>
+    user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
 
   return (
     <div className="mt-4 px-4">
+      {/* Input bình luận */}
       <div className="flex items-center gap-2 mb-4">
         <Input.TextArea
           rows={1}
@@ -459,39 +326,245 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
             type="primary"
             className="rounded-md bg-primary"
             onClick={handleAddComment}
+            aria-label="Gửi bình luận"
           >
             <IoSendSharp />
           </Button>
         </Tooltip>
       </div>
 
-      {loading && comments.length === 0 ? (
-        <div className="flex justify-center mt-4">
-          <Spin />
-        </div>
-      ) : (
-        <div>
-          {buildCommentTree(comments).map((comment) =>
-            renderCommentTree(comment)
-          )}
-        </div>
-      )}
+      <List
+        dataSource={comments}
+        loading={loading && comments.length === 0}
+        renderItem={(comment: CommentResponse) => (
+          <div key={comment.id} className="mb-6">
+            <div className="flex items-start gap-3">
+              <Avatar
+                src={
+                  comment.user?.profilePictureUrl || "https://i.pravatar.cc/40"
+                }
+                alt={comment.user?.username}
+                size={40}
+              />
+              <div className="flex-1 relative">
+                {comment.user?.id === userId && (
+                  <Button
+                    type="text"
+                    className="absolute right-0 top-1 p-1"
+                    onClick={() =>
+                      handleDeleteComment(comment.id, comment.user.id)
+                    }
+                    aria-label="Xóa bình luận"
+                  >
+                    <MdClear />
+                  </Button>
+                )}
+                <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
+                  <span className="font-semibold text-gray-800">
+                    {comment.user?.username}
+                  </span>
+                  <p className="mt-1 text-gray-700 break-words">
+                    {comment.content}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="text"
+                      className={
+                        comment?.userVoteType === 1
+                          ? "text-primary"
+                          : "text-gray-400 hover:text-primary"
+                      }
+                      icon={<PiArrowFatUpLight className="text-xl" />}
+                      onClick={() =>
+                        handleVote(
+                          comment.id,
+                          comment.userVoteType === 1 ? 3 : 1
+                        )
+                      }
+                      aria-label="Upvote"
+                    />
+                    <span className="text-sm font-semibold text-gray-600">
+                      {comment?.votes ?? 0}
+                    </span>
+                    <Button
+                      type="text"
+                      className={
+                        comment?.userVoteType === 2
+                          ? "text-primary"
+                          : "text-gray-400 hover:text-primary"
+                      }
+                      icon={<PiArrowFatDownLight className="text-xl" />}
+                      onClick={() =>
+                        handleVote(
+                          comment.id,
+                          comment.userVoteType === 2 ? 3 : 2
+                        )
+                      }
+                      aria-label="Downvote"
+                    />
+                  </div>
+                  <Button
+                    type="link"
+                    className="p-0 text-gray-500 hover:text-blue-500"
+                    onClick={() => setReplyingTo(comment.id)}
+                  >
+                    Phản hồi
+                  </Button>
+                  {comment.replyCount > 0 && (
+                    <Button
+                      type="link"
+                      className="p-0 text-gray-500 hover:text-blue-500"
+                      onClick={() => handleShowReplies(comment.id)}
+                    >
+                      Xem {comment.replyCount} phản hồi
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
 
+            {/* Reply input */}
+            {replyingTo === comment.id && (
+              <div className="flex items-center gap-2 ml-12 mt-2">
+                <Input.TextArea
+                  rows={1}
+                  value={replyContent[comment.id] || ""}
+                  onChange={(e) =>
+                    setReplyContent((prev) => ({
+                      ...prev,
+                      [comment.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="Viết trả lời..."
+                  className="rounded-md border-gray-300 focus:border-primary focus:ring-primary"
+                />
+                <Tooltip title="Gửi trả lời" placement="top">
+                  <Button
+                    type="primary"
+                    className="rounded-md bg-primary"
+                    onClick={() => handleAddReply(comment.id)}
+                    aria-label="Gửi trả lời"
+                  >
+                    <IoSendSharp />
+                  </Button>
+                </Tooltip>
+              </div>
+            )}
+
+            {/* Replies */}
+            {repliesByComment[comment.id]?.data?.length > 0 && (
+              <div className="ml-12 mt-2">
+                <List
+                  dataSource={repliesByComment[comment.id]?.data}
+                  renderItem={(reply: CommentResponse) => {
+                    // Tìm parent comment để lấy tên người được reply
+                    const parent = comments.find(
+                      (c) => c.id === reply.parentCommentId
+                    );
+                    return (
+                      <div key={reply?.id} className="mb-2">
+                        <div className="flex items-start gap-3">
+                          <Avatar
+                            src={
+                              reply?.user?.profilePictureUrl ||
+                              "https://i.pravatar.cc/40"
+                            }
+                            alt={reply?.user?.username}
+                            size={32}
+                          />
+                          <div className="flex-1 relative">
+                            {reply?.userId === userId && (
+                              <Button
+                                type="text"
+                                className="absolute right-0 top-1 p-1"
+                                onClick={() =>
+                                  handleDeleteComment(
+                                    reply?.id,
+                                    reply?.user?.id
+                                  )
+                                }
+                                aria-label="Xóa trả lời"
+                              >
+                                <MdClear />
+                              </Button>
+                            )}
+                            <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
+                              <span className="font-semibold text-gray-800">
+                                {reply?.user?.username}
+                              </span>
+                              {parent && (
+                                <span className="text-blue-600 ml-2 font-semibold">
+                                  @{getFullName(parent.user)}
+                                </span>
+                              )}
+                              <p className="mt-1 text-gray-700 break-words">
+                                {reply?.content}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="text"
+                                  className={
+                                    reply?.userVoteType === 1
+                                      ? "text-primary"
+                                      : "text-gray-400 hover:text-primary"
+                                  }
+                                  icon={
+                                    <PiArrowFatUpLight className="text-xl" />
+                                  }
+                                  onClick={() =>
+                                    handleVoteReply(
+                                      reply?.id,
+                                      comment.id,
+                                      reply?.userVoteType === 1 ? 3 : 1
+                                    )
+                                  }
+                                  aria-label="Upvote reply"
+                                />
+                                <span className="text-sm font-semibold text-gray-600">
+                                  {reply?.votes ?? 0}
+                                </span>
+                                <Button
+                                  type="text"
+                                  className={
+                                    reply?.userVoteType === 2
+                                      ? "text-primary"
+                                      : "text-gray-400 hover:text-primary"
+                                  }
+                                  icon={
+                                    <PiArrowFatDownLight className="text-xl" />
+                                  }
+                                  onClick={() =>
+                                    handleVoteReply(
+                                      reply?.id,
+                                      comment.id,
+                                      reply?.userVoteType === 2 ? 3 : 2
+                                    )
+                                  }
+                                  aria-label="Downvote reply"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      />
       {loading && comments.length > 0 && (
         <div className="flex justify-center mt-4">
           <Spin />
         </div>
       )}
       <div ref={sentinelRef} style={{ height: "1px" }} />
-      <ReportModal
-        open={isReportModalOpen}
-        onCancel={() => {
-          setIsReportModalOpen(false);
-          setReportTarget(null);
-        }}
-        targetType={reportTarget?.type as TargetType}
-        targetId={reportTarget?.id || ""}
-      />
     </div>
   );
 };

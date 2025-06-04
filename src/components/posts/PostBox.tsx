@@ -11,7 +11,7 @@ import {
   Skeleton,
   Space,
 } from "antd";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FaLock, FaRegComment, FaUserFriends } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { PiArrowFatDownLight, PiArrowFatUpLight } from "react-icons/pi";
@@ -71,6 +71,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
   const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<TargetType | null>(null);
+  const commentBtnRef = useRef<HTMLButtonElement>(null);
 
   const avatarSrc = useMemo(
     () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
@@ -497,6 +498,7 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
             />
           </div>
           <Button
+            ref={commentBtnRef}
             className="comment-btn flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-300"
             icon={<FaRegComment className="text-lg" />}
             type="text"
@@ -550,10 +552,15 @@ const PostBox: React.FC<PostBoxProps> = React.memo(({ post, isSaved }) => {
           footer={null}
           width={"850px"}
           className="comment-modal"
+          afterClose={() => {
+            commentBtnRef.current?.focus();
+          }}
+          maskClosable={true}
+          destroyOnClose
         >
           <div className="max-h-[70vh] p-4 overflow-y-auto">
             <PostBox post={post} />
-            <CommentList postId={post?.id} />{" "}
+            <CommentList postId={post?.id} />
           </div>
         </Modal>
         <ReportModal
