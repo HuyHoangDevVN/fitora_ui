@@ -44,6 +44,7 @@ const SearchBar: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const inputWrapperRef = React.useRef<HTMLDivElement>(null);
 
   const handleResultClick = (result: any) => {
     setDropdownOpen(false);
@@ -110,9 +111,11 @@ const SearchBar: React.FC = () => {
     <div className="relative w-full sm:w-[150px] md:w-[250px] lg:w-[300px] xl:w-[450px] 2xl:w-[600px] mx-auto">
       <div className="flex items-center gap-2 mb-2">
         <div
+          ref={inputWrapperRef}
           style={{ width: "100%" }}
           tabIndex={-1}
           onFocus={() => searchTerm && setDropdownOpen(true)}
+          onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
         >
           <SearchInput
             value={searchTerm}

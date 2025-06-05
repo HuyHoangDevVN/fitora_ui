@@ -13,16 +13,18 @@ const PostSearch: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
-    useInfiniteQuery({
+    useInfiniteQuery<{ data: Post[]; nextCursor: string | null }, Error>({
       queryKey: ["search-posts", keySearch],
-      queryFn: ({ pageParam }: { pageParam?: string }) =>
-        postApi
+      queryFn: async ({ pageParam = undefined, queryKey }) => {
+        const [, keySearchParam] = queryKey as [string, string];
+        return postApi
           .fetchPosts({
             feedType: 1,
-            keySearch,
-            cursor: pageParam,
+            keySearch: keySearchParam,
+            cursor: pageParam as string | undefined,
           })
-          .then((res) => res.data),
+          .then((res) => res.data);
+      },
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: undefined,
     });
@@ -75,13 +77,15 @@ const PostSearch: React.FC = () => {
           tip="Đang tìm kiếm bài viết..."
           className="w-full flex justify-center"
         />
-      ) : data?.pages.every((page) => page.data.length === 0) ? (
+      ) : data?.pages.every(
+          (page) => (page as { data: Post[] }).data.length === 0
+        ) ? (
         <div className="my-10 text-center text-gray-500">
           Không tìm thấy bài viết nào.
         </div>
       ) : (
         data?.pages.map((page) =>
-          page.data.map((post: Post) => (
+          (page as { data: Post[] }).data.map((post: Post) => (
             <div key={post.id} className="relative">
               <PostBox post={post} />
               <Divider
