@@ -27,7 +27,8 @@ const CategoryDeleteModal = ({
       notification.success({ message: "Xóa nhóm thành công!" });
       onSuccess();
     } catch {
-      notification.error({ message: "Xóa nhóm thất bại!" });
+      // notification.error({ message: "Xóa nhóm thất bại!" });
+      console.error({ message: "Xóa nhóm thất bại!" });
     } finally {
       setLoading(false);
     }

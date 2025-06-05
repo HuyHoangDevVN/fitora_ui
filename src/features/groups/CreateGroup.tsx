@@ -257,7 +257,10 @@ const CreateGroup = () => {
             });
             notification.success({ message: "Đã gửi lời mời đến bạn bè!" });
           } catch (inviteError) {
-            notification.error({
+            // notification.error({
+            //   message: `Lỗi khi gửi lời mời: ${inviteError}`,
+            // });
+            console.error({
               message: `Lỗi khi gửi lời mời: ${inviteError}`,
             });
           }
@@ -265,12 +268,16 @@ const CreateGroup = () => {
 
         resetForm();
       } else {
-        notification.error({
+        // notification.error({
+        //   message: `Lỗi khi tạo nhóm: ${response.message}`,
+        // });
+        console.error({
           message: `Lỗi khi tạo nhóm: ${response.message}`,
         });
       }
     } catch (err) {
-      notification.error({ message: `Lỗi khi tạo nhóm: ${err}` });
+      // notification.error({ message: `Lỗi khi tạo nhóm: ${err}` });
+      console.error({ message: `Lỗi khi tạo nhóm: ${err}` });
     }
   };
 

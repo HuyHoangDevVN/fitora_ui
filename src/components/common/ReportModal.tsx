@@ -80,7 +80,7 @@ const ReportModal: React.FC<ReportModalProps> = ({
       onCancel();
       if (onSuccess) onSuccess();
     } catch (_e) {
-      notification.error({ message: "Gửi báo cáo thất bại!" });
+      // notification.error({ message: "Gửi báo cáo thất bại!" });
     } finally {
       setLoading(false);
     }

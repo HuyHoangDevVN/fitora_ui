@@ -26,10 +26,12 @@ const RoleCreateModal = ({
         onSuccess?.();
         form.resetFields();
       } else {
-        notification.error({ message: "Tạo vai trò thất bại" });
+        console.error({ message: "Tạo vai trò thất bại" });
+        // notification.error({ message: "Tạo vai trò thất bại" });
       }
     } catch {
-      notification.error({ message: "Có lỗi xảy ra khi tạo vai trò" });
+      // notification.error({ message: "Có lỗi xảy ra khi tạo vai trò" });
+      console.error({ message: "Có lỗi xảy ra khi tạo vai trò" });
     } finally {
       setSaving(false);
     }

@@ -58,7 +58,7 @@ const AccountEditModal = ({
         onClose();
         onSuccess?.();
       } else {
-        notification.error({ message: res?.message || "Cập nhật thất bại" });
+        // notification.error({ message: res?.message || "Cập nhật thất bại" });
       }
     } catch {
       console.error({ message: "Có lỗi xảy ra khi cập nhật tài khoản" });

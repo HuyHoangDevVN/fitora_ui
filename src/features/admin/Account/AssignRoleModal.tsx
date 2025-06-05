@@ -85,12 +85,16 @@ const AssignRoleModal = ({
         });
         onSuccess?.();
       } else {
-        notification.error({
+        // notification.error({
+        //   message: res?.message || `Xóa vai trò ${roleName} thất bại`,
+        // });
+        console.error({
           message: res?.message || `Xóa vai trò ${roleName} thất bại`,
         });
       }
     } catch {
-      notification.error({ message: `Có lỗi khi xóa vai trò ${roleName}` });
+      // notification.error({ message: `Có lỗi khi xóa vai trò ${roleName}` });
+      console.error({ message: `Có lỗi khi xóa vai trò ${roleName}` });
     } finally {
       setRemoving(false);
     }

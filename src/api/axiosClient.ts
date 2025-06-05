@@ -175,11 +175,12 @@ class Repository {
           break;
       }
     }
-    notification.error({
-      message: "Có lỗi xảy ra",
-      description: errorMessage,
-      duration: 3,
-    });
+    console.log("Error message:", errorMessage);
+    // notification.error({
+    //   message: "Có lỗi xảy ra",
+    //   description: errorMessage,
+    //   duration: 3,
+    // });
   }
 
   /**

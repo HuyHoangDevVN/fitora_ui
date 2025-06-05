@@ -22,7 +22,8 @@ const CategoryCreateModal = ({ open, onClose, onSuccess }: Props) => {
       onSuccess();
     } catch (error: any) {
       if (error?.errorFields) return; // validation error
-      notification.error({ message: "Tạo chủ đề thất bại!" });
+      // notification.error({ message: "Tạo chủ đề thất bại!" });
+      console.error({ message: "Tạo chủ đề thất bại!" });
     } finally {
       setLoading(false);
     }

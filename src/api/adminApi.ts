@@ -114,7 +114,7 @@ export const adminApi = {
     const url = `/admin/get-account?id=${id}`;
     const response = await authRepository.get<ResponseBase<Account>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy thông tin tài khoản" });
+      // notification.error({ message: "Lỗi lấy thông tin tài khoản" });
       throw new Error("Failed to fetch account");
     }
     return response;
@@ -129,7 +129,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<Account>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách tài khoản" });
+      // notification.error({ message: "Lỗi lấy danh sách tài khoản" });
       throw new Error("Failed to fetch accounts");
     }
     return response;
@@ -139,7 +139,7 @@ export const adminApi = {
     const url = `/admin/delete-account?id=${id}`;
     const response = await authRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá tài khoản" });
+      // notification.error({ message: "Lỗi xoá tài khoản" });
       throw new Error("Failed to delete account");
     }
     return response;
@@ -152,7 +152,7 @@ export const adminApi = {
       account
     );
     if (!response) {
-      notification.error({ message: "Lỗi cập nhật tài khoản" });
+      // notification.error({ message: "Lỗi cập nhật tài khoản" });
       throw new Error("Failed to update account");
     }
     return response;
@@ -162,7 +162,7 @@ export const adminApi = {
     const url = `/admin/lock-account?id=${id}`;
     const response = await authRepository.post<ResponseBase<boolean>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi khoá tài khoản" });
+      // notification.error({ message: "Lỗi khoá tài khoản" });
       throw new Error("Failed to lock account");
     }
     return response;
@@ -172,7 +172,7 @@ export const adminApi = {
     const url = `/admin/unlock-account?id=${id}`;
     const response = await authRepository.post<ResponseBase<boolean>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi mở khoá tài khoản" });
+      // notification.error({ message: "Lỗi mở khoá tài khoản" });
       throw new Error("Failed to unlock account");
     }
     return response;
@@ -188,7 +188,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<Role>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách vai trò" });
+      // notification.error({ message: "Lỗi lấy danh sách vai trò" });
       throw new Error("Failed to fetch roles");
     }
     return response;
@@ -198,7 +198,7 @@ export const adminApi = {
     const url = `/admin/get-role?id=${id}`;
     const response = await authRepository.get<ResponseBase<Role>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy thông tin vai trò" });
+      // notification.error({ message: "Lỗi lấy thông tin vai trò" });
       throw new Error("Failed to fetch role");
     }
     return response;
@@ -210,7 +210,7 @@ export const adminApi = {
       roleName,
     });
     if (!response) {
-      notification.error({ message: "Lỗi tạo vai trò" });
+      // notification.error({ message: "Lỗi tạo vai trò" });
       throw new Error("Failed to create role");
     }
     return response;
@@ -223,7 +223,7 @@ export const adminApi = {
       request
     );
     if (!response) {
-      notification.error({ message: "Lỗi gán vai trò" });
+      // notification.error({ message: "Lỗi gán vai trò" });
       throw new Error("Failed to assign role");
     }
     return response;
@@ -236,7 +236,7 @@ export const adminApi = {
       request
     );
     if (!response) {
-      notification.error({ message: "Lỗi xóa vai trò" });
+      // notification.error({ message: "Lỗi xóa vai trò" });
       throw new Error("Failed to remove role");
     }
     return response;
@@ -246,7 +246,7 @@ export const adminApi = {
     const url = `/admin/update-role`;
     const response = await authRepository.put<ResponseBase<null>>(url, request);
     if (!response) {
-      notification.error({ message: "Lỗi cập nhật vai trò" });
+      // notification.error({ message: "Lỗi cập nhật vai trò" });
       throw new Error("Failed to update role");
     }
     return response;
@@ -256,7 +256,7 @@ export const adminApi = {
     const url = `/admin/delete-role?name=${name}`;
     const response = await authRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá vai trò" });
+      // notification.error({ message: "Lỗi xoá vai trò" });
       throw new Error("Failed to delete role");
     }
     return response;
@@ -267,7 +267,7 @@ export const adminApi = {
     const url = `/admin/get-report?id=${id}`;
     const response = await interactRepository.get<ResponseBase<any>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy báo cáo" });
+      // notification.error({ message: "Lỗi lấy báo cáo" });
       throw new Error("Failed to fetch report");
     }
     return response;
@@ -286,7 +286,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<any>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách báo cáo" });
+      // notification.error({ message: "Lỗi lấy danh sách báo cáo" });
       throw new Error("Failed to fetch reports");
     }
     return response;
@@ -298,7 +298,7 @@ export const adminApi = {
       request
     );
     if (!response) {
-      notification.error({ message: "Lỗi cập nhật báo cáo" });
+      // notification.error({ message: "Lỗi cập nhật báo cáo" });
       throw new Error("Failed to update report");
     }
     return response;
@@ -307,7 +307,7 @@ export const adminApi = {
     const url = `/admin/delete-report?id=${id}`;
     const response = await interactRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá báo cáo" });
+      // notification.error({ message: "Lỗi xoá báo cáo" });
       throw new Error("Failed to delete report");
     }
     return response;
@@ -321,7 +321,7 @@ export const adminApi = {
       request
     );
     if (!response) {
-      notification.error({ message: "Lỗi tạo danh mục" });
+      // notification.error({ message: "Lỗi tạo danh mục" });
       throw new Error("Failed to create category");
     }
     return response;
@@ -330,7 +330,7 @@ export const adminApi = {
     const url = `/admin/get-category?id=${id}`;
     const response = await interactRepository.get<ResponseBase<any>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh mục" });
+      // notification.error({ message: "Lỗi lấy danh mục" });
       throw new Error("Failed to fetch category");
     }
     return response;
@@ -342,7 +342,7 @@ export const adminApi = {
       request
     );
     if (!response) {
-      notification.error({ message: "Lỗi cập nhật danh mục" });
+      // notification.error({ message: "Lỗi cập nhật danh mục" });
       throw new Error("Failed to update category");
     }
     return response;
@@ -357,7 +357,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<Category>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách danh mục" });
+      // notification.error({ message: "Lỗi lấy danh sách danh mục" });
       throw new Error("Failed to fetch categories");
     }
     return response;
@@ -366,7 +366,7 @@ export const adminApi = {
     const url = `/admin/delete-category?id=${id}`;
     const response = await interactRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá danh mục" });
+      // notification.error({ message: "Lỗi xoá danh mục" });
       throw new Error("Failed to delete category");
     }
     return response;
@@ -377,7 +377,7 @@ export const adminApi = {
     const url = `/admin/get-post?id=${id}`;
     const response = await interactRepository.get<ResponseBase<any>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy bài viết" });
+      // notification.error({ message: "Lỗi lấy bài viết" });
       throw new Error("Failed to fetch post");
     }
     return response;
@@ -405,7 +405,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<any>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách bài viết" });
+      // notification.error({ message: "Lỗi lấy danh sách bài viết" });
       throw new Error("Failed to fetch posts");
     }
     return response;
@@ -414,7 +414,7 @@ export const adminApi = {
     const url = `/admin/delete-post?id=${id}`;
     const response = await interactRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá bài viết" });
+      // notification.error({ message: "Lỗi xoá bài viết" });
       throw new Error("Failed to delete post");
     }
     return response;
@@ -443,7 +443,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<any>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách bình luận" });
+      // notification.error({ message: "Lỗi lấy danh sách bình luận" });
       throw new Error("Failed to fetch comments");
     }
     return response;
@@ -452,7 +452,7 @@ export const adminApi = {
     const url = `/admin/delete-comment?id=${id}`;
     const response = await interactRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá bình luận" });
+      // notification.error({ message: "Lỗi xoá bình luận" });
       throw new Error("Failed to delete comment");
     }
     return response;
@@ -463,7 +463,7 @@ export const adminApi = {
     const url = `/admin/get-group?id=${id}`;
     const response = await userRepository.get<ResponseBase<any>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy thông tin nhóm" });
+      // notification.error({ message: "Lỗi lấy thông tin nhóm" });
       throw new Error("Failed to fetch group");
     }
     return response;
@@ -479,7 +479,7 @@ export const adminApi = {
       ResponseBase<PaginatedResult<any>>
     >(url);
     if (!response) {
-      notification.error({ message: "Lỗi lấy danh sách nhóm" });
+      // notification.error({ message: "Lỗi lấy danh sách nhóm" });
       throw new Error("Failed to fetch groups");
     }
     return response;
@@ -488,7 +488,7 @@ export const adminApi = {
     const url = `/admin/delete-group?id=${id}`;
     const response = await userRepository.delete<ResponseBase<null>>(url);
     if (!response) {
-      notification.error({ message: "Lỗi xoá nhóm" });
+      // notification.error({ message: "Lỗi xoá nhóm" });
       throw new Error("Failed to delete group");
     }
     return response;

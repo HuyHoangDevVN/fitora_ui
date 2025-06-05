@@ -26,7 +26,8 @@ const CategoryEditModal = ({ open, onClose, categoryId, onSuccess }: Props) => {
           });
         })
         .catch(() => {
-          notification.error({ message: "Không thể tải thông tin chủ đề!" });
+          // notification.error({ message: "Không thể tải thông tin chủ đề!" });
+          console.error({ message: "Không thể tải thông tin chủ đề!" });
           onClose();
         })
         .finally(() => setFetching(false));
@@ -56,7 +57,8 @@ const CategoryEditModal = ({ open, onClose, categoryId, onSuccess }: Props) => {
       onSuccess();
     } catch (error: any) {
       if (error?.errorFields) return;
-      notification.error({ message: "Cập nhật chủ đề thất bại!" });
+      // notification.error({ message: "Cập nhật chủ đề thất bại!" });
+      console.error({ message: "Cập nhật chủ đề thất bại!" });
     } finally {
       setLoading(false);
     }

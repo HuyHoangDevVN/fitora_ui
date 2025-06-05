@@ -58,10 +58,12 @@ const RoleEditModal = ({
         onClose();
         onSuccess?.();
       } else {
-        notification.error({ message: res?.message || "Cập nhật thất bại" });
+        // notification.error({ message: res?.message || "Cập nhật thất bại" });
+        console.error({ message: res?.message || "Cập nhật thất bại" });
       }
     } catch {
-      notification.error({ message: "Có lỗi xảy ra khi cập nhật vai trò" });
+      // notification.error({ message: "Có lỗi xảy ra khi cập nhật vai trò" });
+      console.error({ message: "Có lỗi xảy ra khi cập nhật vai trò" });
     } finally {
       setSaving(false);
     }

@@ -19,7 +19,8 @@ const CategoryViewModal = ({ open, onClose, categoryId }: Props) => {
         .getCateory(categoryId)
         .then((res) => setCategory(res))
         .catch(() => {
-          notification.error({ message: "Không thể tải thông tin nhóm!" });
+          // notification.error({ message: "Không thể tải thông tin nhóm!" });
+          console.error({ message: "Không thể tải thông tin nhóm!" });
           onClose();
         })
         .finally(() => setLoading(false));

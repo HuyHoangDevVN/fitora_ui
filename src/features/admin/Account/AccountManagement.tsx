@@ -234,7 +234,10 @@ const AccountManagement = () => {
                 });
                 handleSearch();
               } catch {
-                notification.error({
+                // notification.error({
+                //   message: "Có lỗi xảy ra khi thao tác tài khoản",
+                // });
+                console.error({
                   message: "Có lỗi xảy ra khi thao tác tài khoản",
                 });
               }

@@ -105,7 +105,8 @@ const ProfileSettings = () => {
       if (response.isSuccess) {
         notification.success({ message: "Cập nhật hồ sơ thành công!" });
       } else {
-        notification.error({ message: "Phản hồi không mong đợi từ máy chủ." });
+        // notification.error({ message: "Phản hồi không mong đợi từ máy chủ." });
+        console.error({ message: "Phản hồi không mong đợi từ máy chủ." });
       }
     } catch (error: any) {
       const errorMessage =
@@ -113,7 +114,8 @@ const ProfileSettings = () => {
         (error.request
           ? "Không có phản hồi từ máy chủ. Vui lòng kiểm tra kết nối Internet của bạn."
           : "Đã xảy ra lỗi không mong đợi.");
-      notification.error({ message: `Lỗi: ${errorMessage}` });
+      // notification.error({ message: `Lỗi: ${errorMessage}` });
+      console.error({ message: `Lỗi: ${errorMessage}` });
     }
   };
 
