@@ -3,6 +3,9 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router";
 import { useSignalR } from "@/context/SignalRContext";
+import { Avatar, Button, message, Tooltip, Typography } from "antd";
+import { groupApi } from "@/api/groupApi";
+import { BellOutlined } from "@ant-design/icons";
 
 function timeAgo(dateString?: string) {
   if (!dateString) return "";
@@ -15,9 +18,62 @@ function timeAgo(dateString?: string) {
   return date.toLocaleDateString();
 }
 
+interface Invite {
+  id: string;
+  groupId: string;
+  groupName: string;
+  groupImageUrl: string;
+  senderUserId: string;
+  senderName: string;
+  senderImageUrl: string;
+  receiverUserId: string;
+  receiverName: string;
+  receiverImageUrl: string;
+  status: number;
+}
+
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount } = useSignalR();
+
+  // Group invite logic
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [loadingInvites, setLoadingInvites] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingInvites(true);
+      groupApi
+        .getReceivedGroupInvites({ PageIndex: 0, PageSize: 10 })
+        .then((response) => {
+          setInvites(response.data?.data ? response.data.data : []);
+        })
+        .catch(() => {
+          message.error("Không thể lấy lời mời nhóm.");
+        })
+        .finally(() => setLoadingInvites(false));
+    }
+  }, [isOpen]);
+
+  const handleAccept = async (id) => {
+    try {
+      await groupApi.acceptGroupInvite({ Id: id });
+      message.success("Đã chấp nhận lời mời.");
+      setInvites((prev) => prev.filter((invite) => invite.id !== id));
+    } catch {
+      message.error("Không thể chấp nhận lời mời.");
+    }
+  };
+
+  const handleDeny = async (id) => {
+    try {
+      await groupApi.deleteGroupInvite({ Id: id });
+      message.success("Đã từ chối lời mời.");
+      setInvites((prev) => prev.filter((invite) => invite.id !== id));
+    } catch {
+      message.error("Không thể từ chối lời mời.");
+    }
+  };
 
   // Mark all as read when dropdown opens
   useEffect(() => {
@@ -42,32 +98,13 @@ export default function NotificationDropdown() {
 
   return (
     <div className="relative">
-      <button
-        className="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full dropdown-toggle hover:text-gray-700 h-11 w-11 hover:bg-gray-100 custom-dark:border-gray-800 custom-dark:bg-gray-900 custom-dark:text-gray-400 custom-dark:hover:bg-gray-800 custom-dark:hover:text-white"
-        onClick={toggleDropdown}
-      >
-        <span
-          className={`absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full bg-orange-400 ${
-            unreadCount === 0 ? "hidden" : "flex"
-          }`}
-        >
-          <span className="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"></span>
-        </span>
-        <svg
-          className="fill-current"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M10.75 2.29248C10.75 1.87827 10.4143 1.54248 10 1.54248C9.58583 1.54248 9.25004 1.87827 9.25004 2.29248V2.83613C6.08266 3.20733 3.62504 5.9004 3.62504 9.16748V14.4591H3.33337C2.91916 14.4591 2.58337 14.7949 2.58337 15.2091C2.58337 15.6234 2.91916 15.9591 3.33337 15.9591H4.37504H15.625H16.6667C17.0809 15.9591 17.4167 15.6234 17.4167 15.2091C17.4167 14.7949 17.0809 14.4591 16.6667 14.4591H16.375V9.16748C16.375 5.9004 13.9174 3.20733 10.75 2.83613V2.29248ZM14.875 14.4591V9.16748C14.875 6.47509 12.6924 4.29248 10 4.29248C7.30765 4.29248 5.12504 6.47509 5.12504 9.16748V14.4591H14.875ZM8.00004 17.7085C8.00004 18.1228 8.33583 18.4585 8.75004 18.4585H11.25C11.6643 18.4585 12 18.1228 12 17.7085C12 17.2943 11.6643 16.9585 11.25 16.9585H8.75004C8.33583 16.9585 8.00004 17.2943 8.00004 17.7085Z"
-            fill="currentColor"
-          />
-        </svg>
-      </button>
+      <Tooltip title="Thông báo">
+        <Button
+          shape="circle"
+          icon={<BellOutlined />}
+          onClick={toggleDropdown}
+        />
+      </Tooltip>
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
@@ -97,8 +134,65 @@ export default function NotificationDropdown() {
             </svg>
           </button>
         </div>
+        {/* Group Invites Section */}
+        <div className="mb-2">
+          {loadingInvites ? (
+            <div className="text-center text-gray-500 py-2">
+              Đang tải lời mời nhóm...
+            </div>
+          ) : invites.length > 0 ? (
+            <>
+              <div className="text-xs font-semibold text-gray-500 mb-1">
+                Lời mời vào nhóm
+              </div>
+              <ul className="mb-2">
+                {invites.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-col gap-1 p-2 mb-2 rounded-lg border border-gray-100 custom-dark:border-gray-800 bg-gray-50 custom-dark:bg-gray-900"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar
+                        src={item.groupImageUrl}
+                        size={32}
+                        className="mr-2"
+                      />
+                      <div>
+                        <Typography.Text strong>
+                          {item.groupName}
+                        </Typography.Text>
+                        <div className="text-xs text-gray-500">
+                          Gửi bởi: {item.senderName}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <Button
+                        size="small"
+                        type="link"
+                        className="text-blue-500 p-0"
+                        onClick={() => handleAccept(item.id)}
+                      >
+                        Chấp nhận
+                      </Button>
+                      <Button
+                        size="small"
+                        type="link"
+                        className="text-red-500 p-0"
+                        onClick={() => handleDeny(item.id)}
+                      >
+                        Từ chối
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+        {/* Notifications Section */}
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {notifications.length === 0 && (
+          {notifications.length === 0 && invites.length === 0 && (
             <li className="text-center text-gray-400 py-8">
               Không có thông báo nào
             </li>
@@ -119,7 +213,6 @@ export default function NotificationDropdown() {
                     alt="User"
                     className="w-full overflow-hidden rounded-full"
                   />
-                  {/* Status dot by notification type or read status */}
                   <span
                     className={`absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white ${
                       noti.isRead
