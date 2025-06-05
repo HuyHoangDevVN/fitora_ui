@@ -63,6 +63,8 @@ const GroupDetailPage: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [keySearch, setKeySearch] = useState<string>("");
+  const [color, setColor] = useState<string>("");
+
   const { categoriesForPost } = useSelector(
     (state: any) => state.category || {}
   );
@@ -321,6 +323,7 @@ const GroupDetailPage: React.FC = () => {
         const newCategory = await categoryApi.createCategory({
           name: newCategoryName,
           description: description,
+          color: color,
         });
         setSelectedCategory(newCategory.id);
         await categoryApi.followCategory(newCategory.id);
@@ -829,6 +832,12 @@ const GroupDetailPage: React.FC = () => {
           placeholder="Mô tả chủ đề mới"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          className="mt-2"
+        />
+        <Input
+          placeholder="Màu sắc chủ đề (ví dụ: #ff5733)"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
           className="mt-2"
         />
       </Modal>

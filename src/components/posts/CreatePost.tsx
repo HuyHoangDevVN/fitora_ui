@@ -31,6 +31,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const [color, setColor] = useState<string>("");
   const [keySearch, setKeySearch] = useState<string>("");
   const [categoriesForPost, setCategoriesForPost] = useState<any[]>([]);
 
@@ -55,6 +56,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         const response = await categoryApi.createCategory({
           name: newCategoryName,
           description: description,
+          color: color,
         });
         setSelectedCategory(response.id);
 
@@ -285,6 +287,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           placeholder="Mô tả chủ đề mới"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          className="mt-2"
+        />
+        <Input
+          placeholder="Màu sắc chủ đề (ví dụ: #ff5733)"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
           className="mt-2"
         />
       </Modal>
