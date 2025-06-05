@@ -42,9 +42,11 @@ const SearchBar: React.FC = () => {
   const [searchType, setSearchType] = useState<string>("post");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleResultClick = (result: any) => {
+    setDropdownOpen(false);
     if (searchType === "user") {
       navigate(`/profile/${result.id}`, {
         state: { isWatching: true },
@@ -52,13 +54,12 @@ const SearchBar: React.FC = () => {
     } else if (searchType === "group") {
       navigate(`/group/${result.id}`);
     } else if (searchType === "post") {
-      // Khi click vào kết quả bài viết, truyền content vào keySearch
       navigate(`/search/${encodeURIComponent(result.content || "")}`);
     }
   };
 
   const handleSearch = () => {
-    // Khi ấn enter hoặc icon search, truyền text search vào keySearch
+    setDropdownOpen(false);
     if (searchType === "post") {
       navigate(`/search/${encodeURIComponent(searchTerm)}`);
     }
@@ -67,8 +68,10 @@ const SearchBar: React.FC = () => {
   useEffect(() => {
     if (!searchTerm.trim()) {
       setResults([]);
+      setDropdownOpen(false);
       return;
     }
+    setDropdownOpen(true);
 
     const debouncedFetch = debounce(async () => {
       setLoading(true);
@@ -106,21 +109,27 @@ const SearchBar: React.FC = () => {
   return (
     <div className="relative w-full sm:w-[150px] md:w-[250px] lg:w-[300px] xl:w-[450px] 2xl:w-[600px] mx-auto">
       <div className="flex items-center gap-2 mb-2">
-        <SearchInput
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={handleSearch}
-          placeholder={`Tìm kiếm ${
-            searchType === "user"
-              ? "người dùng"
-              : searchType === "group"
-              ? "nhóm"
-              : "bài viết"
-          }...`}
-        />
+        <div
+          style={{ width: "100%" }}
+          tabIndex={-1}
+          onFocus={() => searchTerm && setDropdownOpen(true)}
+        >
+          <SearchInput
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onSearch={handleSearch}
+            placeholder={`Tìm kiếm ${
+              searchType === "user"
+                ? "người dùng"
+                : searchType === "group"
+                ? "nhóm"
+                : "bài viết"
+            }...`}
+          />
+        </div>
       </div>
 
-      {searchTerm && (
+      {dropdownOpen && searchTerm && (
         <div className="absolute top-full left-0 w-full bg-white border border-gray-300 mt-1 rounded-md shadow-lg z-50">
           <div className="p-2">
             <Select

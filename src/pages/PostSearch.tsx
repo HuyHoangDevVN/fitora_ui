@@ -64,8 +64,6 @@ const PostSearch: React.FC = () => {
           tip="Đang tìm kiếm bài viết..."
           className="w-full flex justify-center"
         />
-      ) : data?.pages.every((page) => page.data.length === 0) ? (
-        <Empty description="Không tìm thấy bài viết nào." className="my-10" />
       ) : (
         data?.pages.map((page) =>
           page.data.map((post: Post) => (
