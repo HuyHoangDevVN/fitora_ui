@@ -10,6 +10,7 @@ import { useParams } from "react-router-dom";
 const PostSearch: React.FC = () => {
   const { keySearch } = useParams();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
@@ -25,6 +26,13 @@ const PostSearch: React.FC = () => {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: undefined,
     });
+
+  // Reset scroll when keySearch changes
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo?.(0, 0);
+    }
+  }, [keySearch]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -57,12 +65,20 @@ const PostSearch: React.FC = () => {
   );
 
   return (
-    <div className="max-w-2xl mx-auto px-2 md:px-0">
-      {isLoading && !data ? (
+    <div ref={containerRef} className="max-w-2xl mx-auto px-2 md:px-0">
+      {!keySearch ? (
+        <div className="my-10 text-center text-gray-500">
+          Vui lòng nhập từ khóa tìm kiếm.
+        </div>
+      ) : isLoading && !data ? (
         <Spin
           tip="Đang tìm kiếm bài viết..."
           className="w-full flex justify-center"
         />
+      ) : data?.pages.every((page) => page.data.length === 0) ? (
+        <div className="my-10 text-center text-gray-500">
+          Không tìm thấy bài viết nào.
+        </div>
       ) : (
         data?.pages.map((page) =>
           page.data.map((post: Post) => (
