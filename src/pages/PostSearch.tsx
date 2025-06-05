@@ -3,7 +3,7 @@ import PostBox from "@/components/posts/PostBox";
 import colors from "@/styles/colors";
 import { Post } from "@/types/post";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Divider, Empty, Skeleton, Spin } from "antd";
+import { Divider, Skeleton, Spin } from "antd";
 import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
@@ -24,7 +24,6 @@ const PostSearch: React.FC = () => {
           .then((res) => res.data),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       initialPageParam: undefined,
-      enabled: !!keySearch,
     });
 
   useEffect(() => {
