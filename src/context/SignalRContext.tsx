@@ -7,7 +7,7 @@ import {
 } from "@microsoft/signalr";
 import { API_URL } from "@/api/repository";
 import { authApi } from "@/api/authApi";
-import { notification as antdNotification } from "antd";
+import { notification } from "antd";
 
 const SignalRContext = createContext({
   messages: {} as Record<
@@ -164,10 +164,14 @@ export const SignalRProvider = ({
           ]);
           setUnreadCount((prev) => prev + 1);
           // Bắn notification antdesign
-          antdNotification.open({
+          notification.info({
             message: title || "Thông báo mới",
             description: content,
             placement: "topRight",
+          });
+          console.log("Nhận thông báo mới: ", {
+            message: title || "Thông báo mới",
+            description: content,
           });
         }
       );
