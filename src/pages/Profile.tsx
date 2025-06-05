@@ -131,7 +131,7 @@ const Profile = () => {
     setLoading(true);
     try {
       const response = await userRepository.get<ResponseBase<User[]>>(
-        `/user/friends-list`
+        `/friendship/get-friends?Id=${userId}`
       );
 
       if (response?.isSuccess && response.data) {
@@ -257,7 +257,7 @@ const Profile = () => {
                   />
                   <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
                     <h1 className="text-3xl font-bold text-gray-800">
-                      {user.userInfo.firstName} {user.userInfo.lastName}
+                      {user.userInfo.lastName} {user.userInfo.firstName}
                     </h1>
                     <p className="text-gray-600 text-sm mt-1">
                       @{user.userName} • {user.followerCount || 0} người theo

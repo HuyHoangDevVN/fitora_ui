@@ -40,7 +40,8 @@ const Header: React.FC = () => {
             <div className="hidden min-[1100px]:flex items-center space-x-4">
               <FriendActionIcon />
               <MessageActionIcon />
-              <NotificationActionIcon className="hidden min-[1100px]:inline-flex" />
+              {/* <NotificationActionIcon className="hidden min-[1100px]:inline-flex" /> */}
+              <NotificationDropdown />
             </div>
             {/* NotificationActionIcon for mobile, only visible when mobile menu is open */}
             {isMobileMenuOpen && (

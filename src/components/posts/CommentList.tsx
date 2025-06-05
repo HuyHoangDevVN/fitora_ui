@@ -494,12 +494,13 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                               <span className="font-semibold text-gray-800">
                                 {reply?.user?.username}
                               </span>
-                              {parent && (
-                                <span className="text-blue-600 ml-2 font-semibold">
-                                  @{getFullName(parent.user)}
-                                </span>
-                              )}
+
                               <p className="mt-1 text-gray-700 break-words">
+                                {parent && (
+                                  <span className="text-blue-600 ml-2 font-semibold">
+                                    @{getFullName(parent.user)}
+                                  </span>
+                                )}
                                 {reply?.content}
                               </p>
                             </div>
