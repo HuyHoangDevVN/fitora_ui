@@ -130,7 +130,7 @@ export const SignalRProvider = ({
       }
       // Kết nối notification
       const notiConnection = new HubConnectionBuilder()
-        .withUrl(`${API_URL}/hubs/noti`, {
+        .withUrl(`${API_URL}/noti`, {
           transport:
             HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents,
           withCredentials: true,
