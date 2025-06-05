@@ -8,13 +8,13 @@ import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 const PostSearch: React.FC = () => {
-  const { keySearch } = useParams();
+  const { query } = useParams();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery<{ data: Post[]; nextCursor: string | null }, Error>({
-      queryKey: ["search-posts", keySearch],
+      queryKey: ["search-posts", query],
       queryFn: async ({ pageParam = undefined, queryKey }) => {
         const [, keySearchParam] = queryKey as [string, string | undefined];
         if (typeof keySearchParam !== "string" || !keySearchParam) {
@@ -37,7 +37,7 @@ const PostSearch: React.FC = () => {
     if (containerRef.current) {
       containerRef.current.scrollTo?.(0, 0);
     }
-  }, [keySearch]);
+  }, [query]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -69,7 +69,7 @@ const PostSearch: React.FC = () => {
     </div>
   );
 
-  if (typeof keySearch !== "string" || !keySearch) {
+  if (typeof query !== "string" || !query) {
     return null;
   }
 
