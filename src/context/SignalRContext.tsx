@@ -144,14 +144,14 @@ export const SignalRProvider = ({
         console.log("Nhận thông báo mới: ", message);
 
         notification.info({
-          message: message.Title || "Thông báo mới", // hoặc message.title nếu backend gửi camelCase
-          description: message.Content, // hoặc message.content
+          message: message.title || "Thông báo mới",
+          description: message.content,
           placement: "topRight",
         });
 
         console.log("Thông tin hiển thị:", {
-          message: message.Title || "Thông báo mới",
-          description: message.Content,
+          message: message.title || "Thông báo mới",
+          description: message.content,
         });
       });
       notiConnection.on("AllNotificationsRead", () => {
