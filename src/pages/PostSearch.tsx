@@ -20,7 +20,7 @@ const PostSearch: React.FC = () => {
         return postApi
           .fetchPosts({
             feedType: 1,
-            keySearch: keySearchParam,
+            keySearch: keySearchParam ? encodeURIComponent(keySearchParam) : "",
             cursor: pageParam as string | undefined,
           })
           .then((res) => res.data);
@@ -68,7 +68,7 @@ const PostSearch: React.FC = () => {
 
   return (
     <div ref={containerRef} className="max-w-2xl mx-auto px-2 md:px-0">
-      {!keySearch ? (
+      {keySearch === undefined || keySearch === null ? (
         <div className="my-10 text-center text-gray-500">
           Vui lòng nhập từ khóa tìm kiếm.
         </div>
