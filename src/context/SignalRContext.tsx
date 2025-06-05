@@ -162,6 +162,16 @@ export const SignalRProvider = ({
             },
             ...prev,
           ]);
+          console.log("Nhận thông báo mới: ", {
+            id,
+            senderId,
+            userId,
+            notificationTypeId,
+            content,
+            isRead,
+            channel,
+            title,
+          });
           setUnreadCount((prev) => prev + 1);
           // Bắn notification antdesign
           notification.info({

@@ -500,7 +500,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                                   <span className="text-blue-600 ml-2 font-semibold">
                                     @{getFullName(parent.user)}
                                   </span>
-                                )}
+                                )}{" "}
                                 {reply?.content}
                               </p>
                             </div>
