@@ -16,11 +16,14 @@ const PostSearch: React.FC = () => {
     useInfiniteQuery<{ data: Post[]; nextCursor: string | null }, Error>({
       queryKey: ["search-posts", keySearch],
       queryFn: async ({ pageParam = undefined, queryKey }) => {
-        const [, keySearchParam] = queryKey as [string, string];
+        const [, keySearchParam] = queryKey as [string, string | undefined];
+        if (typeof keySearchParam !== "string" || !keySearchParam) {
+          return { data: [], nextCursor: null };
+        }
         return postApi
           .fetchPosts({
             feedType: 1,
-            keySearch: keySearchParam ? encodeURIComponent(keySearchParam) : "",
+            keySearch: encodeURIComponent(keySearchParam),
             cursor: pageParam as string | undefined,
           })
           .then((res) => res.data);
@@ -66,13 +69,13 @@ const PostSearch: React.FC = () => {
     </div>
   );
 
+  if (typeof keySearch !== "string" || !keySearch) {
+    return null;
+  }
+
   return (
     <div ref={containerRef} className="max-w-2xl mx-auto px-2 md:px-0">
-      {keySearch === undefined || keySearch === null ? (
-        <div className="my-10 text-center text-gray-500">
-          Vui lòng nhập từ khóa tìm kiếm.
-        </div>
-      ) : isLoading && !data ? (
+      {isLoading && !data ? (
         <Spin
           tip="Đang tìm kiếm bài viết..."
           className="w-full flex justify-center"
