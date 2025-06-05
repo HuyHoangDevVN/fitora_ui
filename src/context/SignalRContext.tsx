@@ -137,54 +137,23 @@ export const SignalRProvider = ({
         })
         .configureLogging(LogLevel.Information)
         .build();
-      notiConnection.on(
-        "ReceiveNotification",
-        (
-          id,
-          senderId,
-          userId,
-          notificationTypeId,
-          content,
-          isRead,
-          channel,
-          title
-        ) => {
-          setNotifications((prev) => [
-            {
-              id,
-              senderId,
-              userId,
-              notificationTypeId,
-              content,
-              isRead,
-              channel,
-              title,
-            },
-            ...prev,
-          ]);
-          console.log("Nhận thông báo mới: ", {
-            id,
-            senderId,
-            userId,
-            notificationTypeId,
-            content,
-            isRead,
-            channel,
-            title,
-          });
-          setUnreadCount((prev) => prev + 1);
-          // Bắn notification antdesign
-          notification.info({
-            message: title || "Thông báo mới",
-            description: content,
-            placement: "topRight",
-          });
-          console.log("Nhận thông báo mới: ", {
-            message: title || "Thông báo mới",
-            description: content,
-          });
-        }
-      );
+      notiConnection.on("ReceiveNotification", (message) => {
+        setNotifications((prev) => [message, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+
+        console.log("Nhận thông báo mới: ", message);
+
+        notification.info({
+          message: message.Title || "Thông báo mới", // hoặc message.title nếu backend gửi camelCase
+          description: message.Content, // hoặc message.content
+          placement: "topRight",
+        });
+
+        console.log("Thông tin hiển thị:", {
+          message: message.Title || "Thông báo mới",
+          description: message.Content,
+        });
+      });
       notiConnection.on("AllNotificationsRead", () => {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);
