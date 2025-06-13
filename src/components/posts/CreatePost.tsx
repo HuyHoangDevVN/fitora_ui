@@ -262,21 +262,43 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         {step === 1 ? (
           <div>
             <div className="flex flex-wrap gap-2 mb-4">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  className={clsx(
-                    "px-3 py-1 rounded-full border flex items-center gap-2 transition",
-                    selectedCategory === cat.id
-                      ? "border-blue-500 ring-2 ring-blue-200"
-                      : "border-gray-200 hover:border-blue-400"
-                  )}
-                  style={{ background: cat.color, color: "#fff" }}
-                  onClick={() => handleSelectCategory(cat.id)}
-                >
-                  <span className="font-medium">{cat.name}</span>
-                </button>
-              ))}
+              <Input
+                placeholder="Tìm kiếm chủ đề..."
+                value={keySearch}
+                onChange={(e) => setKeySearch(e.target.value)}
+                className="mb-2"
+                allowClear
+                onPressEnter={(e) => {
+                  const value = (e.target as HTMLInputElement).value;
+                  categoryApi.fetchCategories(value).then((categories) => {
+                    setCategoriesForPost(categories);
+                  });
+                }}
+                onBlur={() => {
+                  categoryApi.fetchCategories(keySearch).then((categories) => {
+                    setCategoriesForPost(categories);
+                  });
+                }}
+              />
+              {categories?.length === 0 ? (
+                <div className="text-gray-400 italic">Không có chủ đề nào.</div>
+              ) : (
+                categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    className={clsx(
+                      "px-3 py-1 rounded-full border flex items-center gap-2 transition text-black",
+                      selectedCategory === cat.id
+                        ? "border-blue-500 ring-2 ring-blue-200"
+                        : "border-gray-200 hover:border-blue-400"
+                    )}
+                    style={{ background: cat.color, color: "#fff" }}
+                    onClick={() => handleSelectCategory(cat.id)}
+                  >
+                    <span className="font-medium">{cat.name}</span>
+                  </button>
+                ))
+              )}
               <button
                 className={clsx(
                   "px-3 py-1 rounded-full border border-dashed border-gray-400 text-gray-600 hover:border-blue-400 transition"

@@ -58,7 +58,7 @@ export default function DemographicCard() {
   }
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 custom-dark:border-gray-800 custom-dark:bg-white/[0.03] sm:p-6">
-      <div className="flex justify-between">
+      {/* <div className="flex justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800 custom-dark:text-white/90">
             Customers Demographic
@@ -98,76 +98,24 @@ export default function DemographicCard() {
         >
           <CountryMap />
         </div>
-      </div>
-
-      <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="items-center w-full rounded-full max-w-8">
-              <img src="./images/country/country-01.svg" alt="usa" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800 text-theme-sm custom-dark:text-white/90">
-                USA
-              </p>
-              <span className="block text-gray-500 text-theme-xs custom-dark:text-gray-400">
-                2,379 Customers
-              </span>
-            </div>
-          </div>
-
-          <div className="flex w-full max-w-[140px] items-center gap-3">
-            <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 custom-dark:bg-gray-800">
-              <div className="absolute left-0 top-0 flex h-full w-[79%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
-            </div>
-            <p className="font-medium text-gray-800 text-theme-sm custom-dark:text-white/90">
-              79%
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="items-center w-full rounded-full max-w-8">
-              <img src="./images/country/country-02.svg" alt="france" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800 text-theme-sm custom-dark:text-white/90">
-                France
-              </p>
-              <span className="block text-gray-500 text-theme-xs custom-dark:text-gray-400">
-                589 Customers
-              </span>
-            </div>
-          </div>
-
-          <div className="flex w-full max-w-[140px] items-center gap-3">
-            <div className="relative block h-2 w-full max-w-[100px] rounded-sm bg-gray-200 custom-dark:bg-gray-800">
-              <div className="absolute left-0 top-0 flex h-full w-[23%] items-center justify-center rounded-sm bg-brand-500 text-xs font-medium text-white"></div>
-            </div>
-            <p className="font-medium text-gray-800 text-theme-sm custom-dark:text-white/90">
-              23%
-            </p>
-          </div>
-        </div>
-      </div>
+      </div> */}
 
       {/* Ví dụ render dữ liệu nhân khẩu học */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {demographics.map((item) => (
+        {demographics?.map((item) => (
           <div
             key={item.title}
-            className="bg-white dark:bg-gray-900 rounded-xl shadow p-5"
+            className="bg-white custom-dark:bg-gray-900 rounded-xl shadow p-5"
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{item.icon}</span>
               <span className="font-semibold text-lg">{item.title}</span>
             </div>
             <ul>
-              {item.data.map((d) => (
+              {item.data?.map((d) => (
                 <li
                   key={d.label}
-                  className="flex justify-between py-1 text-gray-700 dark:text-gray-200"
+                  className="flex justify-between py-1 text-gray-700 custom-dark:text-gray-200"
                 >
                   <span>{d.label}</span>
                   <span className="font-semibold">
