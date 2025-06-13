@@ -1,168 +1,354 @@
 import { categoryApi } from "@/api/categoryApi";
 import { API_URL, interactRepository } from "@/api/repository";
 import { PrivacyPost } from "@/enums/post";
-import {
-  Avatar,
-  Button,
-  Input,
-  message,
-  Modal,
-  Select,
-  Spin,
-  ColorPicker,
-} from "antd";
+import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
 import axios from "axios";
-import _ from "lodash";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
-import { FaMapMarkerAlt, FaTimes, FaUserTag } from "react-icons/fa";
-import clsx from "clsx";
-import { debounce } from "lodash";
+import React, { useCallback, useRef, useState, memo } from "react";
+import { AiOutlineFileImage } from "react-icons/ai";
+import { FaTimes, FaUserTag } from "react-icons/fa";
 
+// Constants
 const { TextArea } = Input;
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const SUPPORTED_IMAGE_TYPES = /\.(jpeg|webp|jpg|png|gif)$/i;
+const SUPPORTED_VIDEO_TYPES = /\.(mp4|webm|ogg)$/i;
 
-type CreatePostModalProps = {
-  trigger?: React.ReactNode;
-  onPostCreated?: (newPost: any) => void;
+// Privacy options
+const PRIVACY_OPTIONS = [
+  { value: PrivacyPost.Public, label: "Công khai" },
+  { value: PrivacyPost.Private, label: "Riêng tư" },
+];
+
+// Utility functions
+const getFileType = (url: string) => {
+  if (SUPPORTED_IMAGE_TYPES.test(url)) return "image";
+  if (SUPPORTED_VIDEO_TYPES.test(url)) return "video";
+  return "file";
 };
 
-const CreatePostModal: React.FC<CreatePostModalProps> = ({
-  trigger,
-  onPostCreated,
-}) => {
-  const profile = JSON.parse(localStorage.getItem("userInfo") ?? "{}");
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [privacy, setPrivacy] = useState<PrivacyPost>(PrivacyPost.Private);
-  const [content, setContent] = useState("");
-  const [mediaUrl, setMediaUrl] = useState<string>("");
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [uploading, setUploading] = useState<boolean>(false);
-  const [categoriesForPost, setCategoriesForPost] = useState<any[]>([]);
-  const [chosenCategory, setChosenCategory] = useState<any>(null);
+const getUserProfile = () => {
+  try {
+    return JSON.parse(localStorage.getItem("userInfo") ?? "{}");
+  } catch {
+    return {};
+  }
+};
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+const validateFile = (file: File): string | null => {
+  if (file.size > MAX_FILE_SIZE) {
+    return `File quá lớn! Vui lòng chọn file nhỏ hơn ${formatFileSize(
+      MAX_FILE_SIZE
+    )}.`;
+  }
+  return null;
+};
 
-  const showCategoryModal = useCallback(() => {
-    setIsCategoryModalOpen(true);
-    categoryApi.fetchCategories("").then((categories) => {
-      setCategoriesForPost(categories);
-    });
-  }, []);
+// Types
+interface Post {
+  id: string;
+  content: string;
+  mediaUrl?: string;
+  privacy: PrivacyPost;
+  categoryId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  const handleCategoryModalCancel = useCallback(() => {
-    setIsCategoryModalOpen(false);
-  }, []);
+interface CreatePostModalProps {
+  trigger?: React.ReactNode;
+  onPostCreated?: (newPost: Post) => void;
+}
 
-  const handlePostModalCancel = useCallback(() => {
-    setIsPostModalOpen(false);
-    setPreviewUrl("");
-    setMediaUrl("");
-    setContent("");
-    setPrivacy(PrivacyPost.Private);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+interface Category {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+}
 
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        const preview = URL.createObjectURL(file);
-        setPreviewUrl(preview);
-
-        setUploading(true);
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-          const uploadResponse = await axios.post(
-            `${API_URL}/interact/upload/file`,
-            formData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          );
-
-          if (uploadResponse.data?.url) {
-            setMediaUrl(uploadResponse.data.url);
-
-            URL.revokeObjectURL(preview);
-            setPreviewUrl(uploadResponse.data.url);
-            message.success("Tải file lên thành công!");
-          } else {
-            throw new Error("Lỗi khi tải file!");
-          }
-        } catch (error) {
-          console.error("Lỗi khi tải file:", error);
-          message.error("Lỗi khi tải file!");
-          setPreviewUrl("");
-          setMediaUrl("");
-        } finally {
-          setUploading(false);
-        }
-      }
-    },
-    []
-  );
-
-  const handlePostModalOk = useCallback(async () => {
-    if (!content.trim()) {
-      message.info("Bạn chưa viết gì cả!");
+/**
+ * Custom hook for handling file upload functionality
+ * @returns Object containing upload state and functions
+ */
+const useFileUpload = () => {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const uploadFile = useCallback(async (file: File) => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      message.error(validationError);
       return;
     }
 
-    try {
-      const data = {
-        content,
-        mediaUrl,
-        privacy,
-        categoryId: chosenCategory?.id,
-      };
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
+    setUploading(true);
 
-      const response = await interactRepository.post("/post/create-post", data);
-      if (response?.isSuccess) {
-        message.success("Đăng bài thành công!");
-        if (onPostCreated) {
-          onPostCreated(response.data);
-        }
-        setContent("");
-        setMediaUrl("");
-        setPreviewUrl("");
-        setPrivacy(PrivacyPost.Private);
-        setChosenCategory(null);
-        setIsPostModalOpen(false);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const uploadResponse = await axios.post(
+        `${API_URL}/interact/upload/file`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      if (uploadResponse.data?.url) {
+        setMediaUrl(uploadResponse.data.url);
+        URL.revokeObjectURL(preview);
+        setPreviewUrl(uploadResponse.data.url);
+        message.success("Tải file lên thành công!");
       } else {
-        throw new Error("Có lỗi xảy ra!");
+        throw new Error("Lỗi khi tải file!");
       }
     } catch (error) {
-      console.error("Lỗi khi tạo bài viết:", error);
-      message.error("Có lỗi xảy ra, vui lòng thử lại!");
+      console.error("Upload failed:", error);
+      message.error("Lỗi khi tải file lên!");
+      URL.revokeObjectURL(preview);
+      setPreviewUrl("");
+    } finally {
+      setUploading(false);
     }
-  }, [content, mediaUrl, privacy, chosenCategory, onPostCreated]);
+  }, []);
 
-  const renderPreview = () => {
-    if (uploading) {
-      return (
-        <div className="mt-3 flex justify-center items-center h-48 bg-gray-100 rounded-lg">
-          <Spin tip="Đang tải lên..." />
-        </div>
-      );
+  const clearFile = useCallback(() => {
+    if (previewUrl && !mediaUrl) {
+      URL.revokeObjectURL(previewUrl);
     }
+    setPreviewUrl("");
+    setMediaUrl("");
+  }, [previewUrl, mediaUrl]);
+  return { uploading, previewUrl, mediaUrl, uploadFile, clearFile };
+};
 
-    if (previewUrl) {
-      const isImage = /\.(jpeg|webp|jpg|png|gif)$/i.test(previewUrl);
-      const isVideo = /\.(mp4|webm|ogg)$/i.test(previewUrl);
+/**
+ * CategoryModal component for selecting categories
+ */
+interface CategoryModalProps {
+  open: boolean;
+  onCancel: () => void;
+  onOk: (category: Category) => void;
+  categories: Category[];
+  loading: boolean;
+}
+
+const CategoryModal: React.FC<CategoryModalProps> = memo(
+  ({ open, onCancel, onOk, categories, loading }) => {
+    const [searchText, setSearchText] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+      null
+    );
+
+    const filteredCategories = categories.filter((category) =>
+      category.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+
+    const handleOk = () => {
+      if (selectedCategory) {
+        onOk(selectedCategory);
+        setSelectedCategory(null);
+        setSearchText("");
+      }
+    };
+
+    const handleCancel = () => {
+      onCancel();
+      setSelectedCategory(null);
+      setSearchText("");
+    };
+
+    return (
+      <Modal
+        title="Chọn chủ đề"
+        open={open}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="Chọn"
+        cancelText="Hủy"
+        okButtonProps={{ disabled: !selectedCategory }}
+        width={500}
+      >
+        <div className="space-y-4">
+          <Input
+            placeholder="Tìm kiếm chủ đề..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            allowClear
+          />
+
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Spin tip="Đang tải..." />
+            </div>
+          ) : (
+            <div className="max-h-60 overflow-y-auto space-y-2">
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedCategory?.id === category.id
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: category.color || "#666" }}
+                      />
+                      <span className="font-medium">{category.name}</span>
+                    </div>
+                    {category.description && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        {category.description}
+                      </p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  {searchText
+                    ? "Không tìm thấy chủ đề phù hợp"
+                    : "Chưa có chủ đề nào"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>{" "}
+      </Modal>
+    );
+  }
+);
+
+CategoryModal.displayName = "CategoryModal";
+
+/**
+ * Main CreatePost modal component
+ * Handles post creation with media upload and category selection
+ */
+const CreatePostModal: React.FC<CreatePostModalProps> = memo(
+  ({ trigger, onPostCreated }) => {
+    const profile = getUserProfile();
+    // States
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+    const [privacy, setPrivacy] = useState<PrivacyPost>(PrivacyPost.Private);
+    const [content, setContent] = useState("");
+    const [categoriesForPost, setCategoriesForPost] = useState<Category[]>([]);
+    const [chosenCategory, setChosenCategory] = useState<Category | null>(null);
+    const [loadingCategory, setLoadingCategory] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    // File upload hook
+    const { uploading, previewUrl, mediaUrl, uploadFile, clearFile } =
+      useFileUpload();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    // Handlers
+    const showCategoryModal = useCallback(async () => {
+      setIsCategoryModalOpen(true);
+      setLoadingCategory(true);
+      try {
+        const categories = await categoryApi.fetchCategories("");
+        setCategoriesForPost(categories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        message.error("Không thể tải danh sách chủ đề");
+      } finally {
+        setLoadingCategory(false);
+      }
+    }, []);
+
+    const handleCategoryModalCancel = useCallback(() => {
+      setIsCategoryModalOpen(false);
+    }, []);
+
+    const handlePostModalCancel = useCallback(() => {
+      setIsPostModalOpen(false);
+      setContent("");
+      setPrivacy(PrivacyPost.Private);
+      setChosenCategory(null);
+      clearFile();
+    }, [clearFile]);
+
+    const handleFileChange = useCallback(
+      async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+          await uploadFile(e.target.files[0]);
+        }
+      },
+      [uploadFile]
+    );
+    const handleSubmit = useCallback(async () => {
+      if (!content.trim() && !mediaUrl) {
+        message.warning("Vui lòng nhập nội dung hoặc chọn file!");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const postPayload = {
+          Content: content,
+          MediaUrl: mediaUrl,
+          Privacy: privacy,
+          categoryId: chosenCategory?.id,
+        };
+
+        const response = await interactRepository.post(
+          "/post/create",
+          postPayload
+        );
+
+        if (response.data?.isSuccess) {
+          message.success("Đăng bài thành công!");
+          handlePostModalCancel();
+          onPostCreated?.(response.data.data);
+        } else {
+          throw new Error(response.data?.message || "Đăng bài thất bại");
+        }
+      } catch (error) {
+        console.error("Post creation failed:", error);
+        message.error("Đăng bài thất bại!");
+      } finally {
+        setSubmitting(false);
+      }
+    }, [
+      content,
+      mediaUrl,
+      privacy,
+      chosenCategory?.id,
+      onPostCreated,
+      handlePostModalCancel,
+    ]);
+
+    // Components
+    const MediaPreview: React.FC = () => {
+      if (uploading) {
+        return (
+          <div className="mt-3 flex justify-center items-center h-48 bg-gray-100 rounded-lg">
+            <Spin tip="Đang tải lên..." />
+          </div>
+        );
+      }
+      if (!previewUrl) return null;
+
+      const fileType = getFileType(previewUrl);
 
       return (
         <div className="mt-3 relative">
-          {isImage ? (
+          {fileType === "image" ? (
             <div className="relative bg-gray-100 rounded-lg overflow-hidden">
               <img
                 src={previewUrl}
@@ -171,7 +357,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 style={{ maxHeight: "400px" }}
               />
             </div>
-          ) : isVideo ? (
+          ) : fileType === "video" ? (
             <div className="relative bg-gray-100 rounded-lg overflow-hidden">
               <video
                 src={previewUrl}
@@ -188,346 +374,142 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 rel="noopener noreferrer"
                 className="text-blue-500 underline break-all"
               >
-                {previewUrl}
+                {previewUrl.split("/").pop() || previewUrl}
               </a>
             </div>
           )}
           <button
-            className="absolute top-2 right-2 bg-gray-800 text-white rounded-full p-1 hover:bg-red-600"
-            onClick={() => {
-              setPreviewUrl("");
-              setMediaUrl("");
-              if (previewUrl && !mediaUrl) URL.revokeObjectURL(previewUrl);
-            }}
+            className="absolute top-2 right-2 bg-gray-800 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            onClick={clearFile}
           >
-            <FaTimes size={14} />
+            <FaTimes />
           </button>
         </div>
       );
-    }
-    return null;
-  };
-
-  const CategoryModal = ({
-    open,
-    onCancel,
-    onOk,
-    categories,
-    loading,
-  }: {
-    open: boolean;
-    onCancel: () => void;
-    onOk: (category: any) => void;
-    categories: { id: string; name: string; color: string }[];
-    loading?: boolean;
-  }) => {
-    const [step, setStep] = useState<1 | 2>(1);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(
-      null
-    );
-    const [newCategory, setNewCategory] = useState({
-      name: "",
-      description: "",
-      color: "#1677ff",
-    });
-    const [keySearch, setKeySearch] = useState<string>("");
-    const [searchResults, setSearchResults] = useState(categories);
-
-    // Debounce search để tránh call API liên tục
-    const debouncedSearch = useMemo(
-      () =>
-        debounce(async (searchTerm: string) => {
-          if (searchTerm.trim()) {
-            try {
-              const results = await categoryApi.fetchCategories(searchTerm);
-              setSearchResults(results);
-            } catch (error) {
-              console.error("Search failed:", error);
-            }
-          } else {
-            setSearchResults(categories);
-          }
-        }, 300),
-      [categories]
-    );
-
-    // Trigger search khi keySearch thay đổi
-    useEffect(() => {
-      debouncedSearch(keySearch);
-    }, [keySearch, debouncedSearch]);
-
-    // Reset khi modal đóng/mở
-    useEffect(() => {
-      if (open) {
-        setSearchResults(categories);
-        setKeySearch("");
-      }
-    }, [open, categories]);
-
-    const handleSelectCategory = (id: string) => setSelectedCategory(id);
-
-    const handleContinue = () => {
-      if (selectedCategory === "new") {
-        setStep(2);
-      } else {
-        const cat = searchResults.find((c) => c.id === selectedCategory);
-        if (cat) onOk(cat);
-      }
     };
 
-    const handleCreateCategory = () => {
-      onOk({ ...newCategory, id: "new" });
-      setStep(1);
-      setSelectedCategory(null);
-      setNewCategory({ name: "", description: "", color: "#1677ff" });
-    };
-
-    const handleBack = () => {
-      setStep(1);
-      setSelectedCategory(null);
-    };
-
+    // Main render
     return (
-      <Modal
-        open={open}
-        onCancel={() => {
-          setStep(1);
-          setSelectedCategory(null);
-          setKeySearch("");
-          onCancel();
-        }}
-        footer={null}
-        title={step === 1 ? "Chọn chủ đề" : "Tạo chủ đề mới"}
-      >
-        {step === 1 ? (
-          <div>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Input
-                placeholder="Tìm kiếm chủ đề..."
-                value={keySearch}
-                onChange={(e) => setKeySearch(e.target.value)}
-                className="mb-2"
-                allowClear
-              />
-              {searchResults?.length === 0 ? (
-                <div className="text-gray-400 italic">Không có chủ đề nào.</div>
-              ) : (
-                searchResults.map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={clsx(
-                      "px-3 py-1 rounded-full border flex items-center gap-2 transition text-black",
-                      selectedCategory === cat.id
-                        ? "border-blue-500 ring-2 ring-blue-200"
-                        : "border-gray-200 hover:border-blue-400"
-                    )}
-                    style={{ color: cat.color ?? "black" }}
-                    onClick={() => handleSelectCategory(cat.id)}
-                  >
-                    <span className="font-medium">{cat.name}</span>
-                  </button>
-                ))
-              )}
-              <button
-                className={clsx(
-                  "px-3 py-1 rounded-full border border-dashed border-gray-400 text-gray-600 hover:border-blue-400 transition"
-                )}
-                onClick={() => setSelectedCategory("new")}
-              >
-                + Tạo chủ đề mới
-              </button>
-            </div>
-            <Button
-              type="primary"
-              block
-              disabled={!selectedCategory}
-              loading={loading}
-              onClick={handleContinue}
-            >
-              Tiếp tục
-            </Button>
-          </div>
+      <>
+        {trigger ? (
+          <div onClick={() => setIsPostModalOpen(true)}>{trigger}</div>
         ) : (
-          <div>
-            <Input
-              placeholder="Tên chủ đề"
-              value={newCategory.name}
-              onChange={(e) =>
-                setNewCategory((prev) => ({ ...prev, name: e.target.value }))
-              }
-              className="mb-2"
-            />
-            <Input
-              placeholder="Mô tả chủ đề"
-              value={newCategory.description}
-              onChange={(e) =>
-                setNewCategory((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              className="mb-2"
-            />
-            <div className="flex items-center gap-2 mb-4">
-              <span>Màu sắc:</span>
-              <ColorPicker
-                value={newCategory.color}
-                onChange={(color) =>
-                  setNewCategory((prev) => ({
-                    ...prev,
-                    color:
-                      typeof color === "string" ? color : color.toHexString(),
-                  }))
-                }
-                showText
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button onClick={handleBack}>Quay lại</Button>
-              <Button
-                type="primary"
-                onClick={handleCreateCategory}
-                disabled={!newCategory.name}
-                loading={loading}
-              >
-                Tạo chủ đề
-              </Button>
+          <div
+            className="flex items-center gap-3 p-4 bg-white rounded-lg shadow cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setIsPostModalOpen(true)}
+          >
+            <Avatar src={profile?.profilePictureUrl} size={40} />
+            <div className="flex-1 bg-gray-100 rounded-full py-2 px-4 text-gray-500">
+              Bạn đang nghĩ gì?
             </div>
           </div>
         )}
-      </Modal>
-    );
-  };
-
-  return (
-    <>
-      {trigger ? (
-        <div
-          onClick={showCategoryModal}
-          className="inline-block cursor-pointer"
+        {/* Main Post Modal */}
+        <Modal
+          open={isPostModalOpen}
+          onCancel={handlePostModalCancel}
+          footer={null}
+          title="Tạo bài viết"
+          width={600}
         >
-          {trigger}
-        </div>
-      ) : (
-        <Button type="primary" onClick={showCategoryModal}>
-          Tạo bài viết
-        </Button>
-      )}
-
-      <Modal
-        open={isPostModalOpen}
-        onCancel={handlePostModalCancel}
-        footer={null}
-        width={600}
-        className="rounded-lg overflow-hidden"
-        closable={false}
-        styles={{ body: { padding: 0 } }}
-      >
-        <div className="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
-          <h2 className="text-lg font-bold">Tạo bài viết</h2>
-          <button
-            onClick={handlePostModalCancel}
-            className="text-gray-600 hover:text-gray-800"
-          >
-            <FaTimes size={18} />
-          </button>
-        </div>
-
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Avatar
-              src={profile?.profilePictureUrl ?? "https://i.pravatar.cc/80"}
-              size={40}
-            />
-            <div className="flex flex-col">
-              <span className="font-medium text-base">
-                {profile?.lastName + " " + profile?.firstName}
-              </span>
-              <Select
-                value={privacy}
-                onChange={setPrivacy}
-                style={{ width: 130 }}
-                size="small"
-                variant="borderless"
-              >
-                <Select.Option value={PrivacyPost.Public}>
-                  Công khai
-                </Select.Option>
-                <Select.Option value={PrivacyPost.FriendsOnly}>
-                  Bạn bè
-                </Select.Option>
-                <Select.Option value={PrivacyPost.Private}>
-                  Chỉ mình tôi
-                </Select.Option>
-              </Select>
-            </div>
-          </div>
-
-          <TextArea
-            className="border-none focus:ring-0 text-lg placeholder:text-gray-400"
-            placeholder={`${profile?.firstName} ơi, bạn đang nghĩ gì thế?`}
-            autoSize={{ minRows: 2, maxRows: 6 }}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-
-          {renderPreview()}
-
-          <div className="mt-4 flex items-center justify-between px-2 py-2 border rounded-lg bg-gray-50">
-            <span className="text-gray-500 text-sm">
-              Thêm vào bài viết của bạn
-            </span>
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <button
-                className="text-xl text-green-500 hover:text-green-600"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+              <Avatar src={profile?.profilePictureUrl} size={40} />
+              <div>
+                <div className="font-medium">
+                  {profile?.fullName || "Người dùng"}
+                </div>{" "}
+                <Select
+                  value={privacy}
+                  onChange={setPrivacy}
+                  size="small"
+                  options={PRIVACY_OPTIONS}
+                />
+              </div>
+            </div>
+
+            <TextArea
+              placeholder="Bạn đang nghĩ gì?"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
+              className="border-none resize-none"
+            />
+
+            <MediaPreview />
+
+            {chosenCategory && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Chủ đề:</span>
+                <span
+                  className="px-2 py-1 rounded-full text-xs text-white"
+                  style={{ backgroundColor: chosenCategory.color || "#666" }}
+                >
+                  {chosenCategory.name}
+                </span>
+                <button
+                  onClick={() => setChosenCategory(null)}
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <FaTimes size={12} />
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t">
+              <div className="flex gap-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*,video/*"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
+                  disabled={uploading}
+                >
+                  <AiOutlineFileImage size={20} />
+                  <span>Ảnh/Video</span>
+                </button>
+                <button
+                  onClick={showCategoryModal}
+                  className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
+                >
+                  <FaUserTag size={20} />
+                  <span>Chủ đề</span>
+                </button>
+              </div>{" "}
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                loading={submitting}
+                disabled={
+                  (!content.trim() && !mediaUrl) || uploading || submitting
+                }
               >
-                <AiOutlineFileImage />
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
-              <button className="text-xl text-blue-500 hover:text-blue-600">
-                <FaUserTag />
-              </button>
-              <button className="text-xl text-yellow-500 hover:text-yellow-600">
-                <AiOutlineSmile />
-              </button>
-              <button className="text-xl text-pink-500 hover:text-pink-600">
-                <FaMapMarkerAlt />
-              </button>
+                {submitting ? "Đang đăng..." : "Đăng bài"}
+              </Button>
             </div>
           </div>
-        </div>
-        <div className="px-4 py-3 border-t bg-gray-50">
-          <Button
-            type="primary"
-            className="rounded-full w-full"
-            onClick={handlePostModalOk}
-            disabled={!content.trim() || uploading}
-            loading={uploading}
-          >
-            Đăng
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+        {/* Category Modal */}
+        <CategoryModal
+          open={isCategoryModalOpen}
+          onCancel={handleCategoryModalCancel}
+          onOk={(category) => {
+            setChosenCategory(category);
+            setIsCategoryModalOpen(false);
+          }}
+          categories={categoriesForPost}
+          loading={loadingCategory}
+        />{" "}
+      </>
+    );
+  }
+);
 
-      <CategoryModal
-        open={isCategoryModalOpen}
-        onCancel={handleCategoryModalCancel}
-        onOk={(category) => {
-          setChosenCategory(category);
-          setIsCategoryModalOpen(false);
-        }}
-        categories={categoriesForPost}
-        loading={false}
-      />
-    </>
-  );
-};
+CreatePostModal.displayName = "CreatePostModal";
 
 export default CreatePostModal;
