@@ -292,7 +292,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                         ? "border-blue-500 ring-2 ring-blue-200"
                         : "border-gray-200 hover:border-blue-400"
                     )}
-                    style={{ background: cat.color, color: "#fff" }}
+                    style={{ color: cat.color ?? "black" }}
                     onClick={() => handleSelectCategory(cat.id)}
                   >
                     <span className="font-medium">{cat.name}</span>
@@ -384,17 +384,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           Tạo bài viết
         </Button>
       )}
-
-      <CategoryModal
-        open={isCategoryModalOpen}
-        onCancel={handleCategoryModalCancel}
-        onOk={(category) => {
-          setChosenCategory(category);
-          setIsCategoryModalOpen(false);
-        }}
-        categories={categoriesForPost}
-        loading={false}
-      />
 
       <Modal
         open={isPostModalOpen}
@@ -497,6 +486,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           </Button>
         </div>
       </Modal>
+
+      <CategoryModal
+        open={isCategoryModalOpen}
+        onCancel={handleCategoryModalCancel}
+        onOk={(category) => {
+          setChosenCategory(category);
+          setIsCategoryModalOpen(false);
+        }}
+        categories={categoriesForPost}
+        loading={false}
+      />
     </>
   );
 };
