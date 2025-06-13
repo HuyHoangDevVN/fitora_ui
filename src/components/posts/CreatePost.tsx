@@ -4,20 +4,14 @@ import { PrivacyPost } from "@/enums/post";
 import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
 import axios from "axios";
 import React, { useCallback, useRef, useState, memo } from "react";
-import { AiOutlineFileImage } from "react-icons/ai";
-import { FaTimes, FaUserTag } from "react-icons/fa";
+import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
+import { FaTimes, FaUserTag, FaMapMarkerAlt } from "react-icons/fa";
 
 // Constants
 const { TextArea } = Input;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const SUPPORTED_IMAGE_TYPES = /\.(jpeg|webp|jpg|png|gif)$/i;
 const SUPPORTED_VIDEO_TYPES = /\.(mp4|webm|ogg)$/i;
-
-// Privacy options
-const PRIVACY_OPTIONS = [
-  { value: PrivacyPost.Public, label: "Công khai" },
-  { value: PrivacyPost.Private, label: "Riêng tư" },
-];
 
 // Utility functions
 const getFileType = (url: string) => {
@@ -331,10 +325,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
       chosenCategory?.id,
       onPostCreated,
       handlePostModalCancel,
-    ]);
-
-    // Components
-    const MediaPreview: React.FC = () => {
+    ]); // Render functions
+    const renderPreview = () => {
       if (uploading) {
         return (
           <div className="mt-3 flex justify-center items-center h-48 bg-gray-100 rounded-lg">
@@ -342,6 +334,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
           </div>
         );
       }
+
       if (!previewUrl) return null;
 
       const fileType = getFileType(previewUrl);
@@ -403,43 +396,69 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
               Bạn đang nghĩ gì?
             </div>
           </div>
-        )}
+        )}{" "}
         {/* Main Post Modal */}
         <Modal
           open={isPostModalOpen}
           onCancel={handlePostModalCancel}
           footer={null}
-          title="Tạo bài viết"
           width={600}
+          className="rounded-lg overflow-hidden"
+          closable={false}
+          styles={{ body: { padding: 0 } }}
         >
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar src={profile?.profilePictureUrl} size={40} />
-              <div>
-                <div className="font-medium">
-                  {profile?.fullName || "Người dùng"}
-                </div>{" "}
+          <div className="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+            <h2 className="text-lg font-bold">Tạo bài viết</h2>
+            <button
+              onClick={handlePostModalCancel}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <FaTimes size={18} />
+            </button>
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Avatar
+                src={profile?.profilePictureUrl ?? "https://i.pravatar.cc/80"}
+                size={40}
+              />
+              <div className="flex flex-col">
+                <span className="font-medium text-base">
+                  {profile?.lastName + " " + profile?.firstName}
+                </span>
                 <Select
                   value={privacy}
                   onChange={setPrivacy}
+                  style={{ width: 130 }}
                   size="small"
-                  options={PRIVACY_OPTIONS}
-                />
+                  variant="borderless"
+                >
+                  <Select.Option value={PrivacyPost.Public}>
+                    Công khai
+                  </Select.Option>
+                  <Select.Option value={PrivacyPost.FriendsOnly}>
+                    Bạn bè
+                  </Select.Option>
+                  <Select.Option value={PrivacyPost.Private}>
+                    Chỉ mình tôi
+                  </Select.Option>
+                </Select>
               </div>
             </div>
 
             <TextArea
-              placeholder="Bạn đang nghĩ gì?"
+              className="border-none focus:ring-0 text-lg placeholder:text-gray-400"
+              placeholder={`${profile?.firstName} ơi, bạn đang nghĩ gì thế?`}
+              autoSize={{ minRows: 2, maxRows: 6 }}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              rows={4}
-              className="border-none resize-none"
             />
 
-            <MediaPreview />
+            {renderPreview()}
 
             {chosenCategory && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-3">
                 <span className="text-sm text-gray-600">Chủ đề:</span>
                 <span
                   className="px-2 py-1 rounded-full text-xs text-white"
@@ -456,42 +475,53 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-3 border-t">
-              <div className="flex gap-3">
+            <div className="mt-4 flex items-center justify-between px-2 py-2 border rounded-lg bg-gray-50">
+              <span className="text-gray-500 text-sm">
+                Thêm vào bài viết của bạn
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  className="text-xl text-green-500 hover:text-green-600"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <AiOutlineFileImage />
+                </button>
                 <input
                   type="file"
                   ref={fileInputRef}
+                  style={{ display: "none" }}
                   onChange={handleFileChange}
                   accept="image/*,video/*"
-                  className="hidden"
                 />
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
-                  disabled={uploading}
-                >
-                  <AiOutlineFileImage size={20} />
-                  <span>Ảnh/Video</span>
-                </button>
-                <button
+                  className="text-xl text-blue-500 hover:text-blue-600"
                   onClick={showCategoryModal}
-                  className="flex items-center gap-2 text-gray-600 hover:text-blue-500 transition-colors"
                 >
-                  <FaUserTag size={20} />
-                  <span>Chủ đề</span>
+                  <FaUserTag />
                 </button>
-              </div>{" "}
-              <Button
-                type="primary"
-                onClick={handleSubmit}
-                loading={submitting}
-                disabled={
-                  (!content.trim() && !mediaUrl) || uploading || submitting
-                }
-              >
-                {submitting ? "Đang đăng..." : "Đăng bài"}
-              </Button>
+                <button className="text-xl text-yellow-500 hover:text-yellow-600">
+                  <AiOutlineSmile />
+                </button>
+                <button className="text-xl text-pink-500 hover:text-pink-600">
+                  <FaMapMarkerAlt />
+                </button>
+              </div>
             </div>
+          </div>
+          <div className="px-4 py-3 border-t bg-gray-50">
+            {" "}
+            <Button
+              type="primary"
+              className="rounded-full w-full"
+              onClick={handleSubmit}
+              disabled={
+                (!content.trim() && !mediaUrl) || uploading || submitting
+              }
+              loading={submitting}
+            >
+              {submitting ? "Đang đăng..." : "Đăng"}
+            </Button>
           </div>
         </Modal>
         {/* Category Modal */}
