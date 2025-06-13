@@ -5,6 +5,26 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useState } from "react";
 import { MoreDotIcon } from "@/icons";
 
+// Fake dữ liệu cho dashboard mạng xã hội học tập quy mô khoa ~1000 sinh viên
+const months = [
+  "Tháng 1",
+  "Tháng 2",
+  "Tháng 3",
+  "Tháng 4",
+  "Tháng 5",
+  "Tháng 6",
+  "Tháng 7",
+  "Tháng 8",
+  "Tháng 9",
+  "Tháng 10",
+  "Tháng 11",
+  "Tháng 12",
+];
+
+const postCounts = [120, 140, 160, 180, 200, 210, 190, 170, 160, 150, 140, 130];
+
+const newUserCounts = [15, 18, 22, 25, 30, 28, 24, 20, 18, 16, 15, 14];
+
 export default function MonthlySalesChart() {
   const options: ApexOptions = {
     colors: ["#465fff"],
@@ -33,20 +53,7 @@ export default function MonthlySalesChart() {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months,
       axisBorder: {
         show: false,
       },
@@ -87,8 +94,12 @@ export default function MonthlySalesChart() {
   };
   const series = [
     {
-      name: "Sales",
-      data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+      name: "Bài viết mới",
+      data: postCounts,
+    },
+    {
+      name: "Thành viên mới",
+      data: newUserCounts,
     },
   ];
   const [isOpen, setIsOpen] = useState(false);
@@ -104,7 +115,7 @@ export default function MonthlySalesChart() {
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 custom-dark:border-gray-800 custom-dark:bg-white/[0.03] sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 custom-dark:text-white/90">
-          Monthly Sales
+          Biểu đồ hoạt động theo tháng
         </h3>
         <div className="relative inline-block">
           <button className="dropdown-toggle" onClick={toggleDropdown}>
@@ -119,13 +130,13 @@ export default function MonthlySalesChart() {
               onItemClick={closeDropdown}
               className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 custom-dark:text-gray-400 custom-dark:hover:bg-white/5 custom-dark:hover:text-gray-300"
             >
-              View More
+              Xem thêm
             </DropdownItem>
             <DropdownItem
               onItemClick={closeDropdown}
               className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 custom-dark:text-gray-400 custom-dark:hover:bg-white/5 custom-dark:hover:text-gray-300"
             >
-              Delete
+              Xóa
             </DropdownItem>
           </Dropdown>
         </div>

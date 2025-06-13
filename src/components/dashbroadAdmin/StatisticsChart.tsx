@@ -1,6 +1,19 @@
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import ChartTab from "../common/ChartTab";
+import { Pie, Gauge } from "@ant-design/charts";
+
+// Fake dữ liệu cho biểu đồ thống kê mạng xã hội học tập quy mô khoa ~1000 sinh viên
+const topicStats = [
+  { name: "Toán", value: 420 },
+  { name: "Lập trình", value: 320 },
+  { name: "Tiếng Anh", value: 180 },
+  { name: "Kỹ năng mềm", value: 90 },
+  { name: "Khác", value: 110 },
+];
+
+const groupActiveRate = 0.78; // 78% nhóm hoạt động
+const studentJoinRate = 0.92; // 92% sinh viên tham gia ít nhất 1 nhóm
 
 export default function StatisticsChart() {
   const options: ApexOptions = {
@@ -130,6 +143,59 @@ export default function StatisticsChart() {
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="min-w-[1000px] xl:min-w-full">
           <Chart options={options} series={series} type="area" height={310} />
+        </div>
+      </div>
+
+      {/* Biểu đồ thống kê mạng xã hội học tập */}
+      <div className="mt-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <div className="font-semibold text-lg mb-2">
+              Phân bố bài viết theo chủ đề
+            </div>
+            <Pie
+              data={topicStats}
+              angleField="value"
+              colorField="name"
+              radius={0.9}
+              label={{ type: "outer", content: "{name}: {value}" }}
+              legend={{ position: "bottom" }}
+            />
+          </div>
+          <div className="flex flex-col gap-8">
+            <div>
+              <div className="font-semibold mb-2">Tỷ lệ nhóm hoạt động</div>
+              <Gauge
+                percent={groupActiveRate}
+                range={{ color: "#52c41a" }}
+                indicator={{ pointer: { style: { stroke: "#52c41a" } } }}
+                statistic={{
+                  title: { formatter: () => "Nhóm hoạt động" },
+                  content: {
+                    formatter: () => `${Math.round(groupActiveRate * 100)}%`,
+                    style: { color: "#52c41a", fontSize: 24 },
+                  },
+                }}
+              />
+            </div>
+            <div>
+              <div className="font-semibold mb-2">
+                Tỷ lệ sinh viên tham gia nhóm
+              </div>
+              <Gauge
+                percent={studentJoinRate}
+                range={{ color: "#1677ff" }}
+                indicator={{ pointer: { style: { stroke: "#1677ff" } } }}
+                statistic={{
+                  title: { formatter: () => "Sinh viên tham gia" },
+                  content: {
+                    formatter: () => `${Math.round(studentJoinRate * 100)}%`,
+                    style: { color: "#1677ff", fontSize: 24 },
+                  },
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

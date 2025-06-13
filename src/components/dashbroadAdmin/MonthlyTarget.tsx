@@ -5,6 +5,46 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { MoreDotIcon } from "@/icons";
 
+// Fake dữ liệu mục tiêu/thống kê tháng cho dashboard khoa ~1000 sinh viên
+const monthlyTargets = [
+  {
+    title: "Bài viết mục tiêu tháng này",
+    value: 250,
+    icon: "📝",
+    color: "bg-green-500",
+  },
+  {
+    title: "Nhóm học tập mới",
+    value: 3,
+    icon: "👥",
+    color: "bg-purple-500",
+  },
+  {
+    title: "Bình luận mục tiêu",
+    value: 1200,
+    icon: "💬",
+    color: "bg-yellow-500",
+  },
+  {
+    title: "Thành viên mới",
+    value: 25,
+    icon: "👤",
+    color: "bg-blue-500",
+  },
+  {
+    title: "Chủ đề mới",
+    value: 2,
+    icon: "🏷️",
+    color: "bg-cyan-500",
+  },
+  {
+    title: "Báo cáo cần xử lý",
+    value: 1,
+    icon: "🚩",
+    color: "bg-red-500",
+  },
+];
+
 export default function MonthlyTarget() {
   const series = [75.55];
   const options: ApexOptions = {
@@ -69,10 +109,10 @@ export default function MonthlyTarget() {
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 custom-dark:text-white/90">
-              Monthly Target
+              Mục tiêu tháng
             </h3>
             <p className="mt-1 text-gray-500 text-theme-sm custom-dark:text-gray-400">
-              Target you’ve set for each month
+              Mục tiêu bạn đã đặt cho mỗi tháng
             </p>
           </div>
           <div className="relative inline-block">
@@ -88,13 +128,13 @@ export default function MonthlyTarget() {
                 onItemClick={closeDropdown}
                 className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 custom-dark:text-gray-400 custom-dark:hover:bg-white/5 custom-dark:hover:text-gray-300"
               >
-                View More
+                Xem thêm
               </DropdownItem>
               <DropdownItem
                 onItemClick={closeDropdown}
                 className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 custom-dark:text-gray-400 custom-dark:hover:bg-white/5 custom-dark:hover:text-gray-300"
               >
-                Delete
+                Xóa
               </DropdownItem>
             </Dropdown>
           </div>
@@ -114,15 +154,15 @@ export default function MonthlyTarget() {
           </span>
         </div>
         <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-          You earn $3287 today, it's higher than last month. Keep up your good
-          work!
+          Bạn đã kiếm được 3287 đô la hôm nay, cao hơn tháng trước. Tiếp tục
+          phát huy nhé!
         </p>
       </div>
 
       <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs custom-dark:text-gray-400 sm:text-sm">
-            Target
+            Mục tiêu
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 custom-dark:text-white/90 sm:text-lg">
             $20K
@@ -147,7 +187,7 @@ export default function MonthlyTarget() {
 
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs custom-dark:text-gray-400 sm:text-sm">
-            Revenue
+            Doanh thu
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 custom-dark:text-white/90 sm:text-lg">
             $20K
@@ -172,7 +212,7 @@ export default function MonthlyTarget() {
 
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs custom-dark:text-gray-400 sm:text-sm">
-            Today
+            Hôm nay
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 custom-dark:text-white/90 sm:text-lg">
             $20K
@@ -192,6 +232,23 @@ export default function MonthlyTarget() {
             </svg>
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {monthlyTargets.map((item) => (
+          <div
+            key={item.title}
+            className={`flex items-center gap-4 p-5 rounded-xl shadow bg-white dark:bg-gray-900 ${item.color}`}
+          >
+            <span className="text-3xl">{item.icon}</span>
+            <div>
+              <div className="text-lg font-semibold text-white">
+                {item.value.toLocaleString()}
+              </div>
+              <div className="text-sm text-white/80">{item.title}</div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,12 +1,22 @@
 import { categoryApi } from "@/api/categoryApi";
 import { API_URL, interactRepository } from "@/api/repository";
 import { PrivacyPost } from "@/enums/post";
-import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
+import {
+  Avatar,
+  Button,
+  Input,
+  message,
+  Modal,
+  Select,
+  Spin,
+  ColorPicker,
+} from "antd";
 import axios from "axios";
 import _ from "lodash";
 import React, { useCallback, useRef, useState } from "react";
 import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
 import { FaMapMarkerAlt, FaTimes, FaUserTag } from "react-icons/fa";
+import clsx from "clsx";
 
 const { TextArea } = Input;
 
@@ -28,12 +38,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [color, setColor] = useState<string>("");
   const [keySearch, setKeySearch] = useState<string>("");
   const [categoriesForPost, setCategoriesForPost] = useState<any[]>([]);
+  const [chosenCategory, setChosenCategory] = useState<any>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -44,39 +51,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     });
   }, [keySearch]);
 
-  const handleCategoryModalOk = useCallback(async () => {
-    if (!selectedCategory && !newCategoryName.trim()) {
-      message.info("Vui lòng chọn hoặc tạo một chủ đề!");
-      return;
-    }
-
-    try {
-      if (!selectedCategory && newCategoryName.trim()) {
-        // Tạo chủ đề mới
-        const response = await categoryApi.createCategory({
-          name: newCategoryName,
-          description: description,
-          color: color,
-        });
-        setSelectedCategory(response.id);
-
-        // Follow chủ đề vừa tạo
-        await categoryApi.followCategory(response.id);
-        message.success("Chủ đề đã được tạo và theo dõi!");
-      }
-
-      setIsCategoryModalOpen(false);
-      setIsPostModalOpen(true);
-    } catch (error) {
-      console.error("Lỗi khi tạo hoặc theo dõi chủ đề:", error);
-      message.error("Có lỗi xảy ra khi tạo hoặc theo dõi chủ đề!");
-    }
-  }, [selectedCategory, newCategoryName, description]);
-
   const handleCategoryModalCancel = useCallback(() => {
     setIsCategoryModalOpen(false);
-    setSelectedCategory(null);
-    setNewCategoryName("");
   }, []);
 
   const handlePostModalCancel = useCallback(() => {
@@ -141,7 +117,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         content,
         mediaUrl,
         privacy,
-        categoryId: selectedCategory,
+        categoryId: chosenCategory?.id,
       };
 
       const response = await interactRepository.post("/post/create-post", data);
@@ -154,8 +130,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         setMediaUrl("");
         setPreviewUrl("");
         setPrivacy(PrivacyPost.Private);
-        setSelectedCategory(null);
-        setNewCategoryName("");
+        setChosenCategory(null);
         setIsPostModalOpen(false);
       } else {
         throw new Error("Có lỗi xảy ra!");
@@ -164,18 +139,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.error("Lỗi khi tạo bài viết:", error);
       message.error("Có lỗi xảy ra, vui lòng thử lại!");
     }
-  }, [content, mediaUrl, privacy, selectedCategory, onPostCreated]);
-
-  const handleSearchCategory = useCallback(
-    _.debounce((value: string) => {
-      setKeySearch(value);
-
-      categoryApi.fetchCategories(value).then((categories) => {
-        setCategoriesForPost(categories);
-      });
-    }, 300),
-    []
-  );
+  }, [content, mediaUrl, privacy, chosenCategory, onPostCreated]);
 
   const renderPreview = () => {
     if (uploading) {
@@ -238,6 +202,152 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     return null;
   };
 
+  const CategoryModal = ({
+    open,
+    onCancel,
+    onOk,
+    categories,
+    loading,
+  }: {
+    open: boolean;
+    onCancel: () => void;
+    onOk: (category: any) => void;
+    categories: { id: string; name: string; color: string }[];
+    loading?: boolean;
+  }) => {
+    const [step, setStep] = useState<1 | 2>(1);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(
+      null
+    );
+    const [newCategory, setNewCategory] = useState({
+      name: "",
+      description: "",
+      color: "#1677ff",
+    });
+
+    const handleSelectCategory = (id: string) => setSelectedCategory(id);
+
+    const handleContinue = () => {
+      if (selectedCategory === "new") {
+        setStep(2);
+      } else {
+        const cat = categories.find((c) => c.id === selectedCategory);
+        if (cat) onOk(cat);
+      }
+    };
+
+    const handleCreateCategory = () => {
+      onOk({ ...newCategory, id: "new" });
+      setStep(1);
+      setSelectedCategory(null);
+      setNewCategory({ name: "", description: "", color: "#1677ff" });
+    };
+
+    const handleBack = () => {
+      setStep(1);
+      setSelectedCategory(null);
+    };
+
+    return (
+      <Modal
+        open={open}
+        onCancel={() => {
+          setStep(1);
+          setSelectedCategory(null);
+          onCancel();
+        }}
+        footer={null}
+        title={step === 1 ? "Chọn chủ đề" : "Tạo chủ đề mới"}
+      >
+        {step === 1 ? (
+          <div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={clsx(
+                    "px-3 py-1 rounded-full border flex items-center gap-2 transition",
+                    selectedCategory === cat.id
+                      ? "border-blue-500 ring-2 ring-blue-200"
+                      : "border-gray-200 hover:border-blue-400"
+                  )}
+                  style={{ background: cat.color, color: "#fff" }}
+                  onClick={() => handleSelectCategory(cat.id)}
+                >
+                  <span className="font-medium">{cat.name}</span>
+                </button>
+              ))}
+              <button
+                className={clsx(
+                  "px-3 py-1 rounded-full border border-dashed border-gray-400 text-gray-600 hover:border-blue-400 transition"
+                )}
+                onClick={() => setSelectedCategory("new")}
+              >
+                + Tạo chủ đề mới
+              </button>
+            </div>
+            <Button
+              type="primary"
+              block
+              disabled={!selectedCategory}
+              loading={loading}
+              onClick={handleContinue}
+            >
+              Tiếp tục
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <Input
+              placeholder="Tên chủ đề"
+              value={newCategory.name}
+              onChange={(e) =>
+                setNewCategory((prev) => ({ ...prev, name: e.target.value }))
+              }
+              className="mb-2"
+            />
+            <Input
+              placeholder="Mô tả chủ đề"
+              value={newCategory.description}
+              onChange={(e) =>
+                setNewCategory((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              className="mb-2"
+            />
+            <div className="flex items-center gap-2 mb-4">
+              <span>Màu sắc:</span>
+              <ColorPicker
+                value={newCategory.color}
+                onChange={(color) =>
+                  setNewCategory((prev) => ({
+                    ...prev,
+                    color:
+                      typeof color === "string" ? color : color.toHexString(),
+                  }))
+                }
+                showText
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={handleBack}>Quay lại</Button>
+              <Button
+                type="primary"
+                onClick={handleCreateCategory}
+                disabled={!newCategory.name}
+                loading={loading}
+              >
+                Tạo chủ đề
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    );
+  };
+
   return (
     <>
       {trigger ? (
@@ -253,49 +363,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         </Button>
       )}
 
-      <Modal
+      <CategoryModal
         open={isCategoryModalOpen}
         onCancel={handleCategoryModalCancel}
-        onOk={handleCategoryModalOk}
-        title="Chọn hoặc tạo chủ đề"
-        okText="Tiếp tục"
-        cancelText="Hủy"
-      >
-        <Select
-          showSearch
-          placeholder="Tìm kiếm chủ đề"
-          value={selectedCategory}
-          onChange={(value) => setSelectedCategory(value)}
-          onSearch={handleSearchCategory}
-          style={{ width: "100%" }}
-          allowClear
-          filterOption={false}
-        >
-          {categoriesForPost?.map((category: any) => (
-            <Select.Option key={category.id} value={category.id}>
-              {category.name}
-            </Select.Option>
-          ))}
-        </Select>
-        <Input
-          placeholder="Hoặc tạo chủ đề mới"
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-          className="mt-2"
-        />
-        <Input
-          placeholder="Mô tả chủ đề mới"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="mt-2"
-        />
-        <Input
-          placeholder="Màu sắc chủ đề (ví dụ: #ff5733)"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="mt-2"
-        />
-      </Modal>
+        onOk={(category) => {
+          setChosenCategory(category);
+          setIsCategoryModalOpen(false);
+        }}
+        categories={categoriesForPost}
+        loading={false}
+      />
 
       <Modal
         open={isPostModalOpen}

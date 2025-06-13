@@ -4,6 +4,48 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import CountryMap from "./CountryMap";
 import { MoreDotIcon } from "@/icons";
 
+// Fake dữ liệu nhân khẩu học cho dashboard khoa ~1000 sinh viên
+const demographics = [
+  {
+    title: "Giới tính",
+    data: [
+      { label: "Nam", value: 520 },
+      { label: "Nữ", value: 460 },
+    ],
+    icon: "♂️♀️",
+  },
+  {
+    title: "Năm học",
+    data: [
+      { label: "Năm 1", value: 260 },
+      { label: "Năm 2", value: 250 },
+      { label: "Năm 3", value: 240 },
+      { label: "Năm 4", value: 230 },
+    ],
+    icon: "🎓",
+  },
+  {
+    title: "Chuyên ngành",
+    data: [
+      { label: "CNTT", value: 400 },
+      { label: "Khoa học dữ liệu", value: 220 },
+      { label: "Mạng máy tính", value: 180 },
+      { label: "Hệ thống thông tin", value: 120 },
+      { label: "Khác", value: 80 },
+    ],
+    icon: "💻📊",
+  },
+  {
+    title: "Tỉ lệ sinh viên hoạt động",
+    data: [
+      { label: "Hoạt động thường xuyên", value: 720 },
+      { label: "Hoạt động không thường xuyên", value: 180 },
+      { label: "Ít hoạt động", value: 100 },
+    ],
+    icon: "🔥",
+  },
+];
+
 export default function DemographicCard() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -108,6 +150,34 @@ export default function DemographicCard() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Ví dụ render dữ liệu nhân khẩu học */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {demographics.map((item) => (
+          <div
+            key={item.title}
+            className="bg-white dark:bg-gray-900 rounded-xl shadow p-5"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{item.icon}</span>
+              <span className="font-semibold text-lg">{item.title}</span>
+            </div>
+            <ul>
+              {item.data.map((d) => (
+                <li
+                  key={d.label}
+                  className="flex justify-between py-1 text-gray-700 dark:text-gray-200"
+                >
+                  <span>{d.label}</span>
+                  <span className="font-semibold">
+                    {d.value.toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   );
