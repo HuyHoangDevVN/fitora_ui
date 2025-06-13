@@ -13,10 +13,17 @@ import {
 } from "antd";
 import axios from "axios";
 import _ from "lodash";
-import React, { useCallback, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
 import { FaMapMarkerAlt, FaTimes, FaUserTag } from "react-icons/fa";
 import clsx from "clsx";
+import { debounce } from "lodash";
 
 const { TextArea } = Input;
 
@@ -38,7 +45,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [mediaUrl, setMediaUrl] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
-  const [keySearch, setKeySearch] = useState<string>("");
   const [categoriesForPost, setCategoriesForPost] = useState<any[]>([]);
   const [chosenCategory, setChosenCategory] = useState<any>(null);
 
@@ -46,10 +52,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const showCategoryModal = useCallback(() => {
     setIsCategoryModalOpen(true);
-    categoryApi.fetchCategories(keySearch).then((categories) => {
+    categoryApi.fetchCategories("").then((categories) => {
       setCategoriesForPost(categories);
     });
-  }, [keySearch]);
+  }, []);
 
   const handleCategoryModalCancel = useCallback(() => {
     setIsCategoryModalOpen(false);
@@ -224,6 +230,39 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       description: "",
       color: "#1677ff",
     });
+    const [keySearch, setKeySearch] = useState<string>("");
+    const [searchResults, setSearchResults] = useState(categories);
+
+    // Debounce search để tránh call API liên tục
+    const debouncedSearch = useMemo(
+      () =>
+        debounce(async (searchTerm: string) => {
+          if (searchTerm.trim()) {
+            try {
+              const results = await categoryApi.fetchCategories(searchTerm);
+              setSearchResults(results);
+            } catch (error) {
+              console.error("Search failed:", error);
+            }
+          } else {
+            setSearchResults(categories);
+          }
+        }, 300),
+      [categories]
+    );
+
+    // Trigger search khi keySearch thay đổi
+    useEffect(() => {
+      debouncedSearch(keySearch);
+    }, [keySearch, debouncedSearch]);
+
+    // Reset khi modal đóng/mở
+    useEffect(() => {
+      if (open) {
+        setSearchResults(categories);
+        setKeySearch("");
+      }
+    }, [open, categories]);
 
     const handleSelectCategory = (id: string) => setSelectedCategory(id);
 
@@ -231,7 +270,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       if (selectedCategory === "new") {
         setStep(2);
       } else {
-        const cat = categories.find((c) => c.id === selectedCategory);
+        const cat = searchResults.find((c) => c.id === selectedCategory);
         if (cat) onOk(cat);
       }
     };
@@ -254,6 +293,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         onCancel={() => {
           setStep(1);
           setSelectedCategory(null);
+          setKeySearch("");
           onCancel();
         }}
         footer={null}
@@ -268,22 +308,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 onChange={(e) => setKeySearch(e.target.value)}
                 className="mb-2"
                 allowClear
-                onPressEnter={(e) => {
-                  const value = (e.target as HTMLInputElement).value;
-                  categoryApi.fetchCategories(value).then((categories) => {
-                    setCategoriesForPost(categories);
-                  });
-                }}
-                onBlur={() => {
-                  categoryApi.fetchCategories(keySearch).then((categories) => {
-                    setCategoriesForPost(categories);
-                  });
-                }}
               />
-              {categories?.length === 0 ? (
+              {searchResults?.length === 0 ? (
                 <div className="text-gray-400 italic">Không có chủ đề nào.</div>
               ) : (
-                categories.map((cat) => (
+                searchResults.map((cat) => (
                   <button
                     key={cat.id}
                     className={clsx(
