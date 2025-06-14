@@ -1,7 +1,16 @@
 import { useSignalR } from "@/context/SignalRContext";
 import { User } from "@/types/user";
 import { Avatar, Button, Input } from "antd";
-import { useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  lazy,
+  Suspense,
+  useCallback,
+  memo,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { chatApi } from "@/api/chatApi";
@@ -21,7 +30,63 @@ const AiOutlinePaperClip = lazy(() =>
   }))
 );
 
-const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
+// Types
+type ChatProps = {
+  conversationId: string;
+  receiver: User;
+  setOpenChat: (value: any) => void;
+};
+
+// Memoized file preview component
+const FilePreview = memo(({ url }: { url: string }) => {
+  const isImage = /\.(jpeg|webp|jpg|png|gif)$/i.test(url);
+  const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+
+  if (isImage) {
+    return (
+      <div className="relative bg-gray-100 rounded-lg overflow-hidden max-w-xs">
+        <img
+          src={url}
+          alt="Preview"
+          className="w-full object-contain rounded-lg"
+          style={{ maxHeight: "220px" }}
+          loading="lazy"
+        />
+      </div>
+    );
+  } else if (isVideo) {
+    return (
+      <div className="relative bg-gray-100 rounded-lg overflow-hidden max-w-xs">
+        <video
+          src={url}
+          controls
+          className="w-full rounded-lg"
+          style={{ maxHeight: "220px" }}
+        />
+      </div>
+    );
+  } else {
+    return (
+      <div className="p-2 border border-gray-200 rounded-lg bg-white flex items-center gap-2 max-w-xs">
+        <Suspense fallback={<div>Loading...</div>}>
+          <AiOutlinePaperClip />
+        </Suspense>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline break-all text-xs"
+        >
+          {url}
+        </a>
+      </div>
+    );
+  }
+});
+
+FilePreview.displayName = "FilePreview";
+
+const Chat = memo(({ conversationId, receiver, setOpenChat }: ChatProps) => {
   const {
     joinConversation,
     sendMessage,
@@ -29,12 +94,14 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
     addMessagesToConversation,
     connectionState,
   } = useSignalR();
+
   const [messageContent, setMessageContent] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [hasFetchedHistory, setHasFetchedHistory] = useState<
     Record<string, boolean>
   >({});
+
   const userId = localStorage.getItem("x-client-id");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -44,6 +111,83 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
     [messages, conversationId]
   );
 
+  // Memoized callbacks for better performance
+  const handleSendMessage = useCallback(
+    async (content?: string, type: string = "text") => {
+      const msgContent = content !== undefined ? content : messageContent;
+      if (!msgContent.trim()) return;
+      if (connectionState !== "Đã kết nối") {
+        window.alert(
+          "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng. Vui lòng thử lại sau."
+        );
+        return;
+      }
+
+      try {
+        await sendMessage(conversationId, msgContent, type);
+      } catch (error) {
+        window.alert(
+          "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng hoặc có lỗi mạng."
+        );
+        console.error("Error sending message:", error);
+      }
+      if (type === "text") setMessageContent("");
+    },
+    [messageContent, connectionState, sendMessage, conversationId]
+  );
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const uploadResponse = await axios.post(
+            `${API_URL}/interact/upload/file`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+          if (uploadResponse.data?.url) {
+            await handleSendMessage(uploadResponse.data.url, "file");
+          } else {
+            throw new Error("Lỗi khi tải file!");
+          }
+        } catch (error) {
+          console.error("Lỗi khi tải file:", error);
+        } finally {
+          setUploading(false);
+        }
+      }
+    },
+    [handleSendMessage]
+  );
+
+  const handleNavigateToProfile = useCallback(() => {
+    navigate(`/profile/${receiver?.id}`, {
+      state: { isWatching: true },
+    });
+    setShowDropdown(false);
+  }, [navigate, receiver?.id]);
+
+  const handleCloseChat = useCallback(() => {
+    setOpenChat(null);
+  }, [setOpenChat]);
+
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    },
+    [handleSendMessage]
+  );
+
+  // Effects
   useEffect(() => {
     joinConversation(conversationId);
     if (!hasFetchedHistory[conversationId]) {
@@ -54,7 +198,12 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
         setHasFetchedHistory((prev) => ({ ...prev, [conversationId]: true }));
       });
     }
-  }, [conversationId, joinConversation, addMessagesToConversation]);
+  }, [
+    conversationId,
+    joinConversation,
+    addMessagesToConversation,
+    hasFetchedHistory,
+  ]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -62,97 +211,22 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
     }
   }, [chatHistory]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      try {
-        const uploadResponse = await axios.post(
-          `${API_URL}/interact/upload/file`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        if (uploadResponse.data?.url) {
-          await handleSendMessage(uploadResponse.data.url, "file");
-        } else {
-          throw new Error("Lỗi khi tải file!");
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải file:", error);
-      } finally {
-        setUploading(false);
-      }
-    }
-  };
-
-  const handleSendMessage = async (content?: string, type: string = "text") => {
-    const msgContent = content !== undefined ? content : messageContent;
-    if (!msgContent.trim()) return;
-    if (connectionState !== "Connected") {
-      window.alert(
-        "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng. Vui lòng thử lại sau."
-      );
-      return;
-    }
-    try {
-      await sendMessage(conversationId, msgContent, type);
-    } catch (error) {
-      window.alert(
-        "Không thể gửi tin nhắn: Kết nối chưa sẵn sàng hoặc có lỗi mạng."
-      );
-      console.error("Error sending message:", error);
-    }
-    if (type === "text") setMessageContent("");
-  };
-
-  const renderFilePreview = (url: string) => {
-    const isImage = /\.(jpeg|webp|jpg|png|gif)$/i.test(url);
-    const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
-    if (isImage) {
-      return (
-        <div className="relative bg-gray-100 rounded-lg overflow-hidden max-w-xs">
-          <img
-            src={url}
-            alt="Preview"
-            className="w-full object-contain rounded-lg"
-            style={{ maxHeight: "220px" }}
-            loading="lazy"
-          />
-        </div>
-      );
-    } else if (isVideo) {
-      return (
-        <div className="relative bg-gray-100 rounded-lg overflow-hidden max-w-xs">
-          <video
-            src={url}
-            controls
-            className="w-full rounded-lg"
-            style={{ maxHeight: "220px" }}
-          />
-        </div>
-      );
-    } else {
-      return (
-        <div className="p-2 border border-gray-200 rounded-lg bg-white flex items-center gap-2 max-w-xs">
-          <Suspense fallback={<div>Loading...</div>}>
-            <AiOutlinePaperClip />
-          </Suspense>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 underline break-all text-xs"
-          >
-            {url}
-          </a>
-        </div>
-      );
-    }
-  };
+  // Memoized dropdown menu
+  const dropdownMenu = useMemo(
+    () => (
+      <div className="bg-white border rounded shadow-lg">
+        <Button
+          type="text"
+          block
+          className="text-left px-4 py-2"
+          onClick={handleNavigateToProfile}
+        >
+          Xem trang cá nhân
+        </Button>
+      </div>
+    ),
+    [handleNavigateToProfile]
+  );
 
   return (
     <div className="p-5 font-sans max-w-xl mx-auto">
@@ -172,23 +246,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
               open={showDropdown}
               onOpenChange={setShowDropdown}
               trigger={["click"]}
-              overlay={
-                <div className="bg-white border rounded shadow-lg">
-                  <Button
-                    type="text"
-                    block
-                    className="text-left px-4 py-2"
-                    onClick={() => {
-                      navigate(`/profile/${receiver?.id}`, {
-                        state: { isWatching: true },
-                      });
-                      setShowDropdown(false);
-                    }}
-                  >
-                    Xem trang cá nhân
-                  </Button>
-                </div>
-              }
+              overlay={dropdownMenu}
               placement="bottom"
             >
               <Button type="text" shape="circle">
@@ -201,19 +259,20 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
         </div>
         <button
           className="text-gray-400 hover:text-red-500 text-lg font-bold py-1 rounded transition-colors"
-          onClick={() => setOpenChat(null)}
+          onClick={handleCloseChat}
           title="Đóng hội thoại"
         >
           ×
         </button>
       </div>
+
       <div className="border border-gray-300 rounded-lg p-3 h-96 overflow-y-scroll bg-white relative flex flex-col">
         {chatHistory?.map((msg, index) => {
           const isMe = msg.senderId === userId;
           const isFile = msg.type === "file";
           return (
             <div
-              key={index}
+              key={`${msg.id}-${index}`}
               className={`flex items-end gap-2 mb-2 ${
                 isMe ? "justify-end" : "justify-start"
               }`}
@@ -238,7 +297,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
                   </span>
                 )}
                 <span className="break-words whitespace-pre-line">
-                  {isFile ? renderFilePreview(msg.content) : msg.content}
+                  {isFile ? <FilePreview url={msg.content} /> : msg.content}
                 </span>
               </div>
             </div>
@@ -246,6 +305,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
         })}
         <div ref={chatEndRef} />
       </div>
+
       <div className="mt-3 flex items-center gap-2">
         <Input.TextArea
           value={messageContent}
@@ -253,12 +313,7 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
           placeholder="Nhập tin nhắn..."
           autoSize={{ minRows: 1, maxRows: 6 }}
           className="flex-1 px-4 py-2 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white resize-none"
-          onPressEnter={(e) => {
-            if (!e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
+          onPressEnter={handleKeyPress}
         />
         <input
           type="file"
@@ -273,18 +328,19 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
             onClick={() => document.getElementById("chat-file-upload")?.click()}
             loading={uploading}
           />
-        </Suspense>
+        </Suspense>{" "}
         <Button
           type="primary"
           shape="round"
           onClick={() => handleSendMessage()}
           className="px-6 py-2 font-semibold shadow"
           loading={uploading}
-          disabled={connectionState !== "Connected"}
+          disabled={connectionState !== "Đã kết nối"}
         >
           Gửi
         </Button>
       </div>
+
       <style>{`
         @keyframes pop-bubble {
           0% { transform: scale(0.7) translate(-50%, -50%); opacity: 0; }
@@ -304,12 +360,8 @@ const Chat = ({ conversationId, receiver, setOpenChat }: ChatProps) => {
       `}</style>
     </div>
   );
-};
+});
 
-type ChatProps = {
-  conversationId: string;
-  receiver: User;
-  setOpenChat: any;
-};
+Chat.displayName = "Chat";
 
 export default Chat;
