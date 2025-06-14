@@ -305,12 +305,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
           postPayload
         );
 
-        if (response.data?.isSuccess) {
+        if (response?.isSuccess) {
           message.success("Đăng bài thành công!");
           handlePostModalCancel();
-          onPostCreated?.(response.data.data);
+          onPostCreated?.(response.data);
         } else {
-          throw new Error(response.data?.message || "Đăng bài thất bại");
+          throw new Error(response?.message || "Đăng bài thất bại");
         }
       } catch (error) {
         console.error("Post creation failed:", error);
