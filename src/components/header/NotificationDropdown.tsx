@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Link } from "react-router";
@@ -32,7 +32,55 @@ interface Invite {
   status: number;
 }
 
-export default function NotificationDropdown() {
+// Memoized invite item component
+const InviteItem = memo(
+  ({
+    item,
+    onAccept,
+    onDeny,
+  }: {
+    item: Invite;
+    onAccept: (id: string) => void;
+    onDeny: (id: string) => void;
+  }) => (
+    <li
+      key={item.id}
+      className="flex flex-col gap-1 p-2 mb-2 rounded-lg border border-gray-100 custom-dark:border-gray-800 bg-gray-50 custom-dark:bg-gray-900"
+    >
+      <div className="flex items-center gap-2">
+        <Avatar src={item.groupImageUrl} size={32} className="mr-2" />
+        <div>
+          <Typography.Text strong>{item.groupName}</Typography.Text>
+          <div className="text-xs text-gray-500">
+            Gửi bởi: {item.senderName}
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-1">
+        <Button
+          size="small"
+          type="link"
+          className="text-blue-500 p-0"
+          onClick={() => onAccept(item.id)}
+        >
+          Chấp nhận
+        </Button>
+        <Button
+          size="small"
+          type="link"
+          className="text-red-500 p-0"
+          onClick={() => onDeny(item.id)}
+        >
+          Từ chối
+        </Button>
+      </div>
+    </li>
+  )
+);
+
+InviteItem.displayName = "InviteItem";
+
+const NotificationDropdown = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount } = useSignalR();
 
@@ -55,7 +103,7 @@ export default function NotificationDropdown() {
     }
   }, [isOpen]);
 
-  const handleAccept = async (id) => {
+  const handleAccept = useCallback(async (id: string) => {
     try {
       await groupApi.acceptGroupInvite({ Id: id });
       message.success("Đã chấp nhận lời mời.");
@@ -63,9 +111,9 @@ export default function NotificationDropdown() {
     } catch {
       message.error("Không thể chấp nhận lời mời.");
     }
-  };
+  }, []);
 
-  const handleDeny = async (id) => {
+  const handleDeny = useCallback(async (id: string) => {
     try {
       await groupApi.deleteGroupInvite({ Id: id });
       message.success("Đã từ chối lời mời.");
@@ -73,7 +121,20 @@ export default function NotificationDropdown() {
     } catch {
       message.error("Không thể từ chối lời mời.");
     }
-  };
+  }, []);
+
+  // Memoize expensive computations
+  const hasNotifications = useMemo(() => {
+    return notifications.length > 0 || invites.length > 0;
+  }, [notifications.length, invites.length]);
+
+  const toggleDropdown = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    setIsOpen(false);
+  }, []);
 
   // Mark all as read when dropdown opens
   useEffect(() => {
@@ -87,14 +148,6 @@ export default function NotificationDropdown() {
       // Hiện tại chỉ rely vào SignalR event
     }
   }, [isOpen, unreadCount]);
-
-  function toggleDropdown() {
-    setIsOpen((prev) => !prev);
-  }
-
-  function closeDropdown() {
-    setIsOpen(false);
-  }
 
   return (
     <div className="relative">
@@ -147,44 +200,12 @@ export default function NotificationDropdown() {
               </div>
               <ul className="mb-2">
                 {invites.map((item) => (
-                  <li
+                  <InviteItem
                     key={item.id}
-                    className="flex flex-col gap-1 p-2 mb-2 rounded-lg border border-gray-100 custom-dark:border-gray-800 bg-gray-50 custom-dark:bg-gray-900"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar
-                        src={item.groupImageUrl}
-                        size={32}
-                        className="mr-2"
-                      />
-                      <div>
-                        <Typography.Text strong>
-                          {item.groupName}
-                        </Typography.Text>
-                        <div className="text-xs text-gray-500">
-                          Gửi bởi: {item.senderName}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-1">
-                      <Button
-                        size="small"
-                        type="link"
-                        className="text-blue-500 p-0"
-                        onClick={() => handleAccept(item.id)}
-                      >
-                        Chấp nhận
-                      </Button>
-                      <Button
-                        size="small"
-                        type="link"
-                        className="text-red-500 p-0"
-                        onClick={() => handleDeny(item.id)}
-                      >
-                        Từ chối
-                      </Button>
-                    </div>
-                  </li>
+                    item={item}
+                    onAccept={handleAccept}
+                    onDeny={handleDeny}
+                  />
                 ))}
               </ul>
             </>
@@ -192,7 +213,7 @@ export default function NotificationDropdown() {
         </div>
         {/* Notifications Section */}
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {notifications.length === 0 && invites.length === 0 && (
+          {!hasNotifications && (
             <li className="text-center text-gray-400 py-8">
               Không có thông báo nào
             </li>
@@ -247,4 +268,8 @@ export default function NotificationDropdown() {
       </Dropdown>
     </div>
   );
-}
+});
+
+NotificationDropdown.displayName = "NotificationDropdown";
+
+export default NotificationDropdown;

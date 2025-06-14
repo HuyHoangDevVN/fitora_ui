@@ -32,6 +32,9 @@ interface Notification {
   content: string;
   isRead?: boolean;
   createdAt?: string;
+  avatarUrl?: string;
+  senderName?: string;
+  channel?: string;
 }
 
 interface SignalRContextType {
