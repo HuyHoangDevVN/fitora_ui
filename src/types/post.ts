@@ -19,6 +19,7 @@ export interface Post {
   groupId: string | null;
   categoryId: string | null;
   categoryName: string | null;
+  categoryColor: string | null;
   content: string;
   mediaUrl: string;
   votesCount: number;

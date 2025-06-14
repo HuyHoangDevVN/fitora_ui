@@ -572,7 +572,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
           ? `⭐ ${post?.categoryName}`
           : post?.categoryName
       }
-      color={randomRibbonColor}
+      color={post?.categoryColor ?? randomRibbonColor}
       placement="end"
       className="absolute top-[-5px]"
     >
