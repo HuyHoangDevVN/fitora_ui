@@ -5,7 +5,7 @@ import { Avatar, Button, Input, message, Modal, Select, Spin } from "antd";
 import axios from "axios";
 import React, { useCallback, useRef, useState, memo } from "react";
 import { AiOutlineFileImage, AiOutlineSmile } from "react-icons/ai";
-import { FaTimes, FaUserTag, FaMapMarkerAlt } from "react-icons/fa";
+import { FaTimes, FaUserTag, FaMapMarkerAlt, FaTag } from "react-icons/fa";
 
 // Constants
 const { TextArea } = Input;
@@ -407,7 +407,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
           closable={false}
           styles={{ body: { padding: 0 } }}
         >
-          <div className="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-gray-50">
             <h2 className="text-lg font-bold">Tạo bài viết</h2>
             <button
               onClick={handlePostModalCancel}
@@ -475,7 +475,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
               </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between px-2 py-2 border rounded-lg bg-gray-50">
+            <div className="mt-4 flex items-center justify-between px-2 py-2 border border-gray-200 rounded-lg bg-gray-50">
               <span className="text-gray-500 text-sm">
                 Thêm vào bài viết của bạn
               </span>
@@ -498,7 +498,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
                   className="text-xl text-blue-500 hover:text-blue-600"
                   onClick={showCategoryModal}
                 >
-                  <FaUserTag />
+                  <FaTag />
                 </button>
                 <button className="text-xl text-yellow-500 hover:text-yellow-600">
                   <AiOutlineSmile />
@@ -509,7 +509,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = memo(
               </div>
             </div>
           </div>
-          <div className="px-4 py-3 border-t bg-gray-50">
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
             {" "}
             <Button
               type="primary"
