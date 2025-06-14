@@ -70,6 +70,7 @@ const CategoryManagement = () => {
     }, 400);
     debouncedFetch();
     return () => debouncedFetch.cancel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, pagination.current, pagination.pageSize]);
 
   const handleTableChange = (pag) => {
@@ -103,7 +104,6 @@ const CategoryManagement = () => {
       .finally(() => setLoading(false));
     searchInputRef.current?.blur();
   };
-
   const columns = [
     {
       title: "STT",
@@ -127,16 +127,32 @@ const CategoryManagement = () => {
       title: "Mô tả",
       dataIndex: "description",
       key: "description",
-      width: 300,
+      width: 250,
       ellipsis: true,
       render: (text: string) =>
         text || <span className="text-gray-400">(Không có)</span>,
     },
     {
+      title: "Màu sắc",
+      dataIndex: "color",
+      key: "color",
+      width: 100,
+      align: "center" as const,
+      render: (color: string) => (
+        <div className="flex items-center justify-center gap-2">
+          <div
+            className="w-6 h-6 rounded border border-gray-300"
+            style={{ backgroundColor: color || "#cccccc" }}
+          />
+          <span className="text-xs font-mono">{color || "N/A"}</span>
+        </div>
+      ),
+    },
+    {
       title: "Slug",
       dataIndex: "slug",
       key: "slug",
-      width: 200,
+      width: 180,
       ellipsis: true,
       render: (text: string) => <span className="text-gray-500">{text}</span>,
     },

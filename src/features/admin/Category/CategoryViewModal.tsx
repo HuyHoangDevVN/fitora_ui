@@ -1,5 +1,5 @@
 import { adminApi } from "@/api/adminApi";
-import { Descriptions, Modal, Spin, notification } from "antd";
+import { Descriptions, Modal, Spin } from "antd";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -11,13 +11,16 @@ interface Props {
 const CategoryViewModal = ({ open, onClose, categoryId }: Props) => {
   const [category, setCategory] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     if (open && categoryId) {
       setLoading(true);
       adminApi
         .getCateory(categoryId)
-        .then((res) => setCategory(res))
+        .then((res) => {
+          // Handle both res.data and direct res structure
+          const categoryData = res?.data || res;
+          setCategory(categoryData);
+        })
         .catch(() => {
           // notification.error({ message: "Không thể tải thông tin nhóm!" });
           console.error({ message: "Không thể tải thông tin nhóm!" });
@@ -33,7 +36,7 @@ const CategoryViewModal = ({ open, onClose, categoryId }: Props) => {
   return (
     <Modal
       open={open}
-      title="Chi tiết nhóm"
+      title="Chi tiết chủ đề"
       onCancel={onClose}
       footer={null}
       destroyOnClose
@@ -41,7 +44,7 @@ const CategoryViewModal = ({ open, onClose, categoryId }: Props) => {
       <Spin spinning={loading}>
         {category ? (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="Tên nhóm">
+            <Descriptions.Item label="Tên chủ đề">
               {category.name}
             </Descriptions.Item>
             <Descriptions.Item label="Mô tả">
@@ -49,14 +52,40 @@ const CategoryViewModal = ({ open, onClose, categoryId }: Props) => {
                 <span className="text-gray-400">(Không có)</span>
               )}
             </Descriptions.Item>
+            <Descriptions.Item label="Màu sắc">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded border border-gray-300"
+                  style={{ backgroundColor: category.color || "#cccccc" }}
+                />
+                <span className="font-mono text-sm">
+                  {category.color || "#cccccc"}
+                </span>
+              </div>
+            </Descriptions.Item>
+            <Descriptions.Item label="Slug">
+              {category.slug || (
+                <span className="text-gray-400">(Không có)</span>
+              )}
+            </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               <span
                 className={
-                  category.isActive ? "text-green-600" : "text-red-500"
+                  !category.isDeleted ? "text-green-600" : "text-red-500"
                 }
               >
-                {category.isActive ? "Hoạt động" : "Đã khóa"}
+                {!category.isDeleted ? "Hoạt động" : "Đã xóa"}
               </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {category.createdAt
+                ? new Date(category.createdAt).toLocaleString("vi-VN")
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Cập nhật lần cuối">
+              {category.lastModified
+                ? new Date(category.lastModified).toLocaleString("vi-VN")
+                : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="ID">{category.id}</Descriptions.Item>
           </Descriptions>
