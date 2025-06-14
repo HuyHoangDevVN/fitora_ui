@@ -192,7 +192,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
   const handleEditOk = useCallback(async () => {
     setLoading(true);
     try {
-      await interactRepository.put(`/post/update-post/${post?.id}`, {
+      await interactRepository.put(`/post/update/${post?.id}`, {
         content: editContent,
         mediaUrl: mediaUrl,
         privacy: editPrivacy,
@@ -282,7 +282,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
       onOk: async () => {
         setLoading(true);
         try {
-          await interactRepository.delete(`/post/delete-post/${post?.id}`);
+          await interactRepository.delete(`/post/delete/${post?.id}`);
           message.success("Xóa bài viết thành công");
         } catch (_error) {
           console.error("Error deleting post:", _error);

@@ -210,7 +210,7 @@ const GroupDetailPage: React.FC = () => {
         categoryId: selectedCategory,
       };
 
-      const response = await interactRepository.post("/post/create-post", data);
+      const response = await interactRepository.post("/post/create", data);
       if (response?.isSuccess) {
         message.success("Đăng bài thành công!");
         setPosts([response.data, ...posts]);
