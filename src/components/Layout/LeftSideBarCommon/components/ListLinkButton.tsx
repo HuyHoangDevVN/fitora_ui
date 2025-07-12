@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { MenuItem } from "../interfaces";
 import LinkButton from "./LinkButton";
 import { Button, Flex } from "antd";
@@ -10,50 +10,58 @@ type ListLinkButtonProps = {
   hasMore?: boolean;
 };
 
-const ListLinkButton = ({
-  listItems,
-  onLoadMore,
-  hasMore,
-}: ListLinkButtonProps) => {
-  const [showAll, setShowAll] = useState(false);
+const ListLinkButton = memo(
+  ({ listItems, onLoadMore, hasMore }: ListLinkButtonProps) => {
+    const [showAll, setShowAll] = useState(false);
 
-  const itemsToShow = showAll ? listItems : listItems.slice(0, 6);
+    const itemsToShow = useMemo(
+      () => (showAll ? listItems : listItems.slice(0, 6)),
+      [showAll, listItems]
+    );
 
-  const handleLoadMore = () => {
-    if (onLoadMore) {
-      onLoadMore();
-    }
-    setShowAll(true);
-  };
+    const handleLoadMore = useCallback(() => {
+      if (onLoadMore) {
+        onLoadMore();
+      }
+      setShowAll(true);
+    }, [onLoadMore]);
 
-  return (
-    <div>
-      <ul className="space-y-5">
-        {itemsToShow?.map((item, index) => (
-          <li key={index}>
-            <LinkButton
-              icon={item.icon}
-              link={item?.link ?? ""}
-              title={item.title}
-            />
-          </li>
-        ))}
-      </ul>
+    const shouldShowMoreButton = useMemo(
+      () => listItems.length > 6 && hasMore,
+      [listItems.length, hasMore]
+    );
 
-      {listItems.length > 6 && hasMore && (
-        <Flex flex={"row"} className="mt-4">
-          <Button
-            onClick={handleLoadMore}
-            type="text"
-            icon={showAll ? <FaCircleChevronUp /> : <FaCircleChevronDown />}
-            className="text-primary bg-white font-medium w-full"
-          >
-            {showAll ? "Thu gọn" : "Xem thêm"}
-          </Button>
-        </Flex>
-      )}
-    </div>
-  );
-};
+    return (
+      <div>
+        <ul className="space-y-5">
+          {itemsToShow?.map((item, index) => (
+            <li key={item.link || index}>
+              <LinkButton
+                icon={item.icon}
+                link={item?.link ?? ""}
+                title={item.title}
+              />
+            </li>
+          ))}
+        </ul>
+
+        {shouldShowMoreButton && (
+          <Flex flex={"row"} className="mt-4">
+            <Button
+              onClick={handleLoadMore}
+              type="text"
+              icon={showAll ? <FaCircleChevronUp /> : <FaCircleChevronDown />}
+              className="text-primary bg-white font-medium w-full"
+            >
+              {showAll ? "Thu gọn" : "Xem thêm"}
+            </Button>
+          </Flex>
+        )}
+      </div>
+    );
+  }
+);
+
+ListLinkButton.displayName = "ListLinkButton";
 
 export default ListLinkButton;

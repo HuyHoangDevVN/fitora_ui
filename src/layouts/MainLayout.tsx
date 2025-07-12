@@ -5,6 +5,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 
 const Layout: React.FC = () => {
+  console.log("Layout component rendered");
   return (
     <div className="min-h-screen container mx-auto px-4">
       <Header />
