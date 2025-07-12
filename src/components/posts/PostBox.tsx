@@ -150,12 +150,43 @@ const useFileUpload = (initialMediaUrl?: string) => {
 };
 
 const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+
+  // Memoized values
   const randomRibbonColor = useMemo(
     () => RIBBON_COLORS[Math.floor(Math.random() * RIBBON_COLORS.length)],
     []
   );
-  const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+
+  const avatarSrc = useMemo(
+    () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
+    [post?.user?.profilePictureUrl]
+  );
+
+  const isMe = useMemo(
+    () => post?.user?.id === localStorage.getItem("x-client-id"),
+    [post?.user?.id]
+  );
+
+  const shouldShowRibbon = useMemo(
+    () => Boolean(post?.categoryName?.trim()),
+    [post?.categoryName]
+  );
+
+  const ribbonText = useMemo(() => {
+    if (!post?.categoryName) return "";
+    return post?.isCategoryFollowed
+      ? `⭐ ${post?.categoryName}`
+      : post?.categoryName;
+  }, [post?.categoryName, post?.isCategoryFollowed]);
+
+  const ribbonColor = useMemo(
+    () => post?.categoryColor ?? randomRibbonColor,
+    [post?.categoryColor, randomRibbonColor]
+  );
+
+  // State
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editContent, setEditContent] = useState(post?.content || "");
   const [editPrivacy, setEditPrivacy] = useState<PrivacyPost>(
@@ -169,6 +200,8 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
   const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<TargetType | null>(null);
+
+  // Refs
   const commentBtnRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -176,19 +209,12 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
   const { uploading, previewUrl, mediaUrl, uploadFile, clearFile } =
     useFileUpload(post?.mediaUrl);
 
-  const avatarSrc = useMemo(
-    () => post?.user?.profilePictureUrl || DEFAULT_AVATAR,
-    [post?.user?.profilePictureUrl]
-  );
-  const isMe = useMemo(
-    () => post?.user?.id === localStorage.getItem("x-client-id"),
-    [post?.user?.id]
-  );
-
+  // Memoized callbacks
   const toggleEditModal = useCallback(
     (visible: boolean) => setIsEditModalVisible(visible),
     []
   );
+
   const handleEditOk = useCallback(async () => {
     setLoading(true);
     try {
@@ -216,6 +242,84 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
     },
     [uploadFile]
   );
+
+  const handleDelete = useCallback(() => {
+    Modal.confirm({
+      title: "Xóa bài viết",
+      content: "Bạn có chắc muốn xóa bài viết này?",
+      okText: "Xóa",
+      cancelText: "Hủy",
+      onOk: async () => {
+        setLoading(true);
+        try {
+          await interactRepository.delete(`/post/delete/${post?.id}`);
+          message.success("Xóa bài viết thành công");
+        } catch (_error) {
+          console.error("Error deleting post:", _error);
+          message.error("Xóa bài viết thất bại");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  }, [post?.id]);
+
+  const handleFollowCategory = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await categoryApi.followCategory(post?.categoryId ?? "");
+      if (response?.isSuccess) {
+        message.success("Đã theo dõi danh mục!");
+      } else {
+        message.error(response?.message || "Không thể theo dõi danh mục.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post?.categoryId]);
+
+  const handleSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.savePost({
+        userId: localStorage.getItem("x-client-id") || "",
+        postId: post?.id,
+      });
+      if (response?.isSuccess) {
+        message.success("Đã lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post?.id]);
+
+  const handleUnSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await postApi.unSavePost(post?.id);
+      if (response?.isSuccess) {
+        message.success("Đã bỏ lưu bài viết!");
+      } else {
+        message.error(response?.message || "Không thể bỏ lưu bài viết.");
+      }
+    } catch (_error) {
+      message.error("Lỗi hệ thống, vui lòng thử lại!");
+    } finally {
+      setLoading(false);
+    }
+  }, [post?.id]);
+
+  const handleNavigateToProfile = useCallback(() => {
+    navigate(`/profile/${post?.user?.id}`, {
+      state: { isWatching: true },
+    });
+  }, [navigate, post?.user?.id]);
 
   // Render preview for edit modal
   const renderPreview = () => {
@@ -273,26 +377,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
     );
   };
 
-  const handleDelete = useCallback(() => {
-    Modal.confirm({
-      title: "Xóa bài viết",
-      content: "Bạn có chắc muốn xóa bài viết này?",
-      okText: "Xóa",
-      cancelText: "Hủy",
-      onOk: async () => {
-        setLoading(true);
-        try {
-          await interactRepository.delete(`/post/delete/${post?.id}`);
-          message.success("Xóa bài viết thành công");
-        } catch (_error) {
-          console.error("Error deleting post:", _error);
-          message.error("Xóa bài viết thất bại");
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-  }, [post?.id]);
+  // Memoized menu items
   const menuItems = useMemo(
     () =>
       [
@@ -309,57 +394,6 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
       ].filter(Boolean) as { key: string; label: string }[],
     [isMe, isSaved, post?.isCategoryFollowed]
   );
-
-  const handleFollowCategory = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await categoryApi.followCategory(post?.categoryId ?? "");
-      if (response?.isSuccess) {
-        message.success("Đã theo dõi danh mục!");
-      } else {
-        message.error(response?.message || "Không thể theo dõi danh mục.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post?.categoryId]);
-
-  const handleSave = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await postApi.savePost({
-        userId: localStorage.getItem("x-client-id") || "",
-        postId: post?.id,
-      });
-      if (response?.isSuccess) {
-        message.success("Đã lưu bài viết!");
-      } else {
-        message.error(response?.message || "Không thể lưu bài viết.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post]);
-
-  const handleUnSave = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await postApi.unSavePost(post?.id);
-      if (response?.isSuccess) {
-        message.success("Đã bỏ lưu bài viết!");
-      } else {
-        message.error(response?.message || "Không thể bỏ lưu bài viết.");
-      }
-    } catch (_error) {
-      message.error("Lỗi hệ thống, vui lòng thử lại!");
-    } finally {
-      setLoading(false);
-    }
-  }, [post]);
 
   const handleMenuClick = useCallback(
     ({ key }: { key: string }) => {
@@ -492,6 +526,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
     [mediaLoading]
   );
 
+  // Memoized privacy icon
   const renderIconPrivacy = useMemo(() => {
     switch (post?.privacy) {
       case PrivacyPost.Public:
@@ -565,17 +600,9 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
     [dispatch, post?.id, post?.userVoteType, post?.votesCount]
   );
 
-  return (
-    <Badge.Ribbon
-      text={
-        post?.isCategoryFollowed
-          ? `⭐ ${post?.categoryName}`
-          : post?.categoryName
-      }
-      color={post?.categoryColor ?? randomRibbonColor}
-      placement="end"
-      className="absolute top-[-5px]"
-    >
+  // Create the main content component
+  const PostContent = () => (
+    <>
       <div className="post-box mb-3 border border-gray-200 rounded-lg p-3 min-w-[500px] bg-white shadow-sm">
         <div className="post-header flex justify-between items-center">
           <div className="post-info flex items-center gap-2">
@@ -584,11 +611,7 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
               <div className="flex items-center gap-1">
                 <h2
                   className="flex items-center category-name text-sm font-semibold cursor-pointer"
-                  onClick={() =>
-                    navigate(`/profile/${post?.user?.id}`, {
-                      state: { isWatching: true },
-                    })
-                  }
+                  onClick={handleNavigateToProfile}
                 >
                   {post?.user?.username}
                 </h2>
@@ -603,28 +626,14 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
             </div>
           </div>
           <Space>
-            {/* {!isFollowing && !isMe && (
-              <Button
-                className="follow-btn bg-primary rounded-2xl hover:bg-primary"
-                icon={<PlusOutlined />}
-                type="primary"
-                size="small"
-                onClick={handleFollow}
-              >
-                Theo dõi
-              </Button>
-            )} */}
-
-            {
-              <Dropdown
-                menu={{ items: menuItems, onClick: handleMenuClick }}
-                trigger={["click"]}
-              >
-                <span className="flex items-center gap-1 cursor-pointer">
-                  <IoIosMore className="icon-more text-lg" />
-                </span>
-              </Dropdown>
-            }
+            <Dropdown
+              menu={{ items: menuItems, onClick: handleMenuClick }}
+              trigger={["click"]}
+            >
+              <span className="flex items-center gap-1 cursor-pointer">
+                <IoIosMore className="icon-more text-lg" />
+              </span>
+            </Dropdown>
           </Space>
         </div>
         <div className="post-content mt-3">
@@ -683,138 +692,154 @@ const PostBox: React.FC<PostBoxProps> = memo(({ post, isSaved }) => {
           >
             <span className="text-sm font-medium">Share</span>
           </Button>
-        </div>{" "}
-        <Modal
-          open={isEditModalVisible}
-          onCancel={() => toggleEditModal(false)}
-          footer={null}
-          width={600}
-          className="rounded-lg overflow-hidden"
-          closable={false}
-          styles={{ body: { padding: 0 } }}
-        >
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-gray-50">
-            <h2 className="text-lg font-bold">Chỉnh sửa bài viết</h2>
-            <button
-              onClick={() => toggleEditModal(false)}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <FaTimes size={18} />
-            </button>
-          </div>
-
-          <div className="p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <Avatar src={avatarSrc} size={40} />
-              <div className="flex flex-col">
-                {" "}
-                <span className="font-medium text-base">
-                  {`${post?.user?.lastName || ""} ${
-                    post?.user?.firstName || ""
-                  }`.trim() || "Người dùng"}
-                </span>
-                <Select
-                  value={editPrivacy}
-                  onChange={setEditPrivacy}
-                  style={{ width: 130 }}
-                  size="small"
-                  variant="borderless"
-                >
-                  <Select.Option value={PrivacyPost.Public}>
-                    Công khai
-                  </Select.Option>
-                  <Select.Option value={PrivacyPost.FriendsOnly}>
-                    Bạn bè
-                  </Select.Option>
-                  <Select.Option value={PrivacyPost.Private}>
-                    Chỉ mình tôi
-                  </Select.Option>
-                </Select>
-              </div>
-            </div>
-
-            <TextArea
-              className="border-none focus:ring-0 text-lg placeholder:text-gray-400"
-              placeholder="Bạn đang nghĩ gì?"
-              autoSize={{ minRows: 2, maxRows: 6 }}
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-            />
-
-            {renderPreview()}
-
-            <div className="mt-4 flex items-center justify-between px-2 py-2 border border-gray-200 rounded-lg bg-gray-50">
-              <span className="text-gray-500 text-sm">
-                Thêm vào bài viết của bạn
-              </span>
-              <div className="flex items-center gap-3">
-                <button
-                  className="text-xl text-green-500 hover:text-green-600"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                >
-                  <AiOutlineFileImage />
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: "none" }}
-                  onChange={handleFileChange}
-                  accept="image/*,video/*"
-                />
-                <button className="text-xl text-blue-500 hover:text-blue-600">
-                  <FaTag />
-                </button>
-                <button className="text-xl text-yellow-500 hover:text-yellow-600">
-                  <AiOutlineSmile />
-                </button>
-                <button className="text-xl text-pink-500 hover:text-pink-600">
-                  <FaMapMarkerAlt />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <Button
-              type="primary"
-              className="rounded-full w-full"
-              onClick={handleEditOk}
-              disabled={!editContent.trim() || uploading}
-              loading={loading}
-            >
-              {loading ? "Đang cập nhật..." : "Cập nhật"}
-            </Button>
-          </div>
-        </Modal>
-        <Modal
-          title="Bình luận"
-          open={isCommentModalVisible}
-          onCancel={() => setIsCommentModalVisible(false)}
-          footer={null}
-          width={"850px"}
-          className="comment-modal"
-          afterClose={() => {
-            commentBtnRef.current?.focus();
-          }}
-          maskClosable={true}
-          destroyOnClose
-        >
-          <div className="max-h-[70vh] p-4 overflow-y-auto">
-            <PostBox post={post} />
-            <CommentList postId={post?.id} />
-          </div>
-        </Modal>
-        <ReportModal
-          open={isReportModalOpen}
-          onCancel={() => {
-            setIsReportModalOpen(false);
-            setReportTarget(null);
-          }}
-          targetType={reportTarget as TargetType}
-          targetId={reportTarget === TargetType.User ? post.user.id : post.id}
-        />
+        </div>
       </div>
+
+      {/* Modals */}
+      <Modal
+        open={isEditModalVisible}
+        onCancel={() => toggleEditModal(false)}
+        footer={null}
+        width={600}
+        className="rounded-lg overflow-hidden"
+        closable={false}
+        styles={{ body: { padding: 0 } }}
+      >
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-gray-50">
+          <h2 className="text-lg font-bold">Chỉnh sửa bài viết</h2>
+          <button
+            onClick={() => toggleEditModal(false)}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            <FaTimes size={18} />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar src={avatarSrc} size={40} />
+            <div className="flex flex-col">
+              <span className="font-medium text-base">
+                {`${post?.user?.lastName || ""} ${
+                  post?.user?.firstName || ""
+                }`.trim() || "Người dùng"}
+              </span>
+              <Select
+                value={editPrivacy}
+                onChange={setEditPrivacy}
+                style={{ width: 130 }}
+                size="small"
+                variant="borderless"
+              >
+                <Select.Option value={PrivacyPost.Public}>
+                  Công khai
+                </Select.Option>
+                <Select.Option value={PrivacyPost.FriendsOnly}>
+                  Bạn bè
+                </Select.Option>
+                <Select.Option value={PrivacyPost.Private}>
+                  Chỉ mình tôi
+                </Select.Option>
+              </Select>
+            </div>
+          </div>
+
+          <TextArea
+            className="border-none focus:ring-0 text-lg placeholder:text-gray-400"
+            placeholder="Bạn đang nghĩ gì?"
+            autoSize={{ minRows: 2, maxRows: 6 }}
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+          />
+
+          {renderPreview()}
+
+          <div className="mt-4 flex items-center justify-between px-2 py-2 border border-gray-200 rounded-lg bg-gray-50">
+            <span className="text-gray-500 text-sm">
+              Thêm vào bài viết của bạn
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                className="text-xl text-green-500 hover:text-green-600"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <AiOutlineFileImage />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+                accept="image/*,video/*"
+              />
+              <button className="text-xl text-blue-500 hover:text-blue-600">
+                <FaTag />
+              </button>
+              <button className="text-xl text-yellow-500 hover:text-yellow-600">
+                <AiOutlineSmile />
+              </button>
+              <button className="text-xl text-pink-500 hover:text-pink-600">
+                <FaMapMarkerAlt />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+          <Button
+            type="primary"
+            className="rounded-full w-full"
+            onClick={handleEditOk}
+            disabled={!editContent.trim() || uploading}
+            loading={loading}
+          >
+            {loading ? "Đang cập nhật..." : "Cập nhật"}
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        title="Bình luận"
+        open={isCommentModalVisible}
+        onCancel={() => setIsCommentModalVisible(false)}
+        footer={null}
+        width={"850px"}
+        className="comment-modal"
+        afterClose={() => {
+          commentBtnRef.current?.focus();
+        }}
+        maskClosable={true}
+        destroyOnClose
+      >
+        <div className="max-h-[70vh] p-4 overflow-y-auto">
+          <PostBox post={post} />
+          <CommentList postId={post?.id} />
+        </div>
+      </Modal>
+
+      <ReportModal
+        open={isReportModalOpen}
+        onCancel={() => {
+          setIsReportModalOpen(false);
+          setReportTarget(null);
+        }}
+        targetType={reportTarget as TargetType}
+        targetId={reportTarget === TargetType.User ? post.user.id : post.id}
+      />
+    </>
+  );
+
+  return shouldShowRibbon ? (
+    <Badge.Ribbon
+      text={ribbonText}
+      color={ribbonColor}
+      placement="end"
+      className="absolute top-[-5px]"
+    >
+      <PostContent />
     </Badge.Ribbon>
+  ) : (
+    <PostContent />
   );
 });
 

@@ -13,26 +13,21 @@ const Home: React.FC = () => {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { data: categoryData } = useCategoriesForNewfeed();
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    fetchNextPage,
-    hasNextPage,
-    error,
-  } = useInfiniteQuery({
-    queryKey: ["posts", activeTab],
-    queryFn: ({ pageParam }: { pageParam?: string }) =>
-      postApi
-        .fetchPosts({
-          feedType: activeTab === "all" ? 1 : 2,
-          categoryId: activeTab && activeTab !== "all" ? activeTab : undefined,
-          cursor: pageParam,
-        })
-        .then((res) => res.data),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined,
-  });
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["posts", activeTab],
+      queryFn: ({ pageParam }: { pageParam?: string }) =>
+        postApi
+          .fetchPosts({
+            feedType: activeTab === "all" ? 1 : 2,
+            categoryId:
+              activeTab && activeTab !== "all" ? activeTab : undefined,
+            cursor: pageParam,
+          })
+          .then((res) => res.data),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialPageParam: undefined,
+    });
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
