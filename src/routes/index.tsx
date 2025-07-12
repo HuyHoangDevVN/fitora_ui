@@ -1,150 +1,309 @@
-import AccountManagement from "@/features/admin/Account/AccountManagement";
-import CategoryManagement from "@/features/admin/Category/CategoryManagement";
-import CommentManagement from "@/features/admin/Comment/CommentManagement";
-import GroupManagement from "@/features/admin/Group/GroupManagement";
-import PostManagement from "@/features/admin/Post/PostManagement";
-import ReportManagement from "@/features/admin/Report/ReportManagement";
-import RoleManagement from "@/features/admin/Role/RoleManagement";
-import Login from "@/features/auth/Login";
-import Register from "@/features/auth/Register";
-import CreateGroup from "@/features/groups/CreateGroup";
-import GroupDetailPage from "@/features/groups/GroupDetailPage";
-import AdminLayout from "@/layouts/AdminLayout";
-import LayoutWOSB from "@/layouts/LayoutWithoutSideBar";
-import Layout from "@/layouts/MainLayout";
-import About from "@/pages/About";
-import AdminDashboard from "@/pages/AdminDashbroad";
-import Explore from "@/pages/Explore";
-import FriendRequestPage from "@/pages/FriendRequestPage";
-import Group from "@/pages/Group";
-import Home from "@/pages/Home";
-import PageNotFound from "@/pages/PageNotFound";
-import Profile from "@/pages/Profile";
-import ProfileSettings from "@/pages/ProfileSetting";
-import Saved from "@/pages/Saved";
-import Trending from "@/pages/Trending";
+import { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import PrivateRoute from "./PrivateRoute";
-import PostSearch from "@/pages/PostSearch";
+import LoadingFallback from "@/components/common/LoadingFallback";
+import {
+  PrivateRoute,
+  AccountManagement,
+  CategoryManagement,
+  CommentManagement,
+  GroupManagement,
+  PostManagement,
+  ReportManagement,
+  RoleManagement,
+  Login,
+  Register,
+  CreateGroup,
+  GroupDetailPage,
+  AdminLayout,
+  LayoutWOSB,
+  Layout,
+  About,
+  AdminDashboard,
+  Explore,
+  FriendRequestPage,
+  Group,
+  Home,
+  PageNotFound,
+  Profile,
+  ProfileSettings,
+  Saved,
+  Trending,
+  PostSearch,
+} from "./lazyComponents";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <PrivateRoute />,
-    errorElement: <PageNotFound />,
+    element: (
+      <Suspense fallback={<LoadingFallback message="Authenticating..." />}>
+        <PrivateRoute />
+      </Suspense>
+    ),
+    errorElement: (
+      <Suspense fallback={<LoadingFallback />}>
+        <PageNotFound />
+      </Suspense>
+    ),
     children: [
       {
         path: "/",
-        element: <Layout />,
+        element: (
+          <Suspense fallback={<LoadingFallback message="Loading layout..." />}>
+            <Layout />
+          </Suspense>
+        ),
         children: [
-          { path: "/", element: <Home /> },
-          { path: "about", element: <About /> },
-          { path: "trending", element: <Trending /> },
-          { path: "saved", element: <Saved /> },
-          { path: "explore", element: <Explore /> },
-          { path: "search/:query", element: <PostSearch /> },
+          {
+            path: "/",
+            element: (
+              <Suspense
+                fallback={<LoadingFallback message="Loading home..." />}
+              >
+                <Home />
+              </Suspense>
+            ),
+          },
+          {
+            path: "about",
+            element: (
+              <Suspense
+                fallback={<LoadingFallback message="Loading about..." />}
+              >
+                <About />
+              </Suspense>
+            ),
+          },
+          {
+            path: "trending",
+            element: (
+              <Suspense
+                fallback={<LoadingFallback message="Loading trending..." />}
+              >
+                <Trending />
+              </Suspense>
+            ),
+          },
+          {
+            path: "saved",
+            element: (
+              <Suspense
+                fallback={<LoadingFallback message="Loading saved posts..." />}
+              >
+                <Saved />
+              </Suspense>
+            ),
+          },
+          {
+            path: "explore",
+            element: (
+              <Suspense
+                fallback={<LoadingFallback message="Loading explore..." />}
+              >
+                <Explore />
+              </Suspense>
+            ),
+          },
+          {
+            path: "search/:query",
+            element: (
+              <Suspense fallback={<LoadingFallback message="Searching..." />}>
+                <PostSearch />
+              </Suspense>
+            ),
+          },
         ],
       },
       {
         path: "/profile/:userId",
         element: (
-          <LayoutWOSB>
-            <Profile />
-          </LayoutWOSB>
+          <Suspense fallback={<LoadingFallback message="Loading profile..." />}>
+            <LayoutWOSB>
+              <Profile />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
       {
         path: "/edit-profile",
         element: (
-          <LayoutWOSB>
-            <ProfileSettings />
-          </LayoutWOSB>
+          <Suspense
+            fallback={<LoadingFallback message="Loading profile settings..." />}
+          >
+            <LayoutWOSB>
+              <ProfileSettings />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
       {
         path: "/friend-requests",
         element: (
-          <LayoutWOSB>
-            <FriendRequestPage />
-          </LayoutWOSB>
+          <Suspense
+            fallback={<LoadingFallback message="Loading friend requests..." />}
+          >
+            <LayoutWOSB>
+              <FriendRequestPage />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
       {
         path: "/groups",
         element: (
-          <LayoutWOSB>
-            <Group />
-          </LayoutWOSB>
+          <Suspense fallback={<LoadingFallback message="Loading groups..." />}>
+            <LayoutWOSB>
+              <Group />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
       {
         path: "/groups/create",
         element: (
-          <LayoutWOSB>
-            <CreateGroup />
-          </LayoutWOSB>
+          <Suspense
+            fallback={<LoadingFallback message="Loading group creation..." />}
+          >
+            <LayoutWOSB>
+              <CreateGroup />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
       {
         path: "/groups/:idGroup",
         element: (
-          <LayoutWOSB>
-            <GroupDetailPage />
-          </LayoutWOSB>
+          <Suspense
+            fallback={<LoadingFallback message="Loading group details..." />}
+          >
+            <LayoutWOSB>
+              <GroupDetailPage />
+            </LayoutWOSB>
+          </Suspense>
         ),
       },
     ],
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <Suspense fallback={<LoadingFallback message="Loading admin..." />}>
+        <AdminLayout />
+      </Suspense>
+    ),
     children: [
       {
         path: "dashboard",
-        element: <AdminDashboard />,
+        element: (
+          <Suspense
+            fallback={<LoadingFallback message="Loading dashboard..." />}
+          >
+            <AdminDashboard />
+          </Suspense>
+        ),
       },
       {
         path: "account-management",
-        element: <AccountManagement />,
+        element: (
+          <Suspense
+            fallback={
+              <LoadingFallback message="Loading account management..." />
+            }
+          >
+            <AccountManagement />
+          </Suspense>
+        ),
       },
       {
         path: "role-management",
-        element: <RoleManagement />,
+        element: (
+          <Suspense
+            fallback={<LoadingFallback message="Loading role management..." />}
+          >
+            <RoleManagement />
+          </Suspense>
+        ),
       },
       {
         path: "category-management",
-        element: <CategoryManagement />,
+        element: (
+          <Suspense
+            fallback={
+              <LoadingFallback message="Loading category management..." />
+            }
+          >
+            <CategoryManagement />
+          </Suspense>
+        ),
       },
       {
         path: "group-management",
-        element: <GroupManagement />,
+        element: (
+          <Suspense
+            fallback={<LoadingFallback message="Loading group management..." />}
+          >
+            <GroupManagement />
+          </Suspense>
+        ),
       },
       {
         path: "post-management",
-        element: <PostManagement />,
+        element: (
+          <Suspense
+            fallback={<LoadingFallback message="Loading post management..." />}
+          >
+            <PostManagement />
+          </Suspense>
+        ),
       },
       {
         path: "comment-management",
-        element: <CommentManagement />,
+        element: (
+          <Suspense
+            fallback={
+              <LoadingFallback message="Loading comment management..." />
+            }
+          >
+            <CommentManagement />
+          </Suspense>
+        ),
       },
       {
         path: "report-processing",
-        element: <ReportManagement />,
+        element: (
+          <Suspense
+            fallback={
+              <LoadingFallback message="Loading report processing..." />
+            }
+          >
+            <ReportManagement />
+          </Suspense>
+        ),
       },
     ],
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <Suspense fallback={<LoadingFallback message="Loading login..." />}>
+        <Login />
+      </Suspense>
+    ),
   },
   {
     path: "/register",
-    element: <Register />,
+    element: (
+      <Suspense fallback={<LoadingFallback message="Loading register..." />}>
+        <Register />
+      </Suspense>
+    ),
   },
-
   {
     path: "*",
-    element: <PageNotFound />,
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <PageNotFound />
+      </Suspense>
+    ),
   },
 ]);
 
