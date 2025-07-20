@@ -1,8 +1,7 @@
-import axios, { AxiosInstance } from "axios";
 import { notification } from "antd";
+import axios, { AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 import { authApi } from "./authApi";
-import { Delay } from "@/utils/delay";
 
 class Repository {
   private axiosInstance: AxiosInstance;
@@ -107,7 +106,9 @@ class Repository {
     options?: { suppressErrorNotification?: boolean }
   ): Promise<T | undefined> {
     try {
-      const response = await this.axiosInstance.delete<T>(url, data);
+      const response = await this.axiosInstance.delete<T>(url, {
+        data,
+      });
       return response.data;
     } catch (error: any) {
       if (!options?.suppressErrorNotification) this.handleError(error);
