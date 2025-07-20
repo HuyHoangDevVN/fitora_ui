@@ -1,18 +1,17 @@
+import { GroupPrivacy, GroupStatus } from "@/enums/group";
 import { PrivacyPost } from "@/enums/post";
 import { ReportStatus } from "@/enums/reportStatus";
 import { TargetType } from "@/enums/targetType";
 import { Account } from "@/types/account";
+import { Category } from "@/types/category";
 import { PaginatedResult } from "@/types/paginatedResult";
 import { ResponseBase } from "@/types/responseBase";
 import { Role } from "@/types/role";
-import { notification } from "antd";
 import {
   authRepository,
   interactRepository,
   userRepository,
 } from "./repository";
-import { GroupPrivacy, GroupStatus } from "@/enums/group";
-import { Category } from "@/types/category";
 
 export interface GetAccountsRequest {
   pageIndex: number;
@@ -136,8 +135,10 @@ export const adminApi = {
   },
 
   deleteAccount: async (id: string) => {
-    const url = `/admin/delete-account?id=${id}`;
-    const response = await authRepository.delete<ResponseBase<null>>(url);
+    const url = `/admin/delete-account`;
+    const response = await authRepository.delete<ResponseBase<null>>(url, {
+      userId: id,
+    });
     if (!response) {
       // notification.error({ message: "Lỗi xoá tài khoản" });
       throw new Error("Failed to delete account");
