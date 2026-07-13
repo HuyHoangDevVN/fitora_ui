@@ -7,6 +7,12 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_USER: ${{ secrets.SSH_USER || 'Administrator' }}
+      DEPLOY_PORT: ${{ secrets.SSH_PORT || '22' }}
+      IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Fitora' }}
+      IIS_TARGET_PATH: ${{ secrets.IIS_TARGET_PATH || 'C:\\inetpub\\wwwroot\\Fitora' }}
 
     steps:
       - name: Checkout code
@@ -23,15 +29,23 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Validate deploy settings
+        run: |
+          test -n "$DEPLOY_HOST" || {
+            echo "Missing required secret: SSH_HOST"
+            exit 1
+          }
+
       - name: Setup SSH config
         run: |
           mkdir -p ~/.ssh
-          echo "Host ssh-windows-server
-            HostName ssh-windows-server.aiotlab.edu.vn
-            ProxyCommand cloudflared access ssh --hostname %h
-            User Administrator
-            Port 22
-          " > ~/.ssh/config
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${DEPLOY_HOST}
+            ProxyCommand cloudflared access ssh --hostname ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            Port ${DEPLOY_PORT}
+          EOF
           chmod 600 ~/.ssh/config
 
       - name: Build project
@@ -41,14 +55,14 @@ jobs:
         run: zip -r dist.zip dist
 
       - name: Copy build to server via SCP
-        run: scp -o StrictHostKeyChecking=no dist.zip ssh-windows-server:C:/Users/Administrator/
+        run: scp -o StrictHostKeyChecking=no dist.zip deploy-target:C:/Users/Administrator/
 
       - name: Deploy to IIS via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ssh-windows-server powershell -Command "
+          ssh -o StrictHostKeyChecking=no deploy-target powershell -Command "
             \$ErrorActionPreference = 'Stop';
-            \$siteName = 'Fitora';
-            \$target = 'C:\inetpub\wwwroot\$siteName';
+            \$siteName = '${IIS_SITE_NAME}';
+            \$target = '${IIS_TARGET_PATH}';
             Stop-Website -Name \$siteName;
             Remove-Item '\$target\*' -Recurse -Force -ErrorAction SilentlyContinue;
             Expand-Archive -Path 'C:\Users\Administrator\dist.zip' -DestinationPath \$target -Force;
