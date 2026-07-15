@@ -1,4 +1,4 @@
-# Fitora UI — Đồ án học phần Các hệ thống phân tán
+# Fitora UI — Bài tập lớn học phần Các hệ thống phân tán
 
 Frontend của Fitora là ứng dụng web TypeScript/React dùng Vite. Ứng dụng gọi backend qua API Gateway, quản lý trạng thái phía client bằng Redux Toolkit/React Query và kết nối realtime với SignalR cho chat/thông báo.
 
