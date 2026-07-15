@@ -12,7 +12,7 @@ export interface PostsState {
   errorCount: number;
 }
 
-const initialState: PostsState = {
+export const initialState: PostsState = {
   posts: [],
   status: "idle",
   error: null,
@@ -64,11 +64,19 @@ export const fetchPosts = createAsyncThunk(
 export const fetchPersonalPosts = createAsyncThunk(
   "posts/fetchPersonalPosts",
   async (
-    { userId, cursor }: { userId: number; cursor: string | null },
+    {
+      userId,
+      isFriend,
+      cursor,
+    }: { userId: number; isFriend?: boolean; cursor?: string | null },
     thunkAPI
   ) => {
     try {
-      const response = await postApi.fetchPersonalPosts({ userId, cursor });
+      const response = await postApi.fetchPersonalPosts({
+        userId,
+        isFriend,
+        cursor,
+      });
       if (!response.isSuccess) {
         return thunkAPI.rejectWithValue(
           response.message || "Không thể tải bài viết cá nhân"

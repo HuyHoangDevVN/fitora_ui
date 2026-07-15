@@ -1,5 +1,5 @@
 import { postApi } from "@/api/postApi";
-import { interactRepository } from "@/api/repository";
+import { API_URL, interactRepository } from "@/api/repository";
 import PostBox from "@/components/posts/PostBox";
 import { GroupPrivacy, GroupRole } from "@/enums/group";
 import { PrivacyPost } from "@/enums/post";
@@ -63,6 +63,8 @@ const GroupDetailPage: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [keySearch, setKeySearch] = useState<string>("");
+  const [color, setColor] = useState<string>("");
+
   const { categoriesForPost } = useSelector(
     (state: any) => state.category || {}
   );
@@ -166,7 +168,7 @@ const GroupDetailPage: React.FC = () => {
 
       try {
         const uploadResponse = await axios.post(
-          "https://localhost:5005/api/Upload/file",
+          `${API_URL}/interact/upload/file`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -208,7 +210,7 @@ const GroupDetailPage: React.FC = () => {
         categoryId: selectedCategory,
       };
 
-      const response = await interactRepository.post("/post/create-post", data);
+      const response = await interactRepository.post("/post/create", data);
       if (response?.isSuccess) {
         message.success("Đăng bài thành công!");
         setPosts([response.data, ...posts]);
@@ -321,6 +323,7 @@ const GroupDetailPage: React.FC = () => {
         const newCategory = await categoryApi.createCategory({
           name: newCategoryName,
           description: description,
+          color: color,
         });
         setSelectedCategory(newCategory.id);
         await categoryApi.followCategory(newCategory.id);
@@ -829,6 +832,12 @@ const GroupDetailPage: React.FC = () => {
           placeholder="Mô tả chủ đề mới"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          className="mt-2"
+        />
+        <Input
+          placeholder="Màu sắc chủ đề (ví dụ: #ff5733)"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
           className="mt-2"
         />
       </Modal>

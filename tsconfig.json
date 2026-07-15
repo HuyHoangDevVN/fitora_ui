@@ -25,12 +25,14 @@
       "@layouts/*": ["layouts/*"]
     },
     "composite": true,
+    "rootDir": "src",
     "outDir": "./dist",
     "declaration": true,
     "noImplicitAny": false
   },
+  "files": [],
   "include": ["src"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }

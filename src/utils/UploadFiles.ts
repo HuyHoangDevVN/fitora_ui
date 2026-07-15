@@ -1,9 +1,10 @@
 // src/utils/uploadFile.ts
 import axios from "axios";
 import { message } from "antd";
+import { API_URL } from "@/api/repository";
 
 /**
- * Hàm upload file chung cho toàn dự án.
+ * Hàm upload file chung cho toàn dự án
  * @param file File cần tải lên.
  * @returns Promise trả về URL của file nếu tải lên thành công, ngược lại trả về null.
  */
@@ -13,11 +14,11 @@ export const uploadFile = async (file: File): Promise<string | null> => {
 
   try {
     const response = await axios.post(
-      "https://localhost:5005/api/Upload/file",
+      `${API_URL}/interact/upload/file`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
-      }
+      },
     );
 
     if (response.data?.url) {

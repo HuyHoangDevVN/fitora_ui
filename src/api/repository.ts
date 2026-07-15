@@ -1,6 +1,7 @@
 import Repository from "./axiosClient";
+export const API_URL = import.meta.env.VITE_API_URL;
 
-export const authRepository = new Repository("https://localhost:5000/api");
-export const userRepository = new Repository("https://localhost:5003/api");
-export const interactRepository = new Repository("https://localhost:5005/api");
-export const chatRepository = new Repository("https://localhost:5007/api");
+export const authRepository = new Repository(`${API_URL}/auth`);
+export const userRepository = new Repository(`${API_URL}/user`);
+export const interactRepository = new Repository(`${API_URL}/interact`);
+export const chatRepository = new Repository(`${API_URL}/chat`);

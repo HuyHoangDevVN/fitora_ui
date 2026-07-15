@@ -109,7 +109,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         </a>
       </h1>
 
-      <Divider plain style={{ margin: "0 0 20px 0", fontWeight: 500 }}>
+      {/* <Divider plain style={{ margin: "0 0 20px 0", fontWeight: 500 }}>
         Hoặc
       </Divider>
 
@@ -119,7 +119,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         className="font-[500] w-[300px] p-5 rounded-[20px]"
       >
         Đăng nhập bằng Google
-      </Button>
+      </Button> */}
     </Form>
   );
 };

@@ -9,6 +9,7 @@ import ProfileActionIcon from "./components/ProfileActionIcon";
 import CreatePostActionIcon from "./components/CreatePostActionIcon";
 import FriendActionIcon from "./components/FriendActionIcon";
 import CreatePostModal from "@/components/posts/CreatePost";
+import NotificationDropdown from "@/components/header/NotificationDropdown";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -39,8 +40,15 @@ const Header: React.FC = () => {
             <div className="hidden min-[1100px]:flex items-center space-x-4">
               <FriendActionIcon />
               <MessageActionIcon />
-              <NotificationActionIcon />
+              {/* <NotificationActionIcon className="hidden min-[1100px]:inline-flex" /> */}
+              <NotificationDropdown />
             </div>
+            {/* NotificationActionIcon for mobile, only visible when mobile menu is open */}
+            {isMobileMenuOpen && (
+              <div className="sm:hidden inline-flex items-center ml-2">
+                <NotificationDropdown />
+              </div>
+            )}
             <ProfileActionIcon />
           </div>
         </div>
@@ -86,9 +94,7 @@ const Header: React.FC = () => {
               <li className="flex-1 text-center">
                 <MessageActionIcon />
               </li>
-              <li className="flex-1 text-center">
-                <NotificationActionIcon />
-              </li>
+              {/* Removed NotificationActionIcon from here to prevent double mount */}
               <li className="flex-1 text-center">
                 <ProfileActionIcon />
               </li>

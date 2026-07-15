@@ -1,5 +1,6 @@
 import { Flex, Space } from "antd";
 import { useNavigate } from "react-router-dom";
+import { memo, useCallback } from "react";
 
 type LinkButtonProps = {
   title: string;
@@ -7,8 +8,13 @@ type LinkButtonProps = {
   icon?: React.ReactElement;
   onClick?: () => void;
 };
-const LinkButton = ({ title, icon, link }: LinkButtonProps) => {
+const LinkButton = memo(({ title, icon, link }: LinkButtonProps) => {
   const navigate = useNavigate();
+
+  const handleClick = useCallback(() => {
+    navigate(link);
+  }, [navigate, link]);
+
   return (
     <Space
       size={24}
@@ -17,7 +23,7 @@ const LinkButton = ({ title, icon, link }: LinkButtonProps) => {
     >
       <button
         className="w-full hover:text-primary bg-transparent border-none p-0 text-left"
-        onClick={() => navigate(link)}
+        onClick={handleClick}
         style={{ cursor: "pointer" }}
       >
         <Flex align="center" gap={15}>
@@ -27,6 +33,8 @@ const LinkButton = ({ title, icon, link }: LinkButtonProps) => {
       </button>
     </Space>
   );
-};
+});
+
+LinkButton.displayName = "LinkButton";
 
 export default LinkButton;

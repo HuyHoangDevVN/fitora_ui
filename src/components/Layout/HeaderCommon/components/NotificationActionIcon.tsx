@@ -3,7 +3,11 @@ import { BellOutlined } from "@ant-design/icons";
 import { Avatar, Button, Dropdown, Tooltip, message, Typography } from "antd";
 import { groupApi } from "@/api/groupApi";
 
-const NotificationActionIcon = () => {
+interface NotificationActionIconProps {
+  className?: string;
+}
+
+const NotificationActionIcon = ({ className }: NotificationActionIconProps) => {
   interface Invite {
     id: string;
     groupId: string;
@@ -106,7 +110,7 @@ const NotificationActionIcon = () => {
   return (
     <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
       <Tooltip title="Thông báo">
-        <Button shape="circle" icon={<BellOutlined />} />
+        <Button shape="circle" icon={<BellOutlined />} className={className} />
       </Tooltip>
     </Dropdown>
   );

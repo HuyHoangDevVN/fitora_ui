@@ -3,7 +3,7 @@ import { commentApi } from "@/api/commentApi";
 import { PaginatedCursorResult } from "@/types/paginatedCrusorResult";
 import { CommentResponse } from "@/types/post";
 
-interface CommentState {
+export interface CommentState {
   commentsByPost: {
     [postId: string]: PaginatedCursorResult<CommentResponse>;
   };
@@ -14,7 +14,7 @@ interface CommentState {
   error: string | null;
 }
 
-const initialState: CommentState = {
+export const initialState: CommentState = {
   commentsByPost: {},
   repliesByComment: {},
   loading: false,

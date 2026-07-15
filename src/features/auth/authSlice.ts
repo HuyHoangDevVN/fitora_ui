@@ -1,10 +1,4 @@
-import {
-  getUserInfo,
-  loginUser,
-  logoutUser,
-  refreshAccessToken,
-  registerUser,
-} from "@/api/authApi";
+import { authApi } from "@/api/authApi";
 import { userApi } from "@/api/userApi";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { notification } from "antd";
@@ -16,7 +10,7 @@ export interface AuthState {
   error: string | null;
 }
 
-const initialState: AuthState = {
+export const initialState: AuthState = {
   isLoggedIn: !!localStorage.getItem("isLoggedIn"),
   loading: false,
   userInfo: null,
@@ -27,7 +21,7 @@ export const checkLoginStatus = createAsyncThunk(
   "auth/checkLoginStatus",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await getUserInfo();
+      const response = await authApi.getUserInfo();
       return response?.isSuccess ? true : rejectWithValue("Not logged in");
     } catch {
       return rejectWithValue("Error checking login status");
@@ -42,8 +36,9 @@ export const login = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await loginUser(username, password);
+      const response = await authApi.loginUser(username, password);
       if (response?.isSuccess) {
+        localStorage.setItem("x-client-id", response.user.id);
         const fetchProfile = await userApi.fetchUserProfile();
         if (fetchProfile?.isSuccess) return response.user;
         return rejectWithValue(fetchProfile?.message || "Fetch profile failed");
@@ -66,7 +61,7 @@ export const register = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await registerUser(username, password, fullname);
+      const response = await authApi.registerUser(username, password, fullname);
       return response?.isSuccess
         ? { username, password }
         : rejectWithValue(response?.message || "Registration failed");
@@ -80,7 +75,7 @@ export const logout = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await logoutUser();
+      await authApi.logoutUser();
     } catch {
       return rejectWithValue("Logout error");
     }
@@ -91,7 +86,7 @@ export const refreshToken = createAsyncThunk(
   "auth/refreshToken",
   async (_, { rejectWithValue }) => {
     try {
-      await refreshAccessToken();
+      await authApi.refreshAccessToken();
     } catch {
       return rejectWithValue("Token refresh error");
     }
@@ -131,7 +126,6 @@ const authSlice = createSlice({
         state.userInfo = action.payload;
         state.loading = false;
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("x-client-id", action.payload.id);
         notification.success({
           message: "Đăng nhập thành công",
           description: "Chào mừng bạn trở lại!",

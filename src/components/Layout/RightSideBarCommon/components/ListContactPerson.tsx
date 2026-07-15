@@ -2,19 +2,19 @@ import { User } from "@/types/user";
 import ContactPersonComponent from "./ContactPersonComponent";
 import { chatApi } from "@/api/chatApi";
 import Chat from "@/features/chat/Chat";
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 
 type ListContactPersonProp = {
   people?: User[];
 };
 
-const ListContactPerson = ({ people }: ListContactPersonProp) => {
+const ListContactPerson = memo(({ people }: ListContactPersonProp) => {
   const [openChat, setOpenChat] = useState<{
     conversationId: string;
     receiver: User;
   } | null>(null);
 
-  const handleContactClick = async (item: User) => {
+  const handleContactClick = useCallback(async (item: User) => {
     const userId = localStorage.getItem("x-client-id") || "";
     const otherUserId = item?.id;
     let conversationId = "";
@@ -33,7 +33,7 @@ const ListContactPerson = ({ people }: ListContactPersonProp) => {
     } catch (_e) {
       setOpenChat(null);
     }
-  };
+  }, []);
 
   return (
     <div>
@@ -57,6 +57,8 @@ const ListContactPerson = ({ people }: ListContactPersonProp) => {
       )}
     </div>
   );
-};
+});
+
+ListContactPerson.displayName = "ListContactPerson";
 
 export default ListContactPerson;

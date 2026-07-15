@@ -1,7 +1,7 @@
 export enum PrivacyPost {
-  Public = 0,
+  Private = 0,
   FriendsOnly = 1,
-  Private = 2,
+  Public = 2,
   GroupOnly = 3,
   Custom = 4,
 }

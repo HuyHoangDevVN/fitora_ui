@@ -1,0 +1,71 @@
+name: CI/CD Deploy via SSH & Cloudflare Tunnel
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_USER: ${{ secrets.SSH_USER || 'Administrator' }}
+      DEPLOY_PORT: ${{ secrets.SSH_PORT || '22' }}
+      IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Fitora' }}
+      IIS_TARGET_PATH: ${{ secrets.IIS_TARGET_PATH || 'C:\\inetpub\\wwwroot\\Fitora' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cloudflared
+        run: |
+          wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          sudo mv cloudflared /usr/local/bin/cloudflared
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Validate deploy settings
+        run: |
+          test -n "$DEPLOY_HOST" || {
+            echo "Missing required secret: SSH_HOST"
+            exit 1
+          }
+
+      - name: Setup SSH config
+        run: |
+          mkdir -p ~/.ssh
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${DEPLOY_HOST}
+            ProxyCommand cloudflared access ssh --hostname ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            Port ${DEPLOY_PORT}
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Build project
+        run: yarn install && yarn build
+
+      - name: Zip build folder
+        run: zip -r dist.zip dist
+
+      - name: Copy build to server via SCP
+        run: scp -o StrictHostKeyChecking=no dist.zip deploy-target:C:/Users/Administrator/
+
+      - name: Deploy to IIS via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy-target powershell -Command "
+            \$ErrorActionPreference = 'Stop';
+            \$siteName = '${IIS_SITE_NAME}';
+            \$target = '${IIS_TARGET_PATH}';
+            Stop-Website -Name \$siteName;
+            Remove-Item '\$target\*' -Recurse -Force -ErrorAction SilentlyContinue;
+            Expand-Archive -Path 'C:\Users\Administrator\dist.zip' -DestinationPath \$target -Force;
+            Start-Website -Name \$siteName;
+            Remove-Item 'C:\Users\Administrator\dist.zip' -Force
+          "

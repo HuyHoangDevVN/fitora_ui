@@ -1,7 +1,7 @@
 import { groupApi } from "@/api/groupApi";
 import { userApi } from "@/api/userApi";
 import { GroupPrivacy } from "@/enums/group";
-import { uploadFile } from "@/utils/uploadFiles";
+import { uploadFile } from "@/utils/UploadFiles";
 import { UploadOutlined } from "@ant-design/icons";
 import {
   Avatar,
@@ -257,7 +257,10 @@ const CreateGroup = () => {
             });
             notification.success({ message: "Đã gửi lời mời đến bạn bè!" });
           } catch (inviteError) {
-            notification.error({
+            // notification.error({
+            //   message: `Lỗi khi gửi lời mời: ${inviteError}`,
+            // });
+            console.error({
               message: `Lỗi khi gửi lời mời: ${inviteError}`,
             });
           }
@@ -265,12 +268,16 @@ const CreateGroup = () => {
 
         resetForm();
       } else {
-        notification.error({
+        // notification.error({
+        //   message: `Lỗi khi tạo nhóm: ${response.message}`,
+        // });
+        console.error({
           message: `Lỗi khi tạo nhóm: ${response.message}`,
         });
       }
     } catch (err) {
-      notification.error({ message: `Lỗi khi tạo nhóm: ${err}` });
+      // notification.error({ message: `Lỗi khi tạo nhóm: ${err}` });
+      console.error({ message: `Lỗi khi tạo nhóm: ${err}` });
     }
   };
 

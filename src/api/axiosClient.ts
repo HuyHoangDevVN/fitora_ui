@@ -1,7 +1,7 @@
-import axios, { AxiosInstance } from "axios";
 import { notification } from "antd";
+import axios, { AxiosInstance } from "axios";
 import Cookies from "js-cookie";
-import { Delay } from "@/utils/delay";
+import { authApi } from "./authApi";
 
 class Repository {
   private axiosInstance: AxiosInstance;
@@ -26,23 +26,10 @@ class Repository {
         // Nếu lỗi là 401 thì cố gắng làm mới token
         if (error.response?.status === 401) {
           try {
-            const response = await this.axiosInstance.post(
-              "https://localhost:5000/api/auth/refresh-token"
-            );
-
-            if (response.data && response.data.token) {
-              // Lưu token mới và gửi lại yêu cầu ban đầu
-              error.config.headers["Authorization"] =
-                "Bearer " + response.data.token;
-              return this.axiosInstance(error.config);
-            } else {
-              // Nếu không có token mới, đăng xuất người dùng
-              this.logout();
-              return Promise.reject(error);
-            }
+            await authApi.refreshAccessToken();
+            this.logout();
           } catch (err) {
             // Nếu có lỗi trong quá trình làm mới token, đăng xuất
-            this.logout();
             return Promise.reject(error);
           }
         }
@@ -55,18 +42,17 @@ class Repository {
   /**
    * Gửi yêu cầu GET đến API.
    * @param url - Đường dẫn API.
-   * @param suppressErrorNotification - Nếu true thì không hiển thị thông báo lỗi.
+   * @param options - { suppressErrorNotification?: boolean }
    */
   public async get<T = any>(
     url: string,
-    suppressErrorNotification = false
+    options?: { suppressErrorNotification?: boolean }
   ): Promise<T | undefined> {
-    await Delay(2500);
     try {
       const response = await this.axiosInstance.get<T>(url);
       return response.data; // Trả về dữ liệu từ response
     } catch (error: any) {
-      if (!suppressErrorNotification) this.handleError(error);
+      if (!options?.suppressErrorNotification) this.handleError(error);
     }
   }
 
@@ -74,14 +60,18 @@ class Repository {
    * Gửi yêu cầu POST đến API.
    * @param url - Đường dẫn API.
    * @param data - Dữ liệu gửi kèm.
+   * @param options - { suppressErrorNotification?: boolean }
    */
-  public async post<T = any>(url: string, data?: any): Promise<T | undefined> {
-    await Delay(500);
+  public async post<T = any>(
+    url: string,
+    data?: any,
+    options?: { suppressErrorNotification?: boolean }
+  ): Promise<T | undefined> {
     try {
       const response = await this.axiosInstance.post<T>(url, data);
       return response.data;
     } catch (error: any) {
-      this.handleError(error);
+      if (!options?.suppressErrorNotification) this.handleError(error);
     }
   }
 
@@ -89,14 +79,18 @@ class Repository {
    * Gửi yêu cầu PUT đến API.
    * @param url - Đường dẫn API.
    * @param data - Dữ liệu cập nhật.
+   * @param options - { suppressErrorNotification?: boolean }
    */
-  public async put<T = any>(url: string, data?: any): Promise<T | undefined> {
-    await Delay(1000);
+  public async put<T = any>(
+    url: string,
+    data?: any,
+    options?: { suppressErrorNotification?: boolean }
+  ): Promise<T | undefined> {
     try {
       const response = await this.axiosInstance.put<T>(url, data);
       return response.data;
     } catch (error: any) {
-      this.handleError(error);
+      if (!options?.suppressErrorNotification) this.handleError(error);
     }
   }
 
@@ -104,17 +98,39 @@ class Repository {
    * Gửi yêu cầu DELETE đến API.
    * @param url - Đường dẫn API.
    * @param data - Dữ liệu cần xóa (nếu có).
+   * @param options - { suppressErrorNotification?: boolean }
    */
   public async delete<T = any>(
     url: string,
-    data?: any
+    data?: any,
+    options?: { suppressErrorNotification?: boolean }
   ): Promise<T | undefined> {
-    await Delay(500);
     try {
-      const response = await this.axiosInstance.delete<T>(url, data);
+      const response = await this.axiosInstance.delete<T>(url, {
+        data,
+      });
       return response.data;
     } catch (error: any) {
-      this.handleError(error);
+      if (!options?.suppressErrorNotification) this.handleError(error);
+    }
+  }
+
+  /**
+   * Gửi yêu cầu PATCH đến API.
+   * @param url - Đường dẫn API.
+   * @param data - Dữ liệu cập nhật.
+   * @param options - { suppressErrorNotification?: boolean }
+   */
+  public async patch<T = any>(
+    url: string,
+    data?: any,
+    options?: { suppressErrorNotification?: boolean }
+  ): Promise<T | undefined> {
+    try {
+      const response = await this.axiosInstance.patch<T>(url, data);
+      return response.data;
+    } catch (error: any) {
+      if (!options?.suppressErrorNotification) this.handleError(error);
     }
   }
 
@@ -123,24 +139,49 @@ class Repository {
    * @param error - Đối tượng lỗi.
    */
   private handleError(error: any): void {
+    // Log chi tiết lỗi cho dev
+    console.error("API Error:", error);
+
+    let errorMessage = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
     if (error.code === "ERR_NETWORK") {
-      notification.error({
-        message: "Lỗi mạng",
-        description: "Không thể kết nối đến máy chủ!",
-      });
-      return;
+      errorMessage =
+        "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.";
+    } else if (error.response) {
+      const status = error.response.status;
+      switch (status) {
+        case 400:
+          errorMessage = "Dữ liệu gửi lên không hợp lệ.";
+          break;
+        case 401:
+          errorMessage =
+            "Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.";
+          break;
+        case 403:
+          errorMessage = "Bạn không có quyền thực hiện thao tác này.";
+          break;
+        case 404:
+          errorMessage = "Không tìm thấy tài nguyên hoặc đường dẫn.";
+          break;
+        case 409:
+          errorMessage = "Dữ liệu bị xung đột. Vui lòng kiểm tra lại.";
+          break;
+        case 422:
+          errorMessage = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+          break;
+        case 500:
+          errorMessage = "Lỗi hệ thống. Vui lòng thử lại sau.";
+          break;
+        default:
+          errorMessage = error.response?.data?.message || errorMessage;
+          break;
+      }
     }
-
-    const status = error.response?.status;
-    const errorMessage =
-      {
-        401: "Vui lòng đăng nhập lại!",
-        403: "Bạn không có quyền truy cập tài nguyên này.",
-        404: "Không tìm thấy tài nguyên!",
-        500: "Lỗi máy chủ. Vui lòng thử lại sau.",
-      }[status] || "Đã xảy ra lỗi không mong muốn!";
-
-    notification.error({ message: "Lỗi", description: errorMessage });
+    console.log("Error message:", errorMessage);
+    // notification.error({
+    //   message: "Có lỗi xảy ra",
+    //   description: errorMessage,
+    //   duration: 3,
+    // });
   }
 
   /**
@@ -150,7 +191,7 @@ class Repository {
     Cookies.remove("accessToken");
     Cookies.remove("refreshToken");
     localStorage.removeItem("isLoggedIn");
-    notification.error({
+    notification.warning({
       message: "Token hết hạn",
       description: "Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.",
     });

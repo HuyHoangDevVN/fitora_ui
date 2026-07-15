@@ -1,34 +1,30 @@
-name: CI - Build Fitora UI
+# name: CI pipeline for Fitora UI
 
-on:
-  push:
-    branches:
-      - staging
+# on:
+#   push:
+#     branches:
+#       - staging
 
-jobs:
-  build:
-    runs-on: windows-2016
+# jobs:
+#   build:
+#     runs-on: [self-hosted, windows]
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#       - name: Install dependencies
+#         run: yarn install
 
-      - name: Install dependencies
-        run: yarn install
+#       - name: Build project
+#         run: yarn build
 
-      - name: Build project
-        run: yarn build
-
-      - name: Deploy to IIS
-        run: |
-          $ErrorActionPreference = "Stop"
-          $siteName = "fitora-ui"
-          $target = "C:\inetpub\wwwroot\$siteName"
-
-          Stop-Website -Name $siteName
-
-          Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
-          Copy-Item "$(Resolve-Path dist\*)" -Destination $target -Recurse
-
-          Start-Website -Name $siteName
-        shell: powershell
+#       - name: Deploy to IIS
+#         run: |
+#           $ErrorActionPreference = "Stop"
+#           $siteName = "Fitora"
+#           $target = "C:\inetpub\wwwroot\$siteName"
+#           Stop-Website -Name $siteName
+#           Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
+#           Copy-Item ".\dist\*" -Destination $target -Recurse -Force
+#           Start-Website -Name $siteName
+#         shell: powershell

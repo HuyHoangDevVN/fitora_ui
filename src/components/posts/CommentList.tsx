@@ -101,7 +101,12 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
         content: commentContent,
         mediaUrl: "",
       });
-      setComments((prev) => [response.data, ...prev]);
+      // Gán user từ profile vào comment mới
+      const newComment = {
+        ...response.data,
+        user: profile,
+      };
+      setComments((prev) => [newComment, ...prev]);
       setCommentContent("");
       message.success("Đã thêm bình luận!");
     } catch {
@@ -140,7 +145,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
 
   const handleVote = async (commentId: string, newVoteType: 1 | 2 | 3) => {
     try {
-      const response = await commentApi.voteComment({
+      await commentApi.voteComment({
         userId,
         commentId,
         voteType: newVoteType,
@@ -301,8 +306,13 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
     });
   };
 
+  // Helper: Lấy tên đầy đủ user
+  const getFullName = (user?: any) =>
+    user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
+
   return (
     <div className="mt-4 px-4">
+      {/* Input bình luận */}
       <div className="flex items-center gap-2 mb-4">
         <Input.TextArea
           rows={1}
@@ -316,6 +326,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
             type="primary"
             className="rounded-md bg-primary"
             onClick={handleAddComment}
+            aria-label="Gửi bình luận"
           >
             <IoSendSharp />
           </Button>
@@ -343,51 +354,55 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                     onClick={() =>
                       handleDeleteComment(comment.id, comment.user.id)
                     }
+                    aria-label="Xóa bình luận"
                   >
                     <MdClear />
                   </Button>
                 )}
-
                 <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
                   <span className="font-semibold text-gray-800">
                     {comment.user?.username}
                   </span>
-                  <p className="mt-1 text-gray-700">{comment.content}</p>
+                  <p className="mt-1 text-gray-700 break-words">
+                    {comment.content}
+                  </p>
                 </div>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <div className="flex items-center gap-2">
                     <Button
                       type="text"
-                      className={`${
+                      className={
                         comment?.userVoteType === 1
                           ? "text-primary"
                           : "text-gray-400 hover:text-primary"
-                      } hover:text-primary`}
-                      icon={<PiArrowFatUpLight className={`text-xl `} />}
+                      }
+                      icon={<PiArrowFatUpLight className="text-xl" />}
                       onClick={() =>
                         handleVote(
                           comment.id,
                           comment.userVoteType === 1 ? 3 : 1
                         )
                       }
+                      aria-label="Upvote"
                     />
                     <span className="text-sm font-semibold text-gray-600">
                       {comment?.votes ?? 0}
                     </span>
                     <Button
                       type="text"
-                      className={`${
+                      className={
                         comment?.userVoteType === 2
                           ? "text-primary"
                           : "text-gray-400 hover:text-primary"
-                      } hover:text-primary`}
-                      icon={<PiArrowFatDownLight className={`text-xl `} />}
+                      }
+                      icon={<PiArrowFatDownLight className="text-xl" />}
                       onClick={() =>
                         handleVote(
                           comment.id,
                           comment.userVoteType === 2 ? 3 : 2
                         )
                       }
+                      aria-label="Downvote"
                     />
                   </div>
                   <Button
@@ -410,6 +425,7 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
               </div>
             </div>
 
+            {/* Reply input */}
             {replyingTo === comment.id && (
               <div className="flex items-center gap-2 ml-12 mt-2">
                 <Input.TextArea
@@ -422,13 +438,14 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
                     }))
                   }
                   placeholder="Viết trả lời..."
-                  className="rounded-md  border-gray-300 focus:border-primary focus:ring-primary"
+                  className="rounded-md border-gray-300 focus:border-primary focus:ring-primary"
                 />
-                <Tooltip title="Gửi bình luận" placement="top">
+                <Tooltip title="Gửi trả lời" placement="top">
                   <Button
                     type="primary"
                     className="rounded-md bg-primary"
                     onClick={() => handleAddReply(comment.id)}
+                    aria-label="Gửi trả lời"
                   >
                     <IoSendSharp />
                   </Button>
@@ -436,88 +453,107 @@ const CommentList: React.FC<{ postId: string }> = ({ postId }) => {
               </div>
             )}
 
+            {/* Replies */}
             {repliesByComment[comment.id]?.data?.length > 0 && (
               <div className="ml-12 mt-2">
                 <List
                   dataSource={repliesByComment[comment.id]?.data}
-                  renderItem={(reply: CommentResponse) => (
-                    <div key={reply?.id} className="mb-2">
-                      <div className="flex items-start gap-3">
-                        <Avatar
-                          src={
-                            reply?.user?.profilePictureUrl ||
-                            "https://i.pravatar.cc/40"
-                          }
-                          alt={reply?.user?.username}
-                          size={32}
-                        />
-                        <div className="flex-1 relative">
-                          {reply?.userId === userId && (
-                            <Button
-                              type="text"
-                              className="absolute right-0 top-1 p-1"
-                              onClick={() =>
-                                handleDeleteComment(reply?.id, reply?.user?.id)
-                              }
-                            >
-                              <MdClear />
-                            </Button>
-                          )}
-                          <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
-                            <span className="font-semibold text-gray-800">
-                              {reply?.user?.username}
-                            </span>
-                            <p className="mt-1 text-gray-700">
-                              {reply?.content}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
+                  renderItem={(reply: CommentResponse) => {
+                    // Tìm parent comment để lấy tên người được reply
+                    const parent = comments.find(
+                      (c) => c.id === reply.parentCommentId
+                    );
+                    return (
+                      <div key={reply?.id} className="mb-2">
+                        <div className="flex items-start gap-3">
+                          <Avatar
+                            src={
+                              reply?.user?.profilePictureUrl ||
+                              "https://i.pravatar.cc/40"
+                            }
+                            alt={reply?.user?.username}
+                            size={32}
+                          />
+                          <div className="flex-1 relative">
+                            {reply?.userId === userId && (
                               <Button
                                 type="text"
-                                className={`${
-                                  reply?.userVoteType === 1
-                                    ? "text-primary"
-                                    : "text-gray-400 hover:text-primary"
-                                } hover:text-primary`}
-                                icon={
-                                  <PiArrowFatUpLight className={`text-xl `} />
-                                }
+                                className="absolute right-0 top-1 p-1"
                                 onClick={() =>
-                                  handleVoteReply(
+                                  handleDeleteComment(
                                     reply?.id,
-                                    comment.id,
-                                    reply?.userVoteType === 1 ? 3 : 1
+                                    reply?.user?.id
                                   )
                                 }
-                              />
-                              <span className="text-sm font-semibold text-gray-600">
-                                {reply?.votes ?? 0}
+                                aria-label="Xóa trả lời"
+                              >
+                                <MdClear />
+                              </Button>
+                            )}
+                            <div className="bg-gray-100 p-3 rounded-lg shadow-sm">
+                              <span className="font-semibold text-gray-800">
+                                {reply?.user?.username}
                               </span>
-                              <Button
-                                type="text"
-                                className={`${
-                                  reply?.userVoteType === 2
-                                    ? "text-primary"
-                                    : "text-gray-400 hover:text-primary"
-                                } hover:text-primary`}
-                                icon={
-                                  <PiArrowFatDownLight className={`text-xl `} />
-                                }
-                                onClick={() =>
-                                  handleVoteReply(
-                                    reply?.id,
-                                    comment.id,
-                                    reply?.userVoteType === 2 ? 3 : 2
-                                  )
-                                }
-                              />
+
+                              <p className="mt-1 text-gray-700 break-words">
+                                {parent && (
+                                  <span className="text-blue-600 ml-2 font-semibold">
+                                    @{getFullName(parent.user)}
+                                  </span>
+                                )}{" "}
+                                {reply?.content}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="text"
+                                  className={
+                                    reply?.userVoteType === 1
+                                      ? "text-primary"
+                                      : "text-gray-400 hover:text-primary"
+                                  }
+                                  icon={
+                                    <PiArrowFatUpLight className="text-xl" />
+                                  }
+                                  onClick={() =>
+                                    handleVoteReply(
+                                      reply?.id,
+                                      comment.id,
+                                      reply?.userVoteType === 1 ? 3 : 1
+                                    )
+                                  }
+                                  aria-label="Upvote reply"
+                                />
+                                <span className="text-sm font-semibold text-gray-600">
+                                  {reply?.votes ?? 0}
+                                </span>
+                                <Button
+                                  type="text"
+                                  className={
+                                    reply?.userVoteType === 2
+                                      ? "text-primary"
+                                      : "text-gray-400 hover:text-primary"
+                                  }
+                                  icon={
+                                    <PiArrowFatDownLight className="text-xl" />
+                                  }
+                                  onClick={() =>
+                                    handleVoteReply(
+                                      reply?.id,
+                                      comment.id,
+                                      reply?.userVoteType === 2 ? 3 : 2
+                                    )
+                                  }
+                                  aria-label="Downvote reply"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  }}
                 />
               </div>
             )}
