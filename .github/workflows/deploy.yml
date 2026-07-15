@@ -10,82 +10,49 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: fitora-ui-production-deploy
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
     environment: production
-    env:
-      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
-      DEPLOY_USER: ${{ secrets.SSH_USER || 'Administrator' }}
-      DEPLOY_PORT: ${{ secrets.SSH_PORT || '22' }}
-      IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Fitora' }}
-      IIS_APP_POOL: ${{ secrets.IIS_APP_POOL || 'FitoraPool' }}
-      IIS_TARGET_PATH: ${{ secrets.IIS_TARGET_PATH || 'C:\\inetpub\\wwwroot\\Fitora' }}
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: .
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
-
-      - name: Install cloudflared
-        shell: bash
-        run: |
-          set -euo pipefail
-          wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
-          chmod +x cloudflared
-          sudo mv cloudflared /usr/local/bin/cloudflared
-
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Validate deploy settings
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          Set-StrictMode -Version Latest
-          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_HOST }}")) { throw "Required secret SSH_HOST is missing." }
-          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_PRIVATE_KEY }}")) { throw "Required secret SSH_PRIVATE_KEY is missing." }
-          if ([string]::IsNullOrWhiteSpace("$env:IIS_SITE_NAME")) { throw "IIS_SITE_NAME is empty." }
-          if ([string]::IsNullOrWhiteSpace("$env:IIS_APP_POOL")) { throw "IIS_APP_POOL is empty." }
-          if ([string]::IsNullOrWhiteSpace("$env:IIS_TARGET_PATH")) { throw "IIS_TARGET_PATH is empty." }
-
-      - name: Setup SSH config
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          cat > ~/.ssh/config <<EOF
-          Host deploy-target
-            HostName ${DEPLOY_HOST}
-            ProxyCommand cloudflared access ssh --hostname ${DEPLOY_HOST}
-            User ${DEPLOY_USER}
-            Port ${DEPLOY_PORT}
-          EOF
-          chmod 600 ~/.ssh/config
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
-          npm ci
+          npm ci --include=optional
           if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
 
+      - name: Validate Rollup Linux native dependency
+        if: runner.os == 'Linux' && runner.arch == 'X64'
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          node -e "require.resolve('@rollup/rollup-linux-x64-gnu'); console.log('Rollup Linux native dependency found')"
+          if ($LASTEXITCODE -ne 0) { throw "Rollup Linux native dependency validation failed with exit code $LASTEXITCODE" }
+
       - name: Lint
-        shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
@@ -93,9 +60,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "npm run lint failed with exit code $LASTEXITCODE" }
 
       - name: Build project
-        shell: pwsh
         env:
           VITE_API_URL: /api
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
@@ -105,7 +72,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "npm run build failed with exit code $LASTEXITCODE" }
 
       - name: Validate production bundle
-        shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
@@ -123,12 +89,91 @@ jobs:
           if (-not $apiMatches) {
             throw "Production bundle does not contain the expected /api base URL."
           }
+          $html = Get-Content ".\dist\index.html" -Raw
+          $scriptMatches = [regex]::Matches($html, 'src="([^"]+\.js)"')
+          if ($scriptMatches.Count -eq 0) { throw "index.html does not reference a JavaScript bundle." }
+          foreach ($match in $scriptMatches) {
+            $relative = $match.Groups[1].Value.TrimStart("/")
+            if (-not (Test-Path (Join-Path ".\dist" $relative))) {
+              throw "index.html references missing bundle: $relative"
+            }
+          }
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: fitora-ui-dist
+          path: dist
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_USER: ${{ secrets.SSH_USER || 'Administrator' }}
+      DEPLOY_PORT: ${{ secrets.SSH_PORT || '22' }}
+      IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Fitora' }}
+      IIS_APP_POOL: ${{ secrets.IIS_APP_POOL || 'FitoraPool' }}
+      IIS_TARGET_PATH: ${{ secrets.IIS_TARGET_PATH || 'C:\\inetpub\\wwwroot\\Fitora' }}
+
+    steps:
+      - name: Checkout deploy scripts
+        uses: actions/checkout@v5
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: fitora-ui-dist
+          path: dist
+
+      - name: Validate deploy settings
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_HOST }}")) { throw "Required secret SSH_HOST is missing." }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_PRIVATE_KEY }}")) { throw "Required secret SSH_PRIVATE_KEY is missing." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_SITE_NAME")) { throw "IIS_SITE_NAME is empty." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_APP_POOL")) { throw "IIS_APP_POOL is empty." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_TARGET_PATH")) { throw "IIS_TARGET_PATH is empty." }
+
+      - name: Install cloudflared
+        shell: bash
+        run: |
+          set -euo pipefail
+          wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          sudo mv cloudflared /usr/local/bin/cloudflared
+
+      - name: Setup SSH config
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${DEPLOY_HOST}
+            ProxyCommand cloudflared access ssh --hostname ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            Port ${DEPLOY_PORT}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+          EOF
+          chmod 600 ~/.ssh/config
 
       - name: Zip build folder
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
+          if (-not (Test-Path ".\dist\index.html")) { throw "Downloaded artifact is missing index.html." }
           Compress-Archive -Path ".\dist" -DestinationPath ".\fitora-ui-dist.zip" -Force
           if (-not (Test-Path ".\fitora-ui-dist.zip")) { throw "Artifact zip was not created." }
 
