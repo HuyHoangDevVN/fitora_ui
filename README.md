@@ -78,23 +78,30 @@ flowchart LR
 | File               | Giá trị mặc định đã thấy                         |
 | ------------------ | ------------------------------------------------ |
 | `.env.development` | `VITE_API_URL=http://localhost:4469`             |
-| `.env.production`  | `VITE_API_URL=https://fitora-api.aiotlab.edu.vn` |
+| `.env.production`  | `VITE_API_URL=/api`                              |
 | `.env.local`       | File rỗng, có thể dùng cho cấu hình máy cá nhân  |
 
 Không đặt token, mật khẩu hoặc private endpoint vào file commit lên Git.
 
+### Cấu hình domain production
+
+Production dùng một public domain:
+
+| Thành phần | URL công khai |
+| --- | --- |
+| Frontend | `https://fitora.fitdnu.id.vn/` |
+| API Gateway | `https://fitora.fitdnu.id.vn/api/` |
+| SignalR chat | `https://fitora.fitdnu.id.vn/api/chat` |
+| SignalR notification | `https://fitora.fitdnu.id.vn/api/noti` |
+
+Frontend production phải build với `VITE_API_URL=/api`. File `public/web.config` rewrite các request `/api/*` về API Gateway nội bộ `http://127.0.0.1:4469/*`; do đó frontend không gọi trực tiếp domain API riêng. Cấu hình development vẫn giữ `VITE_API_URL=http://localhost:4469`.
+
 ## Cài đặt
 
-Repository có cả `package-lock.json` và `yarn.lock`. Workflow deploy đang dùng Yarn, nhưng script trong `package.json` chạy được với npm hoặc yarn. Nên thống nhất một package manager cho nhóm; nếu không có yêu cầu khác, dùng npm theo lock file:
+Repository có cả `package-lock.json` và `yarn.lock`. Workflow CI/CD hiện dùng npm theo `package-lock.json` để cài đặt deterministic bằng `npm ci`. Nên tránh trộn package manager trong pipeline.
 
 ```powershell
 npm install
-```
-
-Hoặc dùng Yarn theo workflow:
-
-```powershell
-yarn install
 ```
 
 ## Chạy cục bộ
@@ -142,9 +149,11 @@ Workflow `.github/workflows/deploy.yml` chạy khi push nhánh `staging`. Pipeli
 
 1. Cài `cloudflared`.
 2. Thiết lập SSH bằng GitHub Secrets.
-3. Chạy `yarn install && yarn build`.
-4. Nén thư mục `dist`.
-5. Copy lên máy chủ Windows/IIS và giải nén vào site đích.
+3. Chạy `npm ci`, `npm run lint`, `npm run build` với `VITE_API_URL=/api`.
+4. Kiểm tra bundle không chứa domain API cũ và có `web.config`.
+5. Nén thư mục `dist`.
+6. Copy artifact và script deploy lên Windows Server qua SSH/Cloudflare Tunnel.
+7. Script deploy tạo backup, cập nhật IIS site `Fitora`, kiểm tra health check và rollback nếu lỗi.
 
 Các secret như `SSH_HOST`, `SSH_PRIVATE_KEY`, `IIS_SITE_NAME`, `IIS_TARGET_PATH` phải cấu hình trong GitHub Actions, không ghi vào repository.
 

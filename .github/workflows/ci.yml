@@ -1,30 +1,77 @@
-# name: CI pipeline for Fitora UI
+name: Fitora UI CI
 
-# on:
-#   push:
-#     branches:
-#       - staging
+on:
+  pull_request:
+    branches: [staging]
+  push:
+    branches: [staging]
+    paths-ignore:
+      - "report/**"
+      - "reports/**"
 
-# jobs:
-#   build:
-#     runs-on: [self-hosted, windows]
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+permissions:
+  contents: read
 
-#       - name: Install dependencies
-#         run: yarn install
+concurrency:
+  group: fitora-ui-ci-${{ github.ref }}
+  cancel-in-progress: true
 
-#       - name: Build project
-#         run: yarn build
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: .
 
-#       - name: Deploy to IIS
-#         run: |
-#           $ErrorActionPreference = "Stop"
-#           $siteName = "Fitora"
-#           $target = "C:\inetpub\wwwroot\$siteName"
-#           Stop-Website -Name $siteName
-#           Remove-Item "$target\*" -Recurse -Force -ErrorAction SilentlyContinue
-#           Copy-Item ".\dist\*" -Destination $target -Recurse -Force
-#           Start-Website -Name $siteName
-#         shell: powershell
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+
+      - name: Lint
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          npm run lint
+          if ($LASTEXITCODE -ne 0) { throw "npm run lint failed with exit code $LASTEXITCODE" }
+
+      - name: Production build
+        env:
+          VITE_API_URL: /api
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if (Test-Path ".\dist") { Remove-Item ".\dist" -Recurse -Force }
+          if (Test-Path ".\node_modules\.tmp") { Remove-Item ".\node_modules\.tmp" -Recurse -Force }
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw "npm run build failed with exit code $LASTEXITCODE" }
+
+      - name: Validate production bundle
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if (-not (Test-Path ".\dist\index.html")) { throw "dist/index.html is missing." }
+          if (-not (Test-Path ".\dist\assets")) { throw "dist/assets is missing." }
+          if (-not (Test-Path ".\dist\web.config")) { throw "dist/web.config is missing." }
+          $legacyMatches = Get-ChildItem ".\dist" -Recurse -File |
+            Select-String "fitora-api\.aiotlab\.edu\.vn|fitora\.aiotlab\.edu\.vn"
+          if ($legacyMatches) {
+            $legacyMatches | Select-Object -First 20 Path, LineNumber | Format-Table | Out-String | Write-Host
+            throw "Production bundle still contains a legacy Fitora domain."
+          }
+          $apiMatches = Get-ChildItem ".\dist" -Recurse -File | Select-String '"/api"'
+          if (-not $apiMatches) { throw "Production bundle does not contain the expected /api base URL." }
