@@ -31,8 +31,8 @@
     "noImplicitAny": false
   },
   "files": [],
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"],
+  "include": [],
+  "exclude": ["node_modules", "dist", "**/dist/**"],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }

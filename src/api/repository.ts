@@ -1,5 +1,7 @@
 import Repository from "./axiosClient";
-export const API_URL = import.meta.env.VITE_API_URL;
+import { API_BASE_URL } from "@/config/runtimeConfig";
+
+export const API_URL = API_BASE_URL;
 
 export const authRepository = new Repository(`${API_URL}/auth`);
 export const userRepository = new Repository(`${API_URL}/user`);

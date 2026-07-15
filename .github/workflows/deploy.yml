@@ -1,25 +1,47 @@
 name: CI/CD Deploy via SSH & Cloudflare Tunnel
 
 on:
+  workflow_dispatch:
   push:
     branches: [staging]
+    paths-ignore:
+      - "report/**"
+      - "reports/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fitora-ui-production-deploy
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
     env:
       DEPLOY_HOST: ${{ secrets.SSH_HOST }}
       DEPLOY_USER: ${{ secrets.SSH_USER || 'Administrator' }}
       DEPLOY_PORT: ${{ secrets.SSH_PORT || '22' }}
       IIS_SITE_NAME: ${{ secrets.IIS_SITE_NAME || 'Fitora' }}
+      IIS_APP_POOL: ${{ secrets.IIS_APP_POOL || 'FitoraPool' }}
       IIS_TARGET_PATH: ${{ secrets.IIS_TARGET_PATH || 'C:\\inetpub\\wwwroot\\Fitora' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
       - name: Install cloudflared
+        shell: bash
         run: |
+          set -euo pipefail
           wget -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
           chmod +x cloudflared
           sudo mv cloudflared /usr/local/bin/cloudflared
@@ -30,14 +52,20 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Validate deploy settings
+        shell: pwsh
         run: |
-          test -n "$DEPLOY_HOST" || {
-            echo "Missing required secret: SSH_HOST"
-            exit 1
-          }
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_HOST }}")) { throw "Required secret SSH_HOST is missing." }
+          if ([string]::IsNullOrWhiteSpace("${{ secrets.SSH_PRIVATE_KEY }}")) { throw "Required secret SSH_PRIVATE_KEY is missing." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_SITE_NAME")) { throw "IIS_SITE_NAME is empty." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_APP_POOL")) { throw "IIS_APP_POOL is empty." }
+          if ([string]::IsNullOrWhiteSpace("$env:IIS_TARGET_PATH")) { throw "IIS_TARGET_PATH is empty." }
 
       - name: Setup SSH config
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           cat > ~/.ssh/config <<EOF
           Host deploy-target
@@ -48,24 +76,70 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+
+      - name: Lint
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          npm run lint
+          if ($LASTEXITCODE -ne 0) { throw "npm run lint failed with exit code $LASTEXITCODE" }
+
       - name: Build project
-        run: yarn install && yarn build
+        shell: pwsh
+        env:
+          VITE_API_URL: /api
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if (Test-Path ".\dist") { Remove-Item ".\dist" -Recurse -Force }
+          if (Test-Path ".\node_modules\.tmp") { Remove-Item ".\node_modules\.tmp" -Recurse -Force }
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw "npm run build failed with exit code $LASTEXITCODE" }
+
+      - name: Validate production bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          if (-not (Test-Path ".\dist\index.html")) { throw "dist/index.html is missing." }
+          if (-not (Test-Path ".\dist\assets")) { throw "dist/assets is missing." }
+          if (-not (Test-Path ".\dist\web.config")) { throw "dist/web.config is missing." }
+          $legacyMatches = Get-ChildItem ".\dist" -Recurse -File |
+            Select-String "fitora-api\.aiotlab\.edu\.vn|fitora\.aiotlab\.edu\.vn"
+          if ($legacyMatches) {
+            $legacyMatches | Select-Object -First 20 Path, LineNumber | Format-Table | Out-String | Write-Host
+            throw "Production bundle still contains a legacy Fitora domain."
+          }
+          $apiMatches = Get-ChildItem ".\dist" -Recurse -File |
+            Select-String '"/api"'
+          if (-not $apiMatches) {
+            throw "Production bundle does not contain the expected /api base URL."
+          }
 
       - name: Zip build folder
-        run: zip -r dist.zip dist
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          Compress-Archive -Path ".\dist" -DestinationPath ".\fitora-ui-dist.zip" -Force
+          if (-not (Test-Path ".\fitora-ui-dist.zip")) { throw "Artifact zip was not created." }
 
-      - name: Copy build to server via SCP
-        run: scp -o StrictHostKeyChecking=no dist.zip deploy-target:C:/Users/Administrator/
+      - name: Copy build and deploy script to server via SCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp fitora-ui-dist.zip scripts/deploy-iis-frontend.ps1 deploy-target:C:/Users/Administrator/
 
       - name: Deploy to IIS via SSH
+        shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no deploy-target powershell -Command "
-            \$ErrorActionPreference = 'Stop';
-            \$siteName = '${IIS_SITE_NAME}';
-            \$target = '${IIS_TARGET_PATH}';
-            Stop-Website -Name \$siteName;
-            Remove-Item '\$target\*' -Recurse -Force -ErrorAction SilentlyContinue;
-            Expand-Archive -Path 'C:\Users\Administrator\dist.zip' -DestinationPath \$target -Force;
-            Start-Website -Name \$siteName;
-            Remove-Item 'C:\Users\Administrator\dist.zip' -Force
-          "
+          set -euo pipefail
+          ssh deploy-target "powershell -NoProfile -ExecutionPolicy Bypass -File C:/Users/Administrator/deploy-iis-frontend.ps1 -ArtifactZip C:/Users/Administrator/fitora-ui-dist.zip -SiteName '${IIS_SITE_NAME}' -AppPoolName '${IIS_APP_POOL}' -TargetPath '${IIS_TARGET_PATH}'"
