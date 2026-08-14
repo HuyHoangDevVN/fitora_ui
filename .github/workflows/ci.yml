@@ -27,20 +27,29 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
-          npm ci
+          npm ci --include=optional
           if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+
+      - name: Validate Rollup Linux native dependency
+        if: runner.os == 'Linux' && runner.arch == 'X64'
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+          node -e "require.resolve('@rollup/rollup-linux-x64-gnu'); console.log('Rollup Linux native dependency found')"
+          if ($LASTEXITCODE -ne 0) { throw "Rollup Linux native dependency validation failed with exit code $LASTEXITCODE" }
 
       - name: Lint
         run: |
@@ -52,6 +61,7 @@ jobs:
       - name: Production build
         env:
           VITE_API_URL: /api
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           $ErrorActionPreference = "Stop"
           Set-StrictMode -Version Latest
