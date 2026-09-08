@@ -54,5 +54,8 @@
     "typescript-eslint": "^8.15.0",
     "vite": "^6.0.1",
     "vite-plugin-svgr": "^4.3.0"
+  },
+  "optionalDependencies": {
+    "@swc/core-linux-x64-gnu": "^1.9.3"
   }
 }
